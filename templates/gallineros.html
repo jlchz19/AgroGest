@@ -1,0 +1,455 @@
+{% extends "base.html" %}
+
+{% block title %}Gallineros - AgroGest{% endblock %}
+{% block page_title %}Gestión de Gallineros{% endblock %}
+
+{% block content %}
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+            <div class="icon-circle me-3">
+                <i class="fas fa-egg text-white"></i>
+            </div>
+            <h5 class="mb-0 fw-semibold">Gestión de Gallineros</h5>
+        </div>
+        <a href="{{ url_for('nueva_ubicacion') }}?tipo=gallinero" class="btn btn-light btn-sm shadow-sm">
+            <i class="fas fa-plus me-1"></i> Nuevo Gallinero
+        </a>
+    </div>
+</div>
+
+{% if gallineros %}
+<div class="row">
+    {% for gallinero in gallineros %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 border-0 shadow-sm hover-card">
+            <div class="position-relative">
+                {% if gallinero.imagen %}
+                <div style="height: 180px; overflow: hidden; border-radius: 8px 8px 0 0;">
+                    <img src="{{ url_for('static', filename='imagenes_ubicaciones/' + gallinero.imagen) }}" 
+                         class="card-img-top" 
+                         alt="{{ gallinero.nombre }}"
+                         style="object-fit: cover; width: 100%; height: 100%; transition: transform 0.3s ease;">
+                </div>
+                {% else %}
+                <div class="bg-light text-center py-5" style="height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 8px 8px 0 0;">
+                    <i class="fas fa-egg fa-3x text-muted mb-2"></i>
+                    <p class="small text-muted mb-0">Sin imagen</p>
+                </div>
+                {% endif %}
+                <div class="position-absolute top-0 end-0 m-2">
+                    <span class="badge rounded-pill {% if gallinero.estado == 'disponible' %}bg-success{% elif gallinero.estado == 'ocupado' %}bg-warning text-dark{% else %}bg-danger{% endif %} bg-opacity-90">
+                        {{ gallinero.estado|title }}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title fw-semibold mb-2">{{ gallinero.nombre }}</h5>
+                <p class="text-muted small mb-3">
+                    <i class="fas fa-info-circle me-1"></i> {{ gallinero.descripcion or 'Gallinero de aves' }}
+                </p>
+                
+                <div class="row text-center g-3 mb-3">
+                    <div class="col-4">
+                        <div class="stat-item">
+                            <div class="fw-bold fs-5 text-info">{{ gallinero.capacidad }}</div>
+                            <small class="text-muted">Capacidad</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-item">
+                            <div class="fw-bold fs-5 text-success">{{ gallinero.area or '0' }} m²</div>
+                            <small class="text-muted">Área</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#gallineroModal{{ gallinero.id }}">
+                        <i class="fas fa-eye me-1"></i> Ver Detalles
+                    </button>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('editar_ubicacion', id=gallinero.id) }}" class="btn btn-outline-secondary btn-sm flex-grow-1">
+                            <i class="fas fa-edit me-1"></i> Editar
+                        </a>
+                        <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ gallinero.id }}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detalles del Gallinero -->
+    <div class="modal fade" id="gallineroModal{{ gallinero.id }}" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header py-2">
+                    <h5 class="modal-title d-flex align-items-center">
+                        <i class="fas fa-egg me-2"></i>{{ gallinero.nombre }}
+                        <span class="badge ms-2 {% if gallinero.estado == 'disponible' %}bg-success{% elif gallinero.estado == 'ocupado' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                            {{ gallinero.estado|title }}
+                        </span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <!-- Imagen principal -->
+                    <div class="position-relative">
+                        {% if gallinero.imagen %}
+                        <img src="{{ url_for('static', filename='imagenes_ubicaciones/' + gallinero.imagen) }}" 
+                             class="img-fluid w-100" 
+                             alt="{{ gallinero.nombre }}"
+                             style="height: 160px; object-fit: cover; border-radius: 0;">
+                        {% else %}
+                        <div class="bg-light text-center py-4" style="height: 160px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                            <i class="fas fa-egg fa-3x text-muted mb-2"></i>
+                            <p class="small text-muted mb-0">Sin imagen</p>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Estadísticas rápidas -->
+                        <div class="position-absolute bottom-0 start-0 end-0 p-2" style="background: rgba(0,0,0,0.6);">
+                            <div class="d-flex justify-content-around text-white small">
+                                <div class="text-center">
+                                    <div class="fw-bold">{{ gallinero.capacidad }}</div>
+                                    <div>Capacidad</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="fw-bold">{{ animales_por_gallinero.get(gallinero.id, 0) }}</div>
+                                    <div>Ocupadas</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="fw-bold">{{ gallinero.capacidad - animales_por_gallinero.get(gallinero.id, 0) }}</div>
+                                    <div>Disponibles</div>
+                                </div>
+                                {% if gallinero.area %}
+                                <div class="text-center">
+                                    <div class="fw-bold">{{ gallinero.area }}</div>
+                                    <div>m²</div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Información detallada en pestañas -->
+                    <div class="p-3">
+                        <ul class="nav nav-tabs nav-fill mb-3" id="gallineroTabs{{ gallinero.id }}" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info{{ gallinero.id }}" type="button" role="tab">
+                                    <i class="fas fa-info-circle me-1"></i> Información
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="aves-tab" data-bs-toggle="tab" data-bs-target="#aves{{ gallinero.id }}" type="button" role="tab">
+                                    <i class="fas fa-dove me-1"></i> Aves
+                                    <span class="badge bg-primary rounded-pill ms-1">{{ animales_por_gallinero.get(gallinero.id, 0) }}</span>
+                                </button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content" id="gallineroTabsContent">
+                            <!-- Pestaña de Información -->
+                            <div class="tab-pane fade show active" id="info{{ gallinero.id }}" role="tabpanel">
+                                {% if gallinero.descripcion %}
+                                <div class="mb-3">
+                                    <h6 class="text-muted small text-uppercase mb-2">Descripción</h6>
+                                    <p class="mb-0 small">{{ gallinero.descripcion }}</p>
+                                </div>
+                                {% endif %}
+                                
+                                <div class="row small">
+                                    <div class="col-6">
+                                        <div class="mb-2">
+                                            <span class="text-muted">Tipo:</span>
+                                            <span class="fw-medium">Gallinero</span>
+                                        </div>
+                                        <div class="mb-2">
+                                            <span class="text-muted">Capacidad:</span>
+                                            <span class="fw-medium">{{ gallinero.capacidad }} aves</span>
+                                        </div>
+                                    </div>
+                                    {% if gallinero.area %}
+                                    <div class="col-6">
+                                        <div class="mb-2">
+                                            <span class="text-muted">Área:</span>
+                                            <span class="fw-medium">{{ gallinero.area }} m²</span>
+                                        </div>
+                                        {% if gallinero.fecha_creacion %}
+                                        <div class="mb-2">
+                                            <span class="text-muted">Creado:</span>
+                                            <span class="fw-medium">{{ gallinero.fecha_creacion.strftime('%d/%m/%Y') }}</span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Pestaña de Aves -->
+                            <div class="tab-pane fade" id="aves{{ gallinero.id }}" role="tabpanel">
+                                <div id="avesGallinero{{ gallinero.id }}" class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                                    <div class="text-center py-4">
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                        <p class="small text-muted mt-2">Cargando aves...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i> Cerrar
+                    </button>
+                    <a href="{{ url_for('editar_ubicacion', id=gallinero.id) }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-edit me-1"></i> Editar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+    // Cargar aves al abrir el modal
+    $('#gallineroModal{{ gallinero.id }}').on('show.bs.modal', function () {
+        const container = $('#avesGallinero{{ gallinero.id }}');
+        const gallineroId = {{ gallinero.id }};
+        
+        // Mostrar spinner
+        container.html(`
+            <div class="text-center py-3 w-100">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="text-muted mt-2">Cargando aves...</p>
+            </div>
+        `);
+        
+        // Simular carga de datos (reemplazar con llamada AJAX real si es necesario)
+        setTimeout(() => {
+            const aves = [
+                {% for ave in animales %}
+                {% if ave.ubicacion_id == gallinero.id and ave.tipo|lower in ['ave', 'gallina', 'pollo', 'pavo', 'pavos', 'gallinas', 'pollos'] %}
+                {
+                    id: '{{ ave.identificacion }}',
+                    nombre: '{{ ave.nombre or "Sin nombre" }}',
+                    raza: '{{ ave.raza or "-" }}',
+                    edad: '{{ ((now - ave.fecha_nacimiento).days / 30)|round|int if ave.fecha_nacimiento else "-" }}',
+                    peso: '{{ ave.peso or "-" }}',
+                    tipo: '{{ ave.tipo or "Ave" }}'
+                }{% if not loop.last %},{% endif %}
+                {% endif %}
+                {% endfor %}
+            ];
+            
+            if (aves.length > 0) {
+                let html = `
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Raza</th>
+                                    <th>Edad (meses)</th>
+                                    <th>Peso (kg)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                aves.forEach(ave => {
+                    html += `
+                        <tr>
+                            <td>${ave.id}</td>
+                            <td>${ave.nombre}</td>
+                            <td>${ave.raza}</td>
+                            <td>${ave.edad}</td>
+                            <td>${ave.peso}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+                container.html(html);
+            } else {
+                container.html(`
+                    <div class="text-center py-4 w-100">
+                        <i class="fas fa-dove fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">No hay aves en este gallinero</p>
+                    </div>
+                `);
+            }
+        }, 500);
+    });
+    </script>
+
+    <!-- Modal de Confirmación de Eliminación -->
+    <div class="modal fade" id="deleteModal{{ gallinero.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ gallinero.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteModalLabel{{ gallinero.id }}">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Confirmar Eliminación
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Estás seguro que deseas eliminar el gallinero <strong>{{ gallinero.nombre }}</strong>?</p>
+                    <p class="text-danger mb-0">
+                        <i class="fas fa-exclamation-circle me-1"></i>
+                        Esta acción no se puede deshacer y se eliminarán todos los datos asociados.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <form action="{{ url_for('eliminar_ubicacion', id=gallinero.id) }}" method="POST" style="display: inline;">
+                        <input type="hidden" name="_method" value="DELETE">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash-alt me-1"></i> Eliminar
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="fas fa-egg fa-4x text-muted mb-3"></i>
+            <h5 class="text-muted">No hay gallineros registrados</h5>
+            <p class="text-muted">Comienza registrando tu primer gallinero para tus aves</p>
+            <a href="{{ url_for('nueva_ubicacion') }}?tipo=gallinero" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Crear Primer Gallinero
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+</div>
+
+<style>
+.hover-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1) !important;
+}
+
+.hover-card:hover .card-img-top {
+    transform: scale(1.05);
+}
+
+.icon-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.stat-item {
+    text-align: center;
+    padding: 0.5rem;
+    border-radius: 8px;
+    background-color: #f8f9fc;
+    height: 100%;
+    transition: all 0.2s ease;
+}
+
+.stat-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.stat-item .fw-bold {
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+}
+
+.stat-item .text-muted {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.card-header {
+    border-bottom: none;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+.modal-lg {
+    max-width: 800px;
+}
+
+.table-sm th,
+.table-sm td {
+    padding: 0.5rem;
+    vertical-align: middle;
+}
+
+/* Responsive adjustments */
+@media (max-width: 767.98px) {
+    .stat-item .fw-bold {
+        font-size: 1.1rem;
+    }
+    
+    .btn-sm {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.4rem;
+    }
+    
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+}
+</style>
+
+{% block scripts %}
+{{ super() }}
+<script>
+// Inicializar tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+
+// Cerrar modal con tecla ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        var modals = document.querySelectorAll('.modal.show');
+        if (modals.length > 0) {
+            var modal = bootstrap.Modal.getInstance(modals[0]);
+            if (modal) modal.hide();
+        }
+    }
+});
+</script>
+{% endblock %}
+{% endblock %}

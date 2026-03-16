@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Eliminar Finca - Sistema de Gestión{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Eliminar Finca
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning" role="alert">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <strong>¡Atención!</strong> Está a punto de eliminar la finca "<strong>{{ finca.nombre }}</strong>". 
+                        Esta acción no se puede deshacer.
+                    </div>
+
+                    <div class="mb-3">
+                        <h5>Detalles de la finca:</h5>
+                        <ul class="list-unstyled">
+                            <li><strong>Nombre:</strong> {{ finca.nombre }}</li>
+                            <li><strong>Dirección:</strong> {{ finca.direccion or 'No especificada' }}</li>
+                            {% if finca.extension %}<li><strong>Extensión:</strong> {{ finca.extension }} ha</li>{% endif %}
+                            {% if finca.tipo_produccion %}<li><strong>Tipo de producción:</strong> {{ finca.tipo_produccion }}</li>{% endif %}
+                            {% if finca.propietario %}<li><strong>Propietario:</strong> {{ finca.propietario }}</li>{% endif %}
+                        </ul>
+                    </div>
+
+                    <form method="POST" onsubmit="return confirm('¿Está seguro de que desea eliminar esta finca? Todos los datos asociados serán eliminados permanentemente.')">
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('fincas') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i>
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash"></i>
+                                Eliminar Finca
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

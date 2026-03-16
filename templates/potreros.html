@@ -1,0 +1,395 @@
+{% extends "base.html" %}
+
+{% block title %}Potreros - AgroGest{% endblock %}
+{% block page_title %}Gestión de Potreros{% endblock %}
+
+{% block content %}
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+            <div class="icon-circle me-3">
+                <span style="font-size: 1.2rem;">🗺️</span>
+            </div>
+            <h5 class="mb-0 fw-semibold">Gestión de Potreros</h5>
+        </div>
+        <a href="{{ url_for('nuevo_potrero') }}" class="btn btn-light btn-sm shadow-sm">
+            <span style="font-size: 1rem; margin-right: 4px;">➕</span> Nuevo Potrero
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    {% for potrero in potreros %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 border-0 shadow-sm hover-card">
+            <div class="position-relative">
+                {% if potrero.imagen %}
+                <div style="height: 180px; overflow: hidden; border-radius: 8px 8px 0 0;">
+                    <img src="{{ url_for('static', filename='imagenes_potreros/' + potrero.imagen) }}" 
+                         class="card-img-top" 
+                         alt="{{ potrero.nombre }}"
+                         style="object-fit: cover; width: 100%; height: 100%; transition: transform 0.3s ease;">
+                </div>
+                {% else %}
+                <div class="bg-light text-center py-5" style="height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 8px 8px 0 0;">
+                    <i class="fas fa-image fa-3x text-muted mb-2"></i>
+                    <p class="small text-muted mb-0">Sin imagen</p>
+                </div>
+                {% endif %}
+                <div class="position-absolute top-0 end-0 m-2">
+                    <span class="badge rounded-pill {% if potrero.estado == 'disponible' %}bg-success{% elif potrero.estado == 'ocupado' %}bg-warning text-dark{% else %}bg-danger{% endif %} bg-opacity-90">
+                        {{ potrero.estado|title }}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title fw-semibold mb-2">{{ potrero.nombre }}</h5>
+                <p class="text-muted small mb-3">
+                    <i class="fas fa-tag me-1"></i> {{ potrero.funcion }}
+                </p>
+                <div class="row text-center g-3 mb-3">
+                    <div class="col-4">
+                        <div class="stat-item">
+                            <div class="fw-bold fs-5 text-primary">{{ potrero.area }}</div>
+                            <small class="text-muted">Hectáreas</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-item">
+                            <div class="fw-bold fs-5 text-info">{{ potrero.capacidad }}</div>
+                            <small class="text-muted">Capacidad</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-item">
+                            <div class="fw-bold fs-5 text-success">{{ animales_por_potrero.get(potrero.id, 0) }}</div>
+                            <small class="text-muted">Ocupado</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#potreroModal{{ potrero.id }}">
+                        <i class="fas fa-eye me-1"></i> Ver Detalles
+                    </button>
+                    <a href="{{ url_for('editar_potrero', potrero_id=potrero.id) }}" class="btn btn-outline-secondary btn-sm me-2">
+                        <i class="fas fa-edit me-1"></i> Editar
+                    </a>
+                    <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ potrero.id }}">
+                        <i class="fas fa-trash-alt me-1"></i> Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Detalles del Potrero -->
+    <div class="modal fade" id="potreroModal{{ potrero.id }}" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalles del Potrero</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">Información General</h6>
+                            <p><strong>Nombre:</strong> {{ potrero.nombre }}</p>
+                            <p><strong>Función:</strong> {{ potrero.funcion }}</p>
+                            <p><strong>Estado:</strong> 
+                                <span class="badge rounded-pill {% if potrero.estado == 'disponible' %}bg-success{% elif potrero.estado == 'ocupado' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                    {{ potrero.estado|title }}
+                                </span>
+                            </p>
+                            {% if potrero.tipo_pasto %}
+                            <p><strong>Tipo de Pasto:</strong> {{ potrero.tipo_pasto }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-info mb-3">Capacidad y Ocupación</h6>
+                            <p><strong>Área:</strong> {{ potrero.area }} hectáreas</p>
+                            <p><strong>Capacidad:</strong> {{ potrero.capacidad }} animales</p>
+                            <p><strong>Ocupado:</strong> {{ animales_por_potrero.get(potrero.id, 0) }} animales</p>
+                            <p><strong>Disponible:</strong> {{ potrero.capacidad - animales_por_potrero.get(potrero.id, 0) }} animales</p>
+                        </div>
+                    </div>
+                    
+                    {% if potrero.fecha_creacion %}
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <p><strong>Fecha de Creación:</strong> {{ potrero.fecha_creacion.strftime('%d/%m/%Y') }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Lista de animales en el potrero -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h6 class="text-success mb-3">
+                                <i class="fas fa-cow me-2"></i>Animales en este Potrero ({{ animales_por_potrero.get(potrero.id, 0) }})
+                            </h6>
+                            <div id="animalesPotrero{{ potrero.id }}" class="row">
+                                <!-- Se llenará dinámicamente con JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <a href="{{ url_for('editar_potrero', potrero_id=potrero.id) }}" class="btn btn-primary">
+                        <i class="fas fa-edit me-2"></i>Editar Potrero
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal{{ potrero.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ potrero.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteModalLabel{{ potrero.id }}">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Confirmar Eliminación
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Estás seguro que deseas eliminar el potrero <strong>{{ potrero.nombre }}</strong>?</p>
+                    <p class="text-danger mb-0"><i class="fas fa-exclamation-circle me-1"></i>Esta acción no se puede deshacer.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i> Cancelar
+                    </button>
+                    <form action="{{ url_for('eliminar_potrero', potrero_id=potrero.id) }}" method="POST" style="display: inline;">
+                        <input type="hidden" name="_method" value="DELETE">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash-alt me-1"></i> Eliminar
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if not potreros %}
+<div class="text-center py-5">
+    <i class="fas fa-map-signs fa-4x text-muted mb-3"></i>
+    <h5 class="text-muted mb-3">No hay potreros registrados</h5>
+    <p>Empieza a organizar tu finca creando tu primer potrero.</p>
+    <a href="{{ url_for('nuevo_potrero') }}" class="btn btn-primary mt-2">
+        <i class="fas fa-plus me-2"></i>Crear Primer Potrero
+    </a>
+</div>
+{% endif %}
+
+
+<style>
+.hover-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1) !important;
+}
+
+.hover-card:hover .card-img-top {
+    transform: scale(1.05);
+}
+
+.card-img-overlay {
+    background: rgba(0, 0, 0, 0.3);
+    color: white;
+    padding: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.animal-item {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 8px;
+    border-left: 4px solid #28a745;
+}
+
+.animal-info {
+    display: flex;
+    align-items: center;
+}
+
+.animal-icon {
+    margin-right: 10px;
+}
+
+.animal-emoji {
+    font-size: 1.5rem;
+}
+
+.animal-details h6 {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.animal-details small {
+    color: #6c757d;
+}
+
+.animal-stats {
+    margin-left: auto;
+    text-align: right;
+}
+
+.no-animals {
+    text-align: center;
+    color: #6c757d;
+    padding: 20px;
+}
+</style>
+
+<script>
+function showPotreroDetails(potreroId) {
+    const button = document.querySelector(`[data-potrero-id="${potreroId}"]`);
+    const data = button.dataset;
+    
+    document.getElementById('modalPotreroTitle').innerHTML = '<i class="fas fa-map-signs me-2"></i>Potrero: ' + data.potreroNombre;
+    document.getElementById('modalPotreroNombre').textContent = data.potreroNombre;
+    document.getElementById('modalPotreroFuncion').textContent = data.potreroFuncion;
+    document.getElementById('modalPotreroEstado').textContent = data.potreroEstado;
+    document.getElementById('modalPotreroArea').textContent = data.potreroArea + ' hectáreas';
+    document.getElementById('modalPotreroCapacidad').textContent = data.potreroCapacidad + ' animales';
+    document.getElementById('modalPotreroOcupado').textContent = data.potreroOcupado + ' animales';
+    
+    // Cargar lista de animales
+    loadAnimalsInLocation('potrero', potreroId);
+    
+    document.getElementById('potreroDetailsModal').style.display = 'flex';
+}
+
+function loadAnimalsInLocation(locationType, locationId) {
+    const animalesList = document.getElementById('modalAnimalesList');
+    animalesList.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando animales...</div>';
+    
+    fetch(`/api/animales_en_ubicacion?tipo=${locationType}&id=${locationId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.animales && data.animales.length > 0) {
+                let html = '';
+                data.animales.forEach(animal => {
+                    let animalEmoji = '🐄'; // Default cow
+                    if (animal.tipo === 'Cerdo') animalEmoji = '🐷';
+                    else if (animal.tipo === 'Cabra') animalEmoji = '🐐';
+                    else if (animal.tipo === 'Oveja') animalEmoji = '🐑';
+                    else if (animal.tipo === 'Caballo') animalEmoji = '🐴';
+                    else if (animal.tipo === 'Pollo') animalEmoji = '🐔';
+                    else if (animal.tipo === 'Pato') animalEmoji = '🦆';
+                    else if (animal.tipo === 'Conejo') animalEmoji = '🐰';
+                    
+                    html += `
+                        <div class="animal-item">
+                            <div class="animal-info">
+                                <div class="animal-icon">
+                                    <span class="animal-emoji">${animalEmoji}</span>
+                                </div>
+                                <div class="animal-details">
+                                    <h6>${animal.identificacion}</h6>
+                                    <small>${animal.nombre || 'Sin nombre'} - ${animal.tipo} ${animal.raza}</small>
+                                </div>
+                            </div>
+                            <div class="animal-stats">
+                                <small class="text-muted">${animal.peso} kg</small>
+                            </div>
+                        </div>
+                    `;
+                });
+                animalesList.innerHTML = html;
+            } else {
+                animalesList.innerHTML = `
+                    <div class="no-animals">
+                        <i class="fas fa-cow fa-2x mb-2"></i>
+                        <p>No hay animales en esta ubicación</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            animalesList.innerHTML = `
+                <div class="no-animals">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-2 text-warning"></i>
+                    <p>Error al cargar los animales</p>
+                </div>
+            `;
+        });
+}
+
+function closePotreroModal() {
+    document.getElementById('potreroDetailsModal').style.display = 'none';
+}
+
+// Cerrar modal con ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closePotreroModal();
+    }
+});
+</script>
+
+<script>
+// Script para inicializar el menú móvil
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar el menú móvil inmediatamente
+    if (typeof window.initializeMobileMenu === 'function') {
+        window.initializeMobileMenu();
+    }
+
+    // Verificar y reinicializar el menú móvil después de que el DOM esté completamente cargado
+    window.addEventListener('load', function() {
+        if (typeof window.initializeMobileMenu === 'function') {
+            window.initializeMobileMenu();
+        }
+    });
+
+    // Asegurar que el botón hamburguesa funcione específicamente en esta vista
+    setTimeout(function() {
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const sidebarCollapse = document.getElementById('sidebarCollapse');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        
+        if (mobileMenuToggle && sidebar && sidebarOverlay) {
+            // Remover cualquier event listener existente
+            mobileMenuToggle.removeEventListener('click', handleMobileMenuClick);
+            // Agregar el event listener
+            mobileMenuToggle.addEventListener('click', handleMobileMenuClick);
+        }
+        
+        if (sidebarCollapse && sidebar) {
+            // Remover cualquier event listener existente
+            sidebarCollapse.removeEventListener('click', handleSidebarCollapse);
+            // Agregar el event listener
+            sidebarCollapse.addEventListener('click', handleSidebarCollapse);
+        }
+        
+        function handleMobileMenuClick() {
+            sidebar.classList.toggle('show-mobile');
+            sidebarOverlay.classList.toggle('show');
+            document.body.style.overflow = sidebar.classList.contains('show-mobile') ? 'hidden' : '';
+        }
+        
+        function handleSidebarCollapse() {
+            sidebar.classList.toggle('active');
+            document.getElementById('content').classList.toggle('active');
+        }
+    }, 100);
+});
+</script>
+
+{% endblock %} 

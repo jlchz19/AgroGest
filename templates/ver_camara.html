@@ -1,0 +1,267 @@
+{% extends 'base.html' %}
+{% block title %}{{ camara.nombre }} - Vista en Vivo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="mb-0">
+            <i class="fas fa-video me-2 text-primary"></i>{{ camara.nombre }}
+            <small class="text-muted ms-2">Vista en Vivo</small>
+        </h4>
+        <a href="{{ url_for('camaras') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Volver
+        </a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="ratio ratio-16x9">
+                <div id="streamContainer" style="position: relative; width: 100%; height: 100%; background: #000;">
+                    <img id="cameraStream" src="{{ camara.url }}" 
+                         style="object-fit: contain; width: 100%; height: 100%;"
+                         data-url="{{ camara.url }}"
+                         onerror="this.onerror=null; document.getElementById('streamError').style.display='block'; this.style.display='none';">
+                    <div id="streamError" class="text-center text-white p-4" style="display: none; position: absolute; top: 50%; left: 0; right: 0; transform: translateY(-50%);">
+                        <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                        <h5>No se puede conectar a la cámara</h5>
+                        <p class="mb-3">Verifica que la URL sea correcta y que la cámara esté encendida</p>
+                        <button class="btn btn-warning" onclick="recargarStream()">
+                            <i class="fas fa-sync-alt me-1"></i> Reintentar
+                        </button>
+                    </div>
+                    <!-- Controls Overlay -->
+                    <div class="position-absolute top-0 end-0 m-3">
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-light" onclick="toggleFullscreen()" title="Pantalla completa">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-light" onclick="recargarStream()" title="Refrescar">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-light" onclick="toggleRecording()" title="Grabar">
+                                <i class="fas fa-record-vinyl"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Status Indicator -->
+                    <div class="position-absolute bottom-0 start-0 m-3">
+                        <div class="bg-dark bg-opacity-75 text-white px-3 py-2 rounded">
+                            <small id="connectionStatus">
+                                <i class="fas fa-circle text-success me-1"></i>
+                                <span id="statusText">Conectado</span>
+                                <span class="ms-2" id="updateTime">Actualizado: --:--:--</span>
+                            </small>
+                        </div>
+                    </div>
+                    <!-- Recording Indicator -->
+                    <div id="recordingIndicator" class="position-absolute top-0 start-0 m-3" style="display: none;">
+                        <div class="bg-danger bg-opacity-75 text-white px-3 py-2 rounded">
+                            <small>
+                                <i class="fas fa-circle fa-xs me-1 animate-pulse"></i>
+                                GRABANDO
+                                <span id="recordingTime">00:00</span>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="flex-grow-1">
+                    <div class="text-truncate small text-muted" title="{{ camara.url }}">{{ camara.url }}</div>
+                    <div class="small text-muted">
+                        <i class="fas fa-video me-1"></i>
+                        {{ camara.nombre }}
+                        <span class="ms-2">
+                            <i class="fas fa-clock me-1"></i>
+                            <span id="lastRefresh">Actualizando...</span>
+                        </span>
+                    </div>
+                </div>
+                <div class="btn-group btn-group-sm ms-2">
+                    <button class="btn btn-outline-secondary" onclick="recargarStream()" title="Refrescar">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" onclick="toggleAutoRefresh()" id="autoRefreshBtn" title="Auto refresco">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <a href="{{ url_for('camaras') }}" class="btn btn-outline-secondary" title="Volver a cámaras">
+                        <i class="fas fa-th"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function addTimestamp(url) {
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}_t=${Date.now()}`;
+}
+
+function toggleFullscreen() {
+    const container = document.getElementById('streamContainer');
+    if (!document.fullscreenElement) {
+        container.requestFullscreen().catch(err => {
+            console.log('Error attempting to enable fullscreen:', err);
+        });
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+function updateStatus(status, text = '') {
+    const statusElement = document.getElementById('connectionStatus');
+    const statusText = document.getElementById('statusText');
+    
+    if (status === 'connecting') {
+        statusElement.innerHTML = '<i class="fas fa-circle text-warning me-1"></i>';
+        statusText.textContent = 'Conectando...';
+    } else if (status === 'connected') {
+        statusElement.innerHTML = '<i class="fas fa-circle text-success me-1"></i>';
+        statusText.textContent = 'Conectado';
+    } else if (status === 'error') {
+        statusElement.innerHTML = '<i class="fas fa-circle text-danger me-1"></i>';
+        statusText.textContent = 'Error de conexión';
+    }
+    
+    // Update time
+    const updateTime = document.getElementById('updateTime');
+    const now = new Date();
+    updateTime.textContent = 'Actualizado: ' + now.toLocaleTimeString();
+    
+    // Update footer time
+    const lastRefresh = document.getElementById('lastRefresh');
+    lastRefresh.textContent = 'Actualizado: ' + now.toLocaleTimeString();
+}
+
+function recargarStream() {
+    const container = document.getElementById('streamContainer');
+    const img = document.getElementById('cameraStream');
+    const errorDiv = document.getElementById('streamError');
+    
+    updateStatus('connecting');
+    
+    // Show loading state
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'text-center text-white p-4';
+    loadingDiv.style.position = 'absolute';
+    loadingDiv.style.top = '50%';
+    loadingDiv.style.left = '0';
+    loadingDiv.style.right = '0';
+    loadingDiv.style.transform = 'translateY(-50%)';
+    loadingDiv.innerHTML = '<i class="fas fa-spinner fa-spin fa-3x mb-3"></i><p>Cargando...</p>';
+    
+    // Hide error and show loading
+    errorDiv.style.display = 'none';
+    container.appendChild(loadingDiv);
+    
+    // Create new image to preload
+    const newImg = new Image();
+    newImg.onload = function() {
+        // When image loads successfully, update the source
+        img.src = addTimestamp(img.getAttribute('data-url'));
+        img.style.display = 'block';
+        container.removeChild(loadingDiv);
+        updateStatus('connected');
+    };
+    newImg.onerror = function() {
+        // On error, show error message
+        img.style.display = 'none';
+        errorDiv.style.display = 'block';
+        container.removeChild(loadingDiv);
+        updateStatus('error');
+    };
+    
+    // Set source with timestamp
+    newImg.src = addTimestamp(img.getAttribute('data-url'));
+}
+
+function toggleRecording() {
+    const indicator = document.getElementById('recordingIndicator');
+    const recordingTime = document.getElementById('recordingTime');
+    
+    if (indicator.style.display === 'none') {
+        // Start recording
+        indicator.style.display = 'block';
+        let seconds = 0;
+        recordingTime.textContent = '00:00';
+        
+        recordingInterval = setInterval(() => {
+            seconds++;
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            recordingTime.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }, 1000);
+        
+        // Here you would implement actual recording logic
+        console.log('Recording started');
+    } else {
+        // Stop recording
+        indicator.style.display = 'none';
+        clearInterval(recordingInterval);
+        console.log('Recording stopped');
+    }
+}
+
+function toggleAutoRefresh() {
+    const btn = document.getElementById('autoRefreshBtn');
+    const icon = btn.querySelector('i');
+    
+    if (autoRefreshInterval) {
+        // Stop auto refresh
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+        icon.className = 'fas fa-play';
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-outline-secondary');
+    } else {
+        // Start auto refresh
+        autoRefreshInterval = setInterval(recargarStream, 5000);
+        icon.className = 'fas fa-pause';
+        btn.classList.remove('btn-outline-secondary');
+        btn.classList.add('btn-success');
+    }
+}
+
+// Global variables
+let autoRefreshInterval = null;
+let recordingInterval = null;
+
+// Initial load
+document.addEventListener('DOMContentLoaded', function() {
+    // Add timestamp to initial image load
+    const img = document.getElementById('cameraStream');
+    img.src = addTimestamp(img.getAttribute('data-url'));
+    
+    // Set initial status
+    updateStatus('connected');
+    
+    // Set up auto-refresh (every 5 seconds by default)
+    autoRefreshInterval = setInterval(recargarStream, 5000);
+    
+    // Update auto refresh button
+    const btn = document.getElementById('autoRefreshBtn');
+    const icon = btn.querySelector('i');
+    icon.className = 'fas fa-pause';
+    btn.classList.remove('btn-outline-secondary');
+    btn.classList.add('btn-success');
+    
+    // Pause auto-refresh when tab is not visible
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+        } else {
+            if (document.getElementById('autoRefreshBtn').querySelector('i').classList.contains('fa-pause')) {
+                autoRefreshInterval = setInterval(recargarStream, 5000);
+            }
+            recargarStream(); // Refresh immediately when returning to tab
+        }
+    });
+});
+</script>
+{% endblock %}

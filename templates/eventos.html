@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+
+{% block title %}Eventos - AgroGest{% endblock %}
+{% block page_title %}Gestión de Eventos{% endblock %}
+
+{% block content %}
+<!-- Estilos personalizados para tarjetas de estadísticas -->
+<style>
+    .stats-card-modern {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 16px;
+        padding: 24px 20px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        border: 1px solid rgba(0, 0, 0, 0.03);
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    
+    .stats-card-modern::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--card-color) 0%, var(--card-color-light) 100%);
+    }
+    
+    .stats-card-modern:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+    }
+    
+    .stats-card-modern.total { --card-color: #0ea5e9; --card-color-light: #38bdf8; }
+    .stats-card-modern.fallecidos { --card-color: #ef4444; --card-color-light: #f87171; }
+    .stats-card-modern.vendidos { --card-color: #10b981; --card-color-light: #34d399; }
+    .stats-card-modern.transferidos { --card-color: #8b5cf6; --card-color-light: #a78bfa; }
+    
+    .stats-icon-modern {
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, var(--card-color) 0%, var(--card-color-light) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 24px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        flex-shrink: 0;
+    }
+    
+    .stats-content-modern {
+        flex: 1;
+    }
+    
+    .stats-number-modern {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: #1e293b;
+        line-height: 1;
+        margin-bottom: 4px;
+        background: linear-gradient(135deg, #1e293b 0%, #475569 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .stats-label-modern {
+        font-size: 0.9rem;
+        color: #64748b;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .stats-trend {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        font-size: 0.75rem;
+        padding: 4px 8px;
+        border-radius: 20px;
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+        font-weight: 600;
+    }
+    
+    @media (max-width: 768px) {
+        .stats-card-modern {
+            padding: 18px 16px;
+        }
+        .stats-number-modern {
+            font-size: 1.8rem;
+        }
+        .stats-icon-modern {
+            width: 48px;
+            height: 48px;
+            font-size: 20px;
+        }
+    }
+</style>
+
+<!-- Estadísticas -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="stats-card-modern total">
+            <div class="stats-icon-modern">
+                <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="stats-content-modern">
+                <div class="stats-number-modern">{{ eventos|length }}</div>
+                <div class="stats-label-modern">Total Eventos</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="stats-card-modern fallecidos">
+            <div class="stats-icon-modern">
+                <i class="fas fa-skull-crossbones"></i>
+            </div>
+            <div class="stats-content-modern">
+                <div class="stats-number-modern">{{ eventos|selectattr('0.tipo_evento', 'equalto', 'fallecido')|list|length }}</div>
+                <div class="stats-label-modern">Fallecidos</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="stats-card-modern vendidos">
+            <div class="stats-icon-modern">
+                <i class="fas fa-hand-holding-usd"></i>
+            </div>
+            <div class="stats-content-modern">
+                <div class="stats-number-modern">{{ eventos|selectattr('0.tipo_evento', 'equalto', 'vendido')|list|length }}</div>
+                <div class="stats-label-modern">Vendidos</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="stats-card-modern transferidos">
+            <div class="stats-icon-modern">
+                <i class="fas fa-exchange-alt"></i>
+            </div>
+            <div class="stats-content-modern">
+                <div class="stats-number-modern">{{ eventos|selectattr('0.tipo_evento', 'equalto', 'transferido')|list|length }}</div>
+                <div class="stats-label-modern">Transferidos</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Botones de acción -->
+<div class="row mb-4">
+    <div class="col-12">
+        <a href="{{ url_for('nuevo_evento') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Registrar Nuevo Evento
+        </a>
+        <a href="{{ url_for('reporte_eventos_pdf') }}" class="btn btn-danger ml-2">
+            <i class="fas fa-file-pdf"></i> Descargar Reporte en PDF
+        </a>
+    </div>
+</div>
+
+<!-- Lista de Eventos -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">Historial de Eventos</h5>
+    </div>
+    <div class="card-body">
+        {% if eventos %}
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Animal</th>
+                        <th>Tipo Evento</th>
+                        <th>Descripción</th>
+                        <th>Responsable</th>
+                        <th>Detalles</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for evento, animal in eventos %}
+                    <tr>
+                        <td>{{ evento.fecha_evento.strftime('%d/%m/%Y') }}</td>
+                        <td>
+                            <a href="{{ url_for('historial_animal', animal_id=animal.id) }}" class="text-decoration-none">
+                                {{ animal.identificacion }} - {{ animal.nombre or 'Sin nombre' }}
+                            </a>
+                        </td>
+                        <td>
+                            {% if evento.tipo_evento == 'fallecido' %}
+                                <span class="badge bg-danger">Fallecido</span>
+                            {% elif evento.tipo_evento == 'vendido' %}
+                                <span class="badge bg-success">Vendido</span>
+                            {% elif evento.tipo_evento == 'transferido' %}
+                                <span class="badge bg-info">Transferido</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ evento.tipo_evento.title() }}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ evento.descripcion or '-' }}</td>
+                        <td>{{ evento.responsable or '-' }}</td>
+                        <td>
+                            {% if evento.tipo_evento == 'vendido' %}
+                                <small class="text-muted">
+                                    {% if evento.comprador %}Comprador: {{ evento.comprador }}<br>{% endif %}
+                                    {% if evento.precio_venta %}Precio: ${{ "%.2f"|format(evento.precio_venta) }}{% endif %}
+                                </small>
+                            {% elif evento.tipo_evento == 'fallecido' %}
+                                <small class="text-muted">
+                                    {% if evento.causa_muerte %}Causa: {{ evento.causa_muerte }}{% endif %}
+                                </small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('historial_animal', animal_id=animal.id) }}" class="btn btn-outline-primary btn-sm" title="Ver Animal">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <button class="btn btn-outline-danger btn-sm eliminar-evento-btn" title="Eliminar Evento"
+                                        data-event-id="{{ evento.id }}" 
+                                        data-animal-info="{{ animal.identificacion }} - {{ animal.nombre or &quot;Sin nombre&quot; }}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No hay eventos registrados</h5>
+            <p class="text-muted">Comienza registrando eventos importantes de tus animales.</p>
+            <a href="{{ url_for('nuevo_evento') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Registrar Primer Evento
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal para ver detalles del evento -->
+<div class="modal fade" id="modalDetallesEvento" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalles del Evento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="contenidoDetallesEvento">
+                <!-- Contenido dinámico -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function eliminarEvento(eventoId, nombreAnimal) {
+    if (confirm(`¿Estás seguro de eliminar el evento de ${nombreAnimal}?\n\nEsta acción no se puede deshacer.`)) {
+        // Crear formulario y enviarlo
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/evento/${eventoId}/eliminar`;
+        form.style.display = 'none';
+        
+        // Agregar token CSRF si existe
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        if (csrfToken) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = csrfToken.getAttribute('content');
+            form.appendChild(csrfInput);
+        }
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function verDetallesEvento(eventoId) {
+    // Aquí podrías implementar una llamada AJAX para obtener los detalles completos
+    // Por ahora, mostraremos un mensaje simple
+    const modal = document.getElementById('modalDetallesEvento');
+    const contenido = document.getElementById('contenidoDetallesEvento');
+    
+    contenido.innerHTML = `
+        <div class="text-center">
+            <i class="fas fa-spinner fa-spin fa-2x text-primary mb-3"></i>
+            <p>Cargando detalles...</p>
+        </div>
+    `;
+    
+    // Simular carga (en una implementación real, harías una llamada AJAX)
+    setTimeout(() => {
+        contenido.innerHTML = `
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> 
+                Funcionalidad de detalles completa en desarrollo. 
+                Puedes ver más información en el historial del animal.
+            </div>
+        `;
+    }, 500);
+    
+    const modalInstance = new bootstrap.Modal(modal);
+    modalInstance.show();
+}
+
+// Filtros de tabla (opcional)
+document.addEventListener('DOMContentLoaded', function() {
+    // Aquí podrías agregar funcionalidad de filtros si es necesario
+    
+    // Event listeners para botones de eliminar evento
+    document.querySelectorAll('.eliminar-evento-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const eventoId = this.getAttribute('data-event-id');
+            const animalInfo = this.getAttribute('data-animal-info');
+            eliminarEvento(eventoId, animalInfo);
+        });
+    });
+});
+</script>
+{% endblock %}

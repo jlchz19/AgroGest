@@ -1,0 +1,826 @@
+/* Estilos para botones */
+.btn {
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-primary:hover, .btn-primary:focus, .btn-primary:active {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.btn-primary:active:focus {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.5);
+}
+
+.btn-outline-primary {
+    color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-outline-primary:hover, .btn-outline-primary:focus, .btn-outline-primary:active {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+.btn-success {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-success:hover, .btn-success:focus, .btn-success:active {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.btn-outline-success {
+    color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-outline-success:hover, .btn-outline-success:focus, .btn-outline-success:active {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+/* Tarjetas de Maquinaria - Diseño Ultra Compacto */
+.machinery-card {
+    transition: all 0.3s ease !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 8px !important;
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.04) !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+    position: relative !important;
+}
+
+.machinery-card::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 2px !important;
+    background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%) !important;
+    opacity: 0 !important;
+    transition: opacity 0.3s ease !important;
+}
+
+.machinery-card:hover::before {
+    opacity: 1 !important;
+}
+
+.machinery-card:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08) !important;
+    border-color: #d1d5db !important;
+}
+
+.machinery-card .card-header-stripe {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    padding: 8px !important;
+    border-radius: 8px 8px 0 0 !important;
+    position: relative !important;
+}
+
+.machinery-card .animal-info {
+    padding: 8px 0 6px 0 !important;
+    border-bottom: 1px solid #f3f4f6 !important;
+    margin-bottom: 8px !important;
+    text-align: center !important;
+}
+
+.machinery-card .animal-info h5 {
+    font-size: 1.1rem !important;
+    font-weight: 700 !important;
+    color: #1f2937 !important;
+    margin-bottom: 2px !important;
+    letter-spacing: -0.01em !important;
+}
+
+.machinery-card .animal-info p {
+    font-size: 0.65rem !important;
+    color: #6b7280 !important;
+    font-weight: 500 !important;
+    margin-bottom: 0 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.6px !important;
+}
+
+.machinery-card .animal-details {
+    background: #fafbfc !important;
+    border-radius: 6px !important;
+    padding: 8px !important;
+    margin-bottom: 8px !important;
+    border: 1px solid #f1f5f9 !important;
+}
+
+.machinery-card .animal-details .row > div {
+    padding: 4px 0 !important;
+    border-bottom: 1px solid #f8fafc !important;
+    transition: all 0.2s ease !important;
+}
+
+.machinery-card .animal-details .row > div:last-child {
+    border-bottom: none !important;
+}
+
+.machinery-card .animal-details .row > div:hover {
+    background: #f8fafc !important;
+    padding-left: 4px !important;
+}
+
+.machinery-card .animal-details small {
+    font-weight: 600 !important;
+    font-size: 0.55rem !important;
+    color: #64748b !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.3px !important;
+    display: block !important;
+    margin-bottom: 1px !important;
+}
+
+.machinery-card .animal-details span {
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    color: #1f2937 !important;
+    display: block !important;
+}
+
+.machinery-card .animal-type-icon {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 6px !important;
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #ffffff !important;
+    font-size: 14px !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15) !important;
+}
+
+.machinery-card .animal-type-icon:hover {
+    transform: scale(1.05) !important;
+    box-shadow: 0 3px 12px rgba(59, 130, 246, 0.25) !important;
+}
+
+.machinery-card .animal-image {
+    border-radius: 6px !important;
+    border: 1px solid #f8fafc !important;
+    width: 32px !important;
+    height: 32px !important;
+    object-fit: cover !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+}
+
+.machinery-card .btn-action {
+    width: 28px !important;
+    height: 28px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 6px !important;
+    transition: all 0.3s ease !important;
+    border: 1px solid #e5e7eb !important;
+    background: #ffffff !important;
+    color: #6b7280 !important;
+    font-size: 12px !important;
+    text-decoration: none !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+
+.machinery-card .btn-action:hover {
+    background: #f8fafc !important;
+    border-color: #d1d5db !important;
+    color: #374151 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+
+.machinery-card .btn-action.btn-info {
+    background: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+    color: white !important;
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.15) !important;
+}
+
+.machinery-card .btn-action.btn-info:hover {
+    background: #2563eb !important;
+    border-color: #2563eb !important;
+    box-shadow: 0 3px 10px rgba(59, 130, 246, 0.25) !important;
+}
+
+.machinery-card .location-badge {
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    font-size: 0.6rem !important;
+    font-weight: 500 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    border: 1px solid #e2e8f0 !important;
+    transition: all 0.2s ease !important;
+}
+
+.machinery-card .location-badge:hover {
+    background: #e2e8f0 !important;
+    transform: translateY(-1px) !important;
+}
+
+.machinery-card .location-badge i {
+    font-size: 8px !important;
+    margin-right: 3px !important;
+}
+
+.machinery-card .badge-modern {
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    font-size: 0.55rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.3px !important;
+    border: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+}
+
+.machinery-card .badge-modern.badge-success {
+    background: #10b981 !important;
+    color: white !important;
+}
+
+.machinery-card .badge-modern.badge-warning {
+    background: #f59e0b !important;
+    color: white !important;
+}
+
+.machinery-card .badge-modern.badge-danger {
+    background: #ef4444 !important;
+    color: white !important;
+}
+
+.machinery-card .badge-modern.badge-secondary {
+    background: #6b7280 !important;
+    color: white !important;
+}
+
+.machinery-card .badge-modern.badge-sold {
+    background: #ef4444 !important;
+    color: white !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    font-size: 0.55rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.3px !important;
+    border: none !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+}
+
+.machinery-card .badge-modern i {
+    font-size: 5px !important;
+    margin-right: 3px !important;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-danger:hover, .btn-danger:focus, .btn-danger:active {
+    background-color: #bb2d3b;
+    border-color: #b02a37;
+    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+}
+
+.btn-outline-danger {
+    color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-outline-danger:hover, .btn-outline-danger:focus, .btn-outline-danger:active {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+/* Asegurar que el texto de los botones sea visible al hacer clic */
+.btn:active, .btn:focus {
+    color: inherit !important;
+    background-color: inherit !important;
+    border-color: inherit !important;
+    box-shadow: none !important;
+}
+
+/* Estilos para el mapa interactivo */
+#map {
+    height: 400px;
+    width: 100%;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    border: 1px solid #dee2e6;
+}
+
+.map-container {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.map-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    background: white;
+    padding: 5px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.map-preview {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin-top: 1rem;
+    display: none;
+}
+
+.leaflet-draw-toolbar .leaflet-draw-draw-polygon {
+    background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXNxdWFyZS1kcmF3aW5nIj48cmVjdCB3aWR0aD0iMTgiIGhlaWdodD0iMTgiIHg9IjMiIHk9IjMiIHJ4PSIyIi8+PGNpcmNsZSBjeD0iOCIgY3k9IjgiIHI9IjIiLz48Y2lyY2xlIGN4PSIxNiIgY3k9IjgiIHI9IjIiLz48bGluZSB4MT0iOCIgeDI9IjgiIHkxPSIxNCIgeTI9IjE2Ii8+PGxpbmUgeDE9IjE2IiB4Mj0iMTYiIHkxPSIxNCIgeTI9IjE2Ii8+PGxpbmUgeDE9IjEyIiB4Mj0iMTIiIHkxPSIxNiIgeTI9IjE4Ii8+PC9zdmc+');
+}
+
+/* Estilos para los botones del mapa */
+.leaflet-draw-toolbar a {
+    background-color: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin: 2px;
+}
+
+.leaflet-draw-toolbar a:hover {
+    background-color: #f4f4f4;
+}
+
+/* Estilos para el mapa */
+#map {
+    width: 100%;
+    height: 100%;
+    min-height: 60vh;
+    background: #f8f9fa;
+}
+
+/* Estilos para el modal del mapa */
+#mapModal .modal-dialog {
+    margin: 0.5rem auto;
+    max-width: 95%;
+    width: 95%;
+    height: 90vh;
+    padding: 0;
+}
+
+#mapModal .modal-content {
+    height: 100%;
+    border: none;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+#mapModal .modal-header {
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+#mapModal .modal-body {
+    padding: 0;
+    flex: 1;
+    min-height: 0;
+    position: relative;
+}
+
+#mapModal .modal-footer {
+    padding: 0.5rem 1rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Controles del mapa */
+#btnUbicacionActual,
+#btnDibujarPoligono {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    border: none;
+    transition: all 0.2s;
+}
+
+#btnUbicacionActual:hover,
+#btnDibujarPoligono:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#btnUbicacionActual:active,
+#btnDibujarPoligono:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+#btnGuardarUbicacion {
+    min-width: 150px;
+    padding: 0.5rem 1.25rem;
+    font-weight: 500;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    border: none;
+    transition: all 0.2s;
+}
+
+#btnGuardarUbicacion:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#btnGuardarUbicacion:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+/* Asegurar que los controles de Leaflet sean visibles */
+.leaflet-top,
+.leaflet-bottom {
+    z-index: 1000;
+}
+
+.leaflet-control {
+    margin: 10px;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    background: white;
+    border: none;
+}
+
+.leaflet-bar a,
+.leaflet-bar a:hover {
+    border-bottom: 1px solid #eee;
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    display: block;
+    text-align: center;
+    text-decoration: none;
+    color: #333;
+}
+
+.leaflet-bar a:hover {
+    background-color: #f4f4f4;
+}
+
+.leaflet-bar a.leaflet-disabled {
+    cursor: default;
+    background-color: #f4f4f4;
+    color: #bbb;
+}
+
+/* Ajustes para móviles */
+@media (max-width: 768px) {
+    #mapModal .modal-dialog {
+        margin: 0;
+        max-width: 100%;
+        width: 100%;
+        height: 100vh;
+    }
+    
+    #mapModal .modal-content {
+        border-radius: 0;
+    }
+    
+    #map {
+        min-height: 60vh;
+    }
+}
+
+/* Estilos para el modal del mapa */
+.modal-dialog.modal-lg {
+    max-width: 90%;
+    width: 90%;
+    height: 90vh;
+    margin: 1.75rem auto;
+}
+
+.modal-content {
+    height: 90vh;
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.modal-header {
+    padding: 1rem 1.5rem;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.modal-body {
+    flex: 1;
+    padding: 1.5rem;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    min-height: 0; /* Needed for proper flexbox scrolling */
+    background: #f8f9fa;
+}
+
+.modal-footer {
+    padding: 1rem 1.5rem;
+    background-color: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#mapaFinca {
+    flex: 1;
+    min-height: 300px;
+    width: 100%;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Estilos para los controles del mapa */
+.leaflet-top {
+    top: 10px;
+}
+
+.leaflet-left {
+    left: 10px;
+}
+
+.leaflet-right {
+    right: 10px;
+}
+
+.leaflet-bar {
+    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+    border-radius: 4px;
+    border: none;
+}
+
+.leaflet-bar a {
+    border-bottom: 1px solid #ccc;
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    font-size: 16px;
+}
+
+/* Estilos para la vista previa del mapa */
+#mapaPreviewContainer {
+    margin: 15px 0;
+    text-align: center;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px dashed #dee2e6;
+}
+
+#mapaPreview {
+    max-width: 100%;
+    max-height: 200px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    margin-top: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Estilos para los botones */
+.btn-mapa {
+    margin: 5px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-mapa i {
+    margin-right: 6px;
+    font-size: 1.1em;
+}
+
+.btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-success {
+    background-color: #198754;
+    border-color: #198754;
+}
+
+/* Mejoras de accesibilidad */
+.btn:focus, .btn:active {
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* Ajustes responsivos */
+@media (max-width: 768px) {
+    .modal-dialog.modal-lg {
+        width: 95%;
+        margin: 0.5rem auto;
+    }
+    
+    .btn-mapa {
+        padding: 6px 12px;
+        font-size: 0.9em;
+    }
+    
+    #mapaFinca {
+        height: 400px;
+    }
+}
+
+/* Estilos para el botón de guardar ubicación */
+#btnGuardarUbicacion {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    padding: 8px 16px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    display: none;
+}
+
+#btnGuardarUbicacion:hover {
+    background-color: #218838;
+}
+
+/* Estilos para el botón de abrir mapa */
+.btn-mapa {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-mapa i {
+    font-size: 1.2em;
+}
+
+/* Estilos para tarjetas de maquinaria (similar a animales) */
+.card-header-stripe {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+    border-radius: 8px 8px 0 0 !important;
+    padding: 15px 20px !important;
+    border: none !important;
+    margin: 0 !important;
+}
+
+/* Ensure machinery cards specifically get the blue stripe */
+.card .card-header-stripe {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+    border-radius: 8px 8px 0 0 !important;
+    padding: 15px 20px !important;
+    border: none !important;
+    margin: 0 !important;
+}
+
+/* Override any Bootstrap card header styles */
+.card .card-header.card-header-stripe {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+    border: none !important;
+    border-radius: 8px 8px 0 0 !important;
+}
+
+.animal-type-icon {
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    position: relative;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.animal-type-icon i {
+    font-size: 20px;
+    color: white;
+}
+
+.animal-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    max-width: 50px;
+    max-height: 50px;
+    min-width: 50px;
+    min-height: 50px;
+}
+
+/* Ensure machinery images don't overflow the circular container */
+.animal-type-icon img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    border-radius: 50% !important;
+    max-width: 50px !important;
+    max-height: 50px !important;
+    min-width: 50px !important;
+    min-height: 50px !important;
+}
+
+.badge-modern {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+}
+
+.badge-modern.badge-success {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+}
+
+.badge-modern.badge-warning {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+}
+
+.badge-modern.badge-danger {
+    background: rgba(220, 53, 69, 0.2);
+    color: #dc3545;
+}
+
+.badge-modern.badge-secondary {
+    background: rgba(108, 117, 125, 0.2);
+    color: #6c757d;
+}
+
+.badge.badge-sold {
+    background: rgba(220, 53, 69, 0.2);
+    color: #dc3545;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+}
+
+.location-badge {
+    background: rgba(23, 162, 184, 0.1);
+    color: #17a2b4;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+}
+
+.location-badge i {
+    font-size: 10px;
+}

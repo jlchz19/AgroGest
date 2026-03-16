@@ -1,0 +1,364 @@
+{% extends "base.html" %}
+
+{% block title %}Ver Evento de Salud - AgroGest{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="fas fa-eye me-2"></i>Detalles del Evento de Salud</h2>
+                <div class="btn-group">
+                    <a href="{{ url_for('eventos_salud_editar', evento_id=evento.id) }}" class="btn btn-warning">
+                        <i class="fas fa-edit me-2"></i>Editar
+                    </a>
+                    <a href="{{ url_for('eventos_salud') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información Principal -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-heartbeat me-2"></i>Información del Evento #{{ evento.id }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Animal:</strong><br>
+                                <a href="{{ url_for('historial_animal', animal_id=evento.animal.id) }}" class="text-decoration-none">
+                                    {{ evento.animal.identificacion }} - {{ evento.animal.nombre or 'Sin nombre' }}
+                                </a>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Tipo de Evento:</strong><br>
+                                <span class="badge bg-{{ 
+                                    'danger' if evento.tipo_evento == 'enfermedad' else
+                                    'success' if evento.tipo_evento == 'parto' else
+                                    'info' if evento.tipo_evento == 'vacunacion' else
+                                    'warning' if evento.tipo_evento == 'desparasitacion' else
+                                    'secondary'
+                                }}">
+                                    {{ evento.tipo_evento.title() }}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Fecha del Evento:</strong><br>
+                                {{ evento.fecha_evento.strftime('%d/%m/%Y') }}
+                                {% if evento.hora_evento %}a las {{ evento.hora_evento.strftime('%H:%M') }}{% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Estado:</strong><br>
+                                <span class="badge bg-{{ 
+                                    'warning' if evento.estado == 'pendiente' else
+                                    'info' if evento.estado == 'en_progreso' else
+                                    'success' if evento.estado == 'completado' else
+                                    'danger'
+                                }}">
+                                    {{ evento.estado.title() }}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-12">
+                            <p><strong>Título:</strong><br>
+                                {{ evento.titulo }}
+                            </p>
+                        </div>
+                        <div class="col-12">
+                            <p><strong>Descripción Detallada:</strong><br>
+                                {{ evento.descripcion }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detalles Específicos según Tipo -->
+            {% if evento.tipo_evento in ['enfermedad', 'lesion', 'cirugia'] %}
+            <div class="card mb-4">
+                <div class="card-header bg-danger text-white">
+                    <h6 class="mb-0"><i class="fas fa-virus me-2"></i>Detalles Médicos</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if evento.diagnostico %}
+                        <div class="col-12 mb-3">
+                            <p><strong>Diagnóstico:</strong><br>
+                                {{ evento.diagnostico }}
+                            </p>
+                        </div>
+                        {% endif %}
+                        {% if evento.tratamiento %}
+                        <div class="col-md-6 mb-3">
+                            <p><strong>Tratamiento:</strong><br>
+                                {{ evento.tratamiento }}
+                            </p>
+                        </div>
+                        {% endif %}
+                        {% if evento.medicamento %}
+                        <div class="col-md-6 mb-3">
+                            <p><strong>Medicamento Principal:</strong><br>
+                                {{ evento.medicamento }}
+                            </p>
+                        </div>
+                        {% endif %}
+                        {% if evento.dosis %}
+                        <div class="col-md-4 mb-3">
+                            <p><strong>Dosis:</strong><br>
+                                {{ evento.dosis }}
+                            </p>
+                        </div>
+                        {% endif %}
+                        {% if evento.via_administracion %}
+                        <div class="col-md-4 mb-3">
+                            <p><strong>Vía de Administración:</strong><br>
+                                {{ evento.via_administracion.title() }}
+                            </p>
+                        </div>
+                        {% endif %}
+                        {% if evento.duracion_tratamiento %}
+                        <div class="col-md-4 mb-3">
+                            <p><strong>Duración del Tratamiento:</strong><br>
+                                {{ evento.duracion_tratamiento }} días
+                            </p>
+                        </div>
+                        {% endif %}
+                        {% if evento.proxima_dosis %}
+                        <div class="col-md-6 mb-3">
+                            <p><strong>Próxima Dosis:</strong><br>
+                                {{ evento.proxima_dosis.strftime('%d/%m/%Y') }}
+                            </p>
+                        </div>
+                        {% endif %}
+                        {% if evento.fecha_recuperacion %}
+                        <div class="col-md-6 mb-3">
+                            <p><strong>Fecha de Recuperación:</strong><br>
+                                {{ evento.fecha_recuperacion.strftime('%d/%m/%Y') }}
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if evento.tipo_evento == 'parto' %}
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="fas fa-baby me-2"></i>Detalles del Parto</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if evento.tipo_parto %}
+                        <div class="col-md-6 mb-3">
+                            <p><strong>Tipo de Parto:</strong><br>
+                                {{ evento.tipo_parto.title() }}
+                            </p>
+                        </div>
+                        {% endif %}
+                        {% if evento.numero_crias %}
+                        <div class="col-md-6 mb-3">
+                            <p><strong>Total de Crías:</strong><br>
+                                {{ evento.numero_crias }}
+                            </p>
+                        </div>
+                        {% endif %}
+                        {% if evento.crias_vivas %}
+                        <div class="col-md-4 mb-3">
+                            <p><strong>Crias Vivas:</strong><br>
+                                {{ evento.crias_vivas }}
+                            </p>
+                        </div>
+                        {% endif %}
+                        {% if evento.crias_muertas %}
+                        <div class="col-md-4 mb-3">
+                            <p><strong>Crias Muertas:</strong><br>
+                                {{ evento.crias_muertas }}
+                            </p>
+                        </div>
+                        {% endif %}
+                        {% if evento.peso_crias %}
+                        <div class="col-md-4 mb-3">
+                            <p><strong>Peso Promedio:</strong><br>
+                                {{ evento.peso_crias }} kg
+                            </p>
+                        </div>
+                        {% endif %}
+                        {% if evento.complicaciones %}
+                        <div class="col-12 mb-3">
+                            <p><strong>Complicaciones:</strong><br>
+                                {{ evento.complicaciones }}
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if evento.tipo_evento in ['vacunacion', 'desparasitacion'] %}
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="fas fa-syringe me-2"></i>Detalles de {{ 'Vacunación' if evento.tipo_evento == 'vacunacion' else 'Desparasitación' }}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if evento.tipo_vacuna %}
+                        <div class="col-md-6 mb-3">
+                            <p><strong>Tipo de {{ 'Vacuna' if evento.tipo_evento == 'vacunacion' else 'Antiparasitario' }}:</strong><br>
+                                {{ evento.tipo_vacuna }}
+                            </p>
+                        </div>
+                        {% endif %}
+                        {% if evento.lote_vacuna %}
+                        <div class="col-md-6 mb-3">
+                            <p><strong>Lote:</strong><br>
+                                {{ evento.lote_vacuna }}
+                            </p>
+                        </div>
+                        {% endif %}
+                        {% if evento.fecha_proxima_dosis %}
+                        <div class="col-md-6 mb-3">
+                            <p><strong>Próxima Dosis:</strong><br>
+                                {{ evento.fecha_proxima_dosis.strftime('%d/%m/%Y') }}
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Información Adicional -->
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información Adicional</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if evento.veterinario %}
+                        <div class="col-md-6 mb-3">
+                            <p><strong>Veterinario:</strong><br>
+                                {{ evento.veterinario }}
+                            </p>
+                        </div>
+                        {% endif %}
+                        {% if evento.responsable %}
+                        <div class="col-md-6 mb-3">
+                            <p><strong>Responsable:</strong><br>
+                                {{ evento.responsable }}
+                            </p>
+                        </div>
+                        {% endif %}
+                        {% if evento.resultado %}
+                        <div class="col-md-6 mb-3">
+                            <p><strong>Resultado:</strong><br>
+                                {{ evento.resultado }}
+                            </p>
+                        </div>
+                        {% endif %}
+                        {% if evento.observaciones %}
+                        <div class="col-12 mb-3">
+                            <p><strong>Observaciones Adicionales:</strong><br>
+                                {{ evento.observaciones }}
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Lateral -->
+        <div class="col-lg-4">
+            <!-- Información de Registro -->
+            <div class="card mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h6 class="mb-0"><i class="fas fa-clock me-2"></i>Información de Registro</h6>
+                </div>
+                <div class="card-body">
+                    <p class="small"><strong>Fecha de Registro:</strong><br>
+                        {{ evento.fecha_registro.strftime('%d/%m/%Y %H:%M:%S') }}</p>
+                    <p class="small"><strong>Registrado por:</strong><br>
+                        {{ evento.usuario_registro or 'Sistema' }}</p>
+                </div>
+            </div>
+
+            <!-- Información del Animal -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="fas fa-paw me-2"></i>Información del Animal</h6>
+                </div>
+                <div class="card-body">
+                    <p><strong>ID:</strong> {{ evento.animal.identificacion }}</p>
+                    <p><strong>Nombre:</strong> {{ evento.animal.nombre or 'Sin nombre' }}</p>
+                    <p><strong>Raza:</strong> {{ evento.animal.raza }}</p>
+                    <p><strong>Sexo:</strong> {{ evento.animal.sexo|title }}</p>
+                    <p><strong>Edad:</strong>
+                        {% set edad = ((now().date() - evento.animal.fecha_nacimiento).days // 365) %}
+                        {{ edad }} años
+                    </p>
+                    <p><strong>Estado Actual:</strong><br>
+                        <span class="badge bg-{{ 
+                            'success' if evento.animal.estado == 'activo' else
+                            'warning' if evento.animal.estado == 'en_tratamiento' else
+                            'danger' if evento.animal.estado == 'enfermo' else
+                            'secondary'
+                        }}">
+                            {{ evento.animal.estado.title() }}
+                        </span>
+                    </p>
+                    <div class="mt-3">
+                        <a href="{{ url_for('historial_animal', animal_id=evento.animal.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-history me-1"></i>Ver Historial
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones Rápidas -->
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="fas fa-tools me-2"></i>Acciones Rápidas</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('eventos_salud_editar', evento_id=evento.id) }}" class="btn btn-warning">
+                            <i class="fas fa-edit me-2"></i>Editar Evento
+                        </a>
+                        {% if evento.estado != 'completado' %}
+                        <button class="btn btn-success" onclick="marcarCompletado()">
+                            <i class="fas fa-check me-2"></i>Marcar como Completado
+                        </button>
+                        {% endif %}
+                        <form method="POST" action="{{ url_for('eventos_salud_eliminar', evento_id=evento.id) }}" 
+                              onsubmit="return confirm('¿Está seguro de eliminar este evento? Esta acción no se puede deshacer.');">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash me-2"></i>Eliminar Evento
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function marcarCompletado() {
+    if (confirm('¿Desea marcar este evento como completado?')) {
+        // Aquí podrías agregar una llamada AJAX para actualizar el estado
+        // o redirigir a una ruta que actualice el estado
+        window.location.href = "{{ url_for('eventos_salud_editar', evento_id=evento.id) }}";
+    }
+}
+</script>
+{% endblock %}

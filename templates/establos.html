@@ -1,0 +1,375 @@
+{% extends "base.html" %}
+
+{% block title %}Establos y Corrales - AgroGest{% endblock %}
+{% block page_title %}Gestión de Establos y Corrales{% endblock %}
+
+{% block content %}
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+            <div class="icon-circle me-3">
+                <span style="font-size: 1.2rem;">🏠</span>
+            </div>
+            <h5 class="mb-0 fw-semibold">Gestión de Establos y Corrales</h5>
+        </div>
+        <a href="{{ url_for('nueva_ubicacion') }}?tipo=establo" class="btn btn-light btn-sm shadow-sm">
+            <span style="font-size: 1rem; margin-right: 4px;">➕</span> Nuevo Establo/Corral
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    {% for establo in establos %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 border-0 shadow-sm hover-card">
+            <div class="position-relative">
+                {% if establo.imagen %}
+                <div style="height: 180px; overflow: hidden; border-radius: 8px 8px 0 0;">
+                    <img src="{{ url_for('static', filename='imagenes_ubicaciones/' + establo.imagen) }}" 
+                         class="card-img-top" 
+                         alt="{{ establo.nombre }}"
+                         style="object-fit: cover; width: 100%; height: 100%; transition: transform 0.3s ease;">
+                </div>
+                {% else %}
+                <div style="height: 180px; overflow: hidden; border-radius: 8px 8px 0 0; background-color: #f0f0f0; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-horse fa-4x text-muted"></i>
+                </div>
+                {% endif %}
+                <div class="position-absolute top-0 end-0 m-2">
+                    <span class="badge rounded-pill {% if establo.estado == 'disponible' %}bg-success{% elif establo.estado == 'ocupado' %}bg-warning text-dark{% else %}bg-danger{% endif %} bg-opacity-90">
+                        {{ establo.estado|title }}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title fw-semibold mb-2">{{ establo.nombre }}</h5>
+                <p class="text-muted small mb-3">
+                    <i class="fas fa-tag me-1"></i> {{ establo.tipo_ubicacion|title }}
+                </p>
+                
+                <div class="row text-center g-3 mb-3">
+                    <div class="col-4">
+                        <div class="stat-item">
+                            <div class="fw-bold fs-5 text-primary">{{ animales_por_establo.get(establo.id, 0) }}</div>
+                            <small class="text-muted">Equinos</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-item">
+                            <div class="fw-bold fs-5 text-info">{{ establo.capacidad }}</div>
+                            <small class="text-muted">Capacidad</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-item">
+                            <div class="fw-bold fs-5 text-success">{{ establo.area or '0' }} m²</div>
+                            <small class="text-muted">Área</small>
+                        </div>
+                    </div>
+                </div>
+
+                {% if establo.descripcion %}
+                <p class="text-muted small mb-3">{{ establo.descripcion }}</p>
+                {% endif %}
+
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#establoModal{{ establo.id }}">
+                        <i class="fas fa-eye me-1"></i> Ver Detalles
+                    </button>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('editar_ubicacion', id=establo.id) }}" class="btn btn-outline-secondary btn-sm flex-grow-1">
+                            <i class="fas fa-edit me-1"></i> Editar
+                        </a>
+                        <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ establo.id }}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Detalles del Establo -->
+    <div class="modal fade" id="establoModal{{ establo.id }}" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header py-2">
+                    <h5 class="modal-title d-flex align-items-center">
+                        <i class="fas fa-horse me-2"></i>{{ establo.nombre }}
+                        <span class="badge ms-2 {% if establo.estado == 'disponible' %}bg-success{% elif establo.estado == 'ocupado' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                            {{ establo.estado|title }}
+                        </span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <!-- Imagen principal -->
+                    <div class="position-relative">
+                        {% if establo.imagen %}
+                        <img src="{{ url_for('static', filename='imagenes_ubicaciones/' + establo.imagen) }}" 
+                             class="img-fluid w-100" 
+                             alt="{{ establo.nombre }}"
+                             style="height: 160px; object-fit: cover; border-radius: 0;">
+                        {% else %}
+                        <div class="bg-light text-center py-4" style="height: 160px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                            <i class="fas fa-horse fa-3x text-muted mb-2"></i>
+                            <p class="small text-muted mb-0">Sin imagen</p>
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Estadísticas rápidas -->
+                        <div class="position-absolute bottom-0 start-0 end-0 p-2" style="background: rgba(0,0,0,0.6);">
+                            <div class="d-flex justify-content-around text-white small">
+                                <div class="text-center">
+                                    <div class="fw-bold">{{ establo.capacidad }}</div>
+                                    <div>Capacidad</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="fw-bold">{{ animales_por_establo.get(establo.id, 0) }}</div>
+                                    <div>Ocupados</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="fw-bold">{{ establo.capacidad - animales_por_establo.get(establo.id, 0) }}</div>
+                                    <div>Disponibles</div>
+                                </div>
+                                {% if establo.area %}
+                                <div class="text-center">
+                                    <div class="fw-bold">{{ establo.area }}</div>
+                                    <div>m²</div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Información detallada en pestañas -->
+                    <div class="p-3">
+                        <ul class="nav nav-tabs nav-fill mb-3" id="establoTabs{{ establo.id }}" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info{{ establo.id }}" type="button" role="tab">
+                                    <i class="fas fa-info-circle me-1"></i> Información
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="equinos-tab" data-bs-toggle="tab" data-bs-target="#equinos{{ establo.id }}" type="button" role="tab">
+                                    <i class="fas fa-horse me-1"></i> Equinos
+                                    <span class="badge bg-primary rounded-pill ms-1">{{ animales_por_establo.get(establo.id, 0) }}</span>
+                                </button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content" id="establoTabsContent">
+                            <!-- Pestaña de Información -->
+                            <div class="tab-pane fade show active" id="info{{ establo.id }}" role="tabpanel">
+                                {% if establo.descripcion %}
+                                <div class="mb-3">
+                                    <h6 class="text-muted small text-uppercase mb-2">Descripción</h6>
+                                    <p class="mb-0 small">{{ establo.descripcion }}</p>
+                                </div>
+                                {% endif %}
+                                
+                                <div class="row small">
+                                    <div class="col-6">
+                                        <div class="mb-2">
+                                            <span class="text-muted">Tipo:</span>
+                                            <span class="fw-medium">{{ establo.tipo_ubicacion|title }}</span>
+                                        </div>
+                                        <div class="mb-2">
+                                            <span class="text-muted">Capacidad:</span>
+                                            <span class="fw-medium">{{ establo.capacidad }} equinos</span>
+                                        </div>
+                                    </div>
+                                    {% if establo.area %}
+                                    <div class="col-6">
+                                        <div class="mb-2">
+                                            <span class="text-muted">Área:</span>
+                                            <span class="fw-medium">{{ establo.area }} m²</span>
+                                        </div>
+                                        {% if establo.fecha_creacion %}
+                                        <div class="mb-2">
+                                            <span class="text-muted">Creado:</span>
+                                            <span class="fw-medium">{{ establo.fecha_creacion.strftime('%d/%m/%Y') if establo.fecha_creacion else 'No especificada' }}</span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Pestaña de Equinos -->
+                            <div class="tab-pane fade" id="equinos{{ establo.id }}" role="tabpanel">
+                                <div id="equinosEstablo{{ establo.id }}" class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                                    <div class="text-center py-4">
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                        <p class="small text-muted mt-2">Cargando equinos...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer py-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i> Cerrar
+                    </button>
+                    <a href="{{ url_for('editar_ubicacion', id=establo.id) }}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-edit me-1"></i> Editar
+                    </a>
+                </div>
+                
+                <script>
+                // Cargar equinos al abrir el modal
+                $('#establoModal{{ establo.id }}').on('show.bs.modal', function () {
+                    const container = $('#equinosEstablo{{ establo.id }}');
+                    
+                    // Mostrar spinner de carga
+                    container.html(`
+                        <div class="text-center py-4">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                            <p class="small text-muted mt-2">Cargando equinos...</p>
+                        </div>
+                    `);
+                    
+                    // Simular carga de datos (reemplazar con llamada AJAX real si es necesario)
+                    setTimeout(() => {
+                        const equinos = [
+                            {% for animal in animales %}
+                            {% if animal.ubicacion_id == establo.id and animal.tipo|lower in ['equino', 'caballo', 'yegua', 'potro', 'potranca', 'caballos', 'yeguas'] %}
+                            {
+                                id: '{{ animal.identificacion }}',
+                                nombre: '{{ animal.nombre or "Sin nombre" }}',
+                                raza: '{{ animal.raza or "-" }}',
+                                edad: '{{ ((now - animal.fecha_nacimiento).days / 365)|round(1) if animal.fecha_nacimiento else "-" }}',
+                                tipo: '{{ animal.tipo or "Equino" }}'
+                            }{% if not loop.last %},{% endif %}
+                            {% endif %}
+                            {% endfor %}
+                        ];
+                        
+                        if (equinos.length > 0) {
+                            let html = `
+                                <table class="table table-sm table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th class="small">ID</th>
+                                            <th class="small">Nombre</th>
+                                            <th class="small">Raza</th>
+                                            <th class="small">Edad</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                            `;
+                            
+                            equinos.forEach(equino => {
+                                html += `
+                                    <tr>
+                                        <td class="small">${equino.id}</td>
+                                        <td class="small">${equino.nombre}</td>
+                                        <td class="small">${equino.raza}</td>
+                                        <td class="small">${equino.edad} ${equino.edad !== '-' ? 'años' : ''}</td>
+                                    </tr>
+                                `;
+                            });
+                            
+                            html += `
+                                    </tbody>
+                                </table>
+                            `;
+                            
+                            container.html(html);
+                        } else {
+                            container.html(`
+                                <div class="text-center py-4">
+                                    <i class="fas fa-horse fa-2x text-muted mb-2"></i>
+                                    <p class="text-muted mb-0">No hay equinos en este {{ establo.tipo_ubicacion }}</p>
+                                </div>
+                            `);
+                        }
+                    }, 500);
+                });
+                </script>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de Confirmación de Eliminación -->
+    <div class="modal fade" id="deleteModal{{ establo.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ establo.id }}" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteModalLabel{{ establo.id }}">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Confirmar Eliminación
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Estás seguro de que deseas eliminar el {{ establo.tipo_ubicacion }} <strong>{{ establo.nombre }}</strong>?</p>
+                    {% if animales_por_establo.get(establo.id, 0) > 0 %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        ¡Advertencia! Este {{ establo.tipo_ubicacion }} tiene {{ animales_por_establo.get(establo.id, 0) }} equinos asignados.
+                        No podrás eliminarlo hasta que no muevas a los animales a otra ubicación.
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i> Cancelar
+                    </button>
+                    <form action="{{ url_for('eliminar_ubicacion', id=establo.id) }}" method="POST" class="d-inline">
+                        <input type="hidden" name="_method" value="DELETE">
+                        <button type="submit" class="btn btn-danger" {% if animales_por_establo.get(establo.id, 0) > 0 %}disabled{% endif %}>
+                            <i class="fas fa-trash-alt me-1"></i> Eliminar
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="fas fa-horse fa-4x text-muted mb-3"></i>
+            <h5 class="text-muted">No hay establos o corrales registrados</h5>
+            <p class="text-muted">Comienza agregando tu primer establo o corral para tus caballos</p>
+            <a href="{{ url_for('nueva_ubicacion') }}?tipo=establo" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Agregar Primer Establo/Corral
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+
+<!-- Script para manejar los modales -->
+<script>
+// Función para cerrar el modal de detalles
+function closeEstabloModal() {
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(modal => {
+        const modalInstance = bootstrap.Modal.getInstance(modal);
+        if (modalInstance) {
+            modalInstance.hide();
+        }
+    });
+}
+
+// Cerrar modal con ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeEstabloModal();
+    }
+});
+
+// Manejar clic fuera del modal
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('modal')) {
+        closeEstabloModal();
+    }
+});
+</script>
+{% endblock %}

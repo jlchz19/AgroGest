@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalles de {{ animal.identificacion }} - AgroGest</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-blue: #3b82f6;
+            --dark-blue: #1e40af;
+            --light-blue: #dbeafe;
+            --success-green: #10b981;
+            --warning-orange: #f59e0b;
+            --danger-red: #ef4444;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --bg-light: #f8fafc;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-light);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container-fluid {
+            padding: 0;
+        }
+
+        /* Header Principal */
+        .hero-header {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--dark-blue) 100%);
+            color: white;
+            padding: 3rem 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="hero-pattern" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23hero-pattern)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .animal-avatar {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            font-size: 3rem;
+            box-shadow: var(--shadow-lg);
+            border: 4px solid rgba(255,255,255,0.3);
+        }
+
+        .hero-title {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+        }
+
+        .stats-badges {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+
+        .stat-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 0.75rem 1.5rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        /* Barra de Acciones */
+        .action-bar {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 1.5rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-primary { background: var(--primary-blue); color: white; }
+        .btn-success { background: var(--success-green); color: white; }
+        .btn-warning { background: var(--warning-orange); color: white; }
+        .btn-info { background: #06b6d4; color: white; }
+        .btn-secondary { background: #6b7280; color: white; }
+
+        /* Sistema de Pestañas */
+        .tabs-container {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: var(--shadow-md);
+            margin: 2rem;
+            overflow: hidden;
+        }
+
+        .tabs-nav {
+            background: var(--bg-light);
+            border-bottom: 1px solid #e5e7eb;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            list-style: none;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            position: relative;
+        }
+
+        .tab-button:hover {
+            background: rgba(59, 130, 246, 0.05);
+            color: var(--primary-blue);
+        }
+
+        .tab-button.active {
+            background: white;
+            color: var(--primary-blue);
+            border-bottom: 3px solid var(--primary-blue);
+        }
+
+        .tab-content {
+            padding: 2rem;
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        /* Cards de Información */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .info-card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .info-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .card-header-custom {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--dark-blue) 100%);
+            color: white;
+            padding: 1.5rem;
+            margin: 0;
+        }
+
+        .card-header-custom h5 {
+            margin: 0;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .card-body-custom {
+            padding: 1.5rem;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .info-value {
+            font-weight: 700;
+            color: var(--text-primary);
+            text-align: right;
+        }
+
+        /* Filtros y Controles */
+        .filters-bar {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid #e5e7eb;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-label {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .filter-select {
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+        }
+
+        /* Tabla Moderna */
+        .modern-table {
+            background: white;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+
+        .table-header {
+            background: var(--bg-light);
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .table-header h6 {
+            margin: 0;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .table-custom {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table-custom th,
+        .table-custom td {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .table-custom th {
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: var(--bg-light);
+        }
+
+        .table-custom tr:hover {
+            background: #f8fafc;
+        }
+
+        /* Gráfico SVG */
+        .chart-container {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 2rem;
+        }
+
+        .chart-svg {
+            width: 100%;
+            height: 300px;
+            border-radius: 0.5rem;
+        }
+
+        /* Estados y Badges */
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .badge-success { background: var(--success-green); color: white; }
+        .badge-warning { background: var(--warning-orange); color: white; }
+        .badge-danger { background: var(--danger-red); color: white; }
+        .badge-info { background: #06b6d4; color: white; }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 2rem;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 1rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, var(--primary-blue), var(--success-green));
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 2rem;
+            padding-left: 2rem;
+        }
+
+        .timeline-marker {
+            position: absolute;
+            left: -1.25rem;
+            top: 0.5rem;
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+            background: var(--primary-blue);
+            border: 3px solid white;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .timeline-content {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-header {
+                padding: 2rem 1rem;
+            }
+
+            .hero-title {
+                font-size: 2rem;
+            }
+
+            .action-bar {
+                padding: 1rem;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .action-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .tabs-container {
+                margin: 1rem;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Impresión */
+        @media print {
+            .action-bar,
+            .tabs-nav {
+                display: none !important;
+            }
+
+            .hero-header {
+                background: white !important;
+                color: black !important;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .info-card {
+                break-inside: avoid;
+            }
+        }
+
+        .change-indicator.positive { color: var(--success-green); }
+        .change-indicator.negative { color: var(--danger-red); }
+
+        /* Status Indicators */
+        .status-indicator[data-status="activo"] { color: var(--success-green); }
+        .status-indicator[data-status="inactivo"] { color: var(--danger-red); }
+    </style>
+</head>
+<body>
+    <!-- Header Principal -->
+    <div class="hero-header">
+        <div class="hero-content">
+            <div class="animal-avatar">
+                <i class="fas fa-paw"></i>
+            </div>
+            <h1 class="hero-title">{{ animal.identificacion }}</h1>
+            <p class="hero-subtitle">{{ animal.nombre or 'Sin nombre' }} - {{ animal.tipo|title }}</p>
+
+            <div class="stats-badges">
+                <div class="stat-badge">
+                    <i class="fas fa-birthday-cake"></i>
+                    {{ ((date.date() - animal.fecha_nacimiento).days // 365) if animal.fecha_nacimiento else 0 }} años
+                </div>
+                <div class="stat-badge">
+                    <i class="fas fa-weight"></i>
+                    {{ animal.peso or 0 }} kg
+                </div>
+                <div class="stat-badge">
+                    <i class="fas fa-{{ 'venus' if animal.sexo == 'hembra' else 'mars' }}"></i>
+                    {{ animal.sexo|title if animal.sexo else 'N/A' }}
+                </div>
+                <div class="stat-badge">
+                    <i class="fas fa-circle status-indicator" data-status="{{ animal.estado }}"></i>
+                    {{ animal.estado|title }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenedor Principal -->
+    <div class="tabs-container">
+        <!-- Navegación de Pestañas -->
+        <ul class="tabs-nav">
+            <li><button class="tab-button active" onclick="showTab('info')">
+                <i class="fas fa-info-circle"></i>
+                Información General
+            </button></li>
+            <li><button class="tab-button" onclick="showTab('vacunas')">
+                <i class="fas fa-heartbeat"></i>
+                Salud y Vacunas
+            </button></li>
+        </ul>
+
+        <!-- Barra de Filtros (oculta por defecto) -->
+        <div class="filters-bar" id="filtersBar" style="display: none;">
+            <div class="filters-grid">
+                <div class="filter-group">
+                    <label class="filter-label">Período de Tiempo</label>
+                    <select class="filter-select" id="timeFilter">
+                        <option value="all">Todo el tiempo</option>
+                        <option value="30days">Últimos 30 días</option>
+                        <option value="6months">Últimos 6 meses</option>
+                        <option value="1year">Último año</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Estado de Salud</label>
+                    <select class="filter-select" id="healthFilter">
+                        <option value="all">Todos los estados</option>
+                        <option value="saludable">Saludable</option>
+                        <option value="en_tratamiento">En tratamiento</option>
+                        <option value="recuperacion">En recuperación</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Tipo de Registro</label>
+                    <select class="filter-select" id="typeFilter">
+                        <option value="all">Todos los tipos</option>
+                        <option value="vacuna">Vacunas</option>
+                        <option value="tratamiento">Tratamientos</option>
+                        <option value="peso">Control de peso</option>
+                        <option value="parto">Partos</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Buscar</label>
+                    <input type="text" class="filter-select" id="searchFilter" placeholder="Buscar registros...">
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenido de Pestañas -->
+        <div class="tab-content">
+            <!-- Pestaña Información General -->
+            <div class="tab-panel active" id="infoTab">
+                <div class="info-grid">
+                    <!-- Información Básica -->
+                    <div class="info-card">
+                        <h5 class="card-header-custom">
+                            <i class="fas fa-info-circle"></i>
+                            Información Básica
+                        </h5>
+                        <div class="card-body-custom">
+                            <div class="info-item">
+                                <span class="info-label"><i class="fas fa-hashtag"></i>ID</span>
+                                <span class="info-value">{{ animal.identificacion }}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label"><i class="fas fa-signature"></i>Nombre</span>
+                                <span class="info-value">{{ animal.nombre or 'No registrado' }}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label"><i class="fas fa-tag"></i>Tipo</span>
+                                <span class="info-value">{{ animal.tipo|title }}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label"><i class="fas fa-dna"></i>Raza</span>
+                                <span class="info-value">{{ animal.raza or 'No especificada' }}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label"><i class="fas fa-venus-mars"></i>Sexo</span>
+                                <span class="info-value">{{ animal.sexo|title if animal.sexo else 'No registrado' }}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label"><i class="fas fa-heart-pulse"></i>Estado</span>
+                                <span class="info-value">
+                                    <span class="status-badge badge-{{ 'success' if animal.estado == 'activo' else 'danger' }}">
+                                        {{ animal.estado|title }}
+                                    </span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Datos Físicos -->
+                    <div class="info-card">
+                        <h5 class="card-header-custom">
+                            <i class="fas fa-weight"></i>
+                            Datos Físicos
+                        </h5>
+                        <div class="card-body-custom">
+                            <div class="info-item">
+                                <span class="info-label"><i class="fas fa-birthday-cake"></i>Fecha de Nacimiento</span>
+                                <span class="info-value">{{ animal.fecha_nacimiento.strftime('%d/%m/%Y') if animal.fecha_nacimiento else 'No registrada' }}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label"><i class="fas fa-weight"></i>Peso al Nacer</span>
+                                <span class="info-value">{{ animal.peso_nacimiento or 0 }} kg</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label"><i class="fas fa-weight"></i>Peso Actual</span>
+                                <span class="info-value">{{ animal.peso or 0 }} kg</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label"><i class="fas fa-palette"></i>Color/Señas</span>
+                                <span class="info-value">{{ animal.color_señas or 'No registrado' }}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label"><i class="fas fa-map-marker-alt"></i>Ubicación</span>
+                                <span class="info-value">{{ potrero.nombre if potrero else 'No asignado' }}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label"><i class="fas fa-calendar-plus"></i>Fecha de Ingreso</span>
+                                <span class="info-value">{{ animal.fecha_ingreso.strftime('%d/%m/%Y') if animal.fecha_ingreso else 'No registrada' }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Propietario -->
+                    <div class="info-card">
+                        <h5 class="card-header-custom">
+                            <i class="fas fa-user-tie"></i>
+                            Información del Propietario
+                        </h5>
+                        <div class="card-body-custom">
+                            <div class="info-item">
+                                <span class="info-label"><i class="fas fa-user"></i>Propietario</span>
+                                <span class="info-value">Finca AgroGest</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label"><i class="fas fa-envelope"></i>Email</span>
+                                <span class="info-value">info@agrogestion.com</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label"><i class="fas fa-phone"></i>Teléfono</span>
+                                <span class="info-value">+57 300 123 4567</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Estadísticas Rápidas -->
+                    <div class="info-card">
+                        <h5 class="card-header-custom">
+                            <i class="fas fa-chart-bar"></i>
+                            Estadísticas Rápidas
+                        </h5>
+                        <div class="card-body-custom">
+                            <div class="info-item">
+                                <span class="info-label"><i class="fas fa-calendar-days"></i>Días de Vida</span>
+                                <span class="info-value">{{ ((date.date() - animal.fecha_nacimiento).days) if animal.fecha_nacimiento else 0 }}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label"><i class="fas fa-syringe"></i>Vacunas Recibidas</span>
+                                <span class="info-value">{{ vacunas|length if vacunas else 0 }}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label"><i class="fas fa-baby"></i>Crias Producidas</span>
+                                <span class="info-value">{{ partos|length if partos else 0 }}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label"><i class="fas fa-weight-scale"></i>Controles de Peso</span>
+                                <span class="info-value">{{ pesos|length if pesos else 0 }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestaña Vacunas Aplicadas -->
+            <div class="tab-panel" id="vacunasTab">
+                <div class="info-card">
+                    <h5 class="card-header-custom">
+                        <i class="fas fa-syringe"></i>
+                        Historial de Vacunas
+                    </h5>
+                    <div class="card-body-custom">
+                        {% if vacunas %}
+                        <div class="timeline">
+                            {% for vacuna in vacunas %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker"></div>
+                                <div class="timeline-content">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">{{ vacuna.tipo_vacuna }}</h6>
+                                            <p class="text-muted mb-0">{{ vacuna.fecha_aplicacion.strftime('%d/%m/%Y') }}</p>
+                                            {% if vacuna.observaciones %}
+                                            <small class="text-muted">{{ vacuna.observaciones }}</small>
+                                            {% endif %}
+                                            {% if vacuna.aplicada_por %}
+                                            <small class="text-muted d-block mt-1">Aplicada por: {{ vacuna.aplicada_por }}</small>
+                                            {% endif %}
+                                        </div>
+                                        {% if vacuna.estado == 'aplicada' %}
+                                            <span class="status-badge badge-success">Aplicada</span>
+                                        {% elif vacuna.estado == 'vencida' %}
+                                            <span class="status-badge badge-danger">Vencida</span>
+                                        {% else %}
+                                            <span class="status-badge badge-warning">Por Aplicar</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-info-circle text-muted" style="font-size: 2rem;"></i>
+                            <p class="text-muted mt-2">No hay vacunas registradas para este animal</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Sistema de Pestañas
+        function showTab(tabName) {
+            // Ocultar todas las pestañas
+            document.querySelectorAll('.tab-panel').forEach(panel => {
+                panel.classList.remove('active');
+            });
+
+            // Remover clase active de todos los botones
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+
+            // Mostrar pestaña seleccionada
+            document.getElementById(tabName + 'Tab').classList.add('active');
+
+            // Agregar clase active al botón clickeado
+            event.target.classList.add('active');
+
+            // Aplicar filtros si están activos
+            applyFilters();
+        }
+
+        // Sistema de Filtros
+        function toggleFilters() {
+            const filtersBar = document.getElementById('filtersBar');
+            filtersBar.style.display = filtersBar.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function applyFilters() {
+            const timeFilter = document.getElementById('timeFilter').value;
+            const healthFilter = document.getElementById('healthFilter').value;
+            const typeFilter = document.getElementById('typeFilter').value;
+            const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
+
+            // Aplicar filtros a las tablas y elementos visibles
+            // Esta función se puede expandir según los datos disponibles
+            console.log('Aplicando filtros:', { timeFilter, healthFilter, typeFilter, searchFilter });
+        }
+
+        // Función de búsqueda
+        document.getElementById('searchFilter').addEventListener('input', function() {
+            applyFilters();
+        });
+
+        // Sistema de Ordenamiento
+        function sortData(criteria) {
+            // Implementar ordenamiento según criterio
+            console.log('Ordenando por:', criteria);
+        }
+
+        // Función de Exportación
+        function exportData() {
+            const data = {
+                animal: {
+                    identificacion: '{{ animal.identificacion }}',
+                    nombre: '{{ animal.nombre or "N/A" }}',
+                    tipo: '{{ animal.tipo }}',
+                    fecha_nacimiento: '{{ animal.fecha_nacimiento.strftime("%Y-%m-%d") if animal.fecha_nacimiento else "N/A" }}',
+                    peso: {{ animal.peso or 0 }},
+                    estado: '{{ animal.estado }}'
+                },
+                export_date: new Date().toISOString(),
+                exported_by: 'Sistema AgroGest'
+            };
+
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+
+            const exportFileDefaultName = 'animal_{{ animal.identificacion }}_datos.json';
+
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
+
+        // Función de Compartir
+        function shareInfo() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Información del Animal {{ animal.identificacion }}',
+                    text: 'Información detallada del animal {{ animal.nombre or animal.identificacion }}',
+                    url: window.location.href
+                });
+            } else {
+                // Fallback: copiar al portapapeles
+                navigator.clipboard.writeText(window.location.href).then(function() {
+                    alert('Enlace copiado al portapapeles');
+                });
+            }
+        }
+
+        // Función de Actualizar
+        function refreshData() {
+            // Simular actualización de datos
+            const button = event.target;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Actualizando...';
+            button.disabled = true;
+
+            setTimeout(() => {
+                button.innerHTML = '<i class="fas fa-sync-alt"></i> Actualizar';
+                button.disabled = false;
+                showToast('Datos actualizados', 'success');
+            }, 1500);
+        }
+
+        // Gráfico de Evolución de Peso
+        function createWeightChart() {
+            const svg = document.getElementById('weightChart');
+            const width = svg.clientWidth;
+            const height = svg.clientHeight;
+            const margin = { top: 20, right: 30, bottom: 40, left: 50 };
+
+            // Datos de ejemplo (reemplazar con datos reales)
+            const weightData = [
+                {% for peso in pesos %}
+                { date: '{{ peso.fecha.strftime("%Y-%m-%d") }}', weight: {{ peso.peso }} },
+                {% endfor %}
+            ];
+
+            if (weightData.length === 0) {
+                svg.innerHTML = '<text x="50%" y="50%" text-anchor="middle" fill="#6b7280">No hay datos de peso disponibles</text>';
+                return;
+            }
+
+            // Escalas
+            const xScale = d3.scaleTime()
+                .domain(d3.extent(weightData, d => new Date(d.date)))
+                .range([margin.left, width - margin.right]);
+
+            const yScale = d3.scaleLinear()
+                .domain([0, d3.max(weightData, d => d.weight) * 1.1])
+                .range([height - margin.bottom, margin.top]);
+
+            // Ejes
+            const xAxis = d3.axisBottom(xScale).ticks(5);
+            const yAxis = d3.axisLeft(yScale);
+
+            // Limpiar SVG
+            svg.innerHTML = '';
+
+            // Agregar ejes
+            svg.append('g')
+                .attr('transform', `translate(0,${height - margin.bottom})`)
+                .call(xAxis);
+
+            svg.append('g')
+                .attr('transform', `translate(${margin.left},0)`)
+                .call(yAxis);
+
+            // Línea del gráfico
+            const line = d3.line()
+                .x(d => xScale(new Date(d.date)))
+                .y(d => yScale(d.weight));
+
+            svg.append('path')
+                .datum(weightData)
+                .attr('fill', 'none')
+                .attr('stroke', 'var(--primary-blue)')
+                .attr('stroke-width', 3)
+                .attr('d', line);
+
+            // Puntos
+            svg.selectAll('circle')
+                .data(weightData)
+                .enter()
+                .append('circle')
+                .attr('cx', d => xScale(new Date(d.date)))
+                .attr('cy', d => yScale(d.weight))
+                .attr('r', 6)
+                .attr('fill', 'var(--primary-blue)')
+                .attr('stroke', 'white')
+                .attr('stroke-width', 2)
+                .on('mouseover', function(event, d) {
+                    d3.select(this).attr('r', 8);
+
+                    // Tooltip
+                    const tooltip = svg.append('g')
+                        .attr('class', 'tooltip')
+                        .attr('transform', `translate(${xScale(new Date(d.date))},${yScale(d.weight) - 10})`);
+
+                    tooltip.append('rect')
+                        .attr('x', -40)
+                        .attr('y', -35)
+                        .attr('width', 80)
+                        .attr('height', 25)
+                        .attr('fill', 'var(--text-primary)')
+                        .attr('rx', 5);
+
+                    tooltip.append('text')
+                        .attr('x', 0)
+                        .attr('y', -20)
+                        .attr('text-anchor', 'middle')
+                        .attr('fill', 'white')
+                        .attr('font-size', '12px')
+                        .text(`${d.weight} kg`);
+                })
+                .on('mouseout', function() {
+                    d3.select(this).attr('r', 6);
+                    svg.select('.tooltip').remove();
+                });
+        }
+
+        // Función de notificaciones
+        function showToast(message, type = 'info') {
+            // Crear toast simple
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: ${type === 'success' ? 'var(--success-green)' : type === 'error' ? 'var(--danger-red)' : 'var(--primary-blue)'};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 0.5rem;
+                box-shadow: var(--shadow-lg);
+                z-index: 9999;
+                font-weight: 600;
+            `;
+            toast.textContent = message;
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        // Inicializar cuando se carga la página
+        document.addEventListener('DOMContentLoaded', function() {
+            // Crear gráfico si hay datos
+            if (typeof d3 !== 'undefined') {
+                createWeightChart();
+            }
+
+            // Agregar animaciones de entrada
+            const cards = document.querySelectorAll('.info-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.5s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+
+        // Sistema de filtros dinámicos
+        document.querySelectorAll('.filter-select').forEach(select => {
+            select.addEventListener('change', applyFilters);
+        });
+    </script>
+
+    <!-- D3.js para gráficos (opcional, si no está disponible usar gráficos SVG puros) -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+{# Macros for templates #}
+{% macro get_timestamp() %}
+    {{ now().timestamp()|int }}
+{% endmacro %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Payslip - {{ empleado.nombre }} {{ empleado.apellido }}{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-body">
+    <h4>Payslip</h4>
+    <p><strong>Empleado:</strong> {{ empleado.nombre }} {{ empleado.apellido }}</p>
+    <p><strong>Periodo:</strong> {{ run.periodo_inicio }} - {{ run.periodo_fin }}</p>
+    <table class="table">
+      <thead>
+        <tr><th>Concepto</th><th>Monto</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Salario base</td><td>{{ item.salario_base }}</td></tr>
+        <tr><td>Bonificaciones</td><td>{{ item.bonificaciones }}</td></tr>
+        <tr><td>Deducciones</td><td>{{ item.deducciones }}</td></tr>
+        <tr><th>NETO</th><th>{{ item.neto }}</th></tr>
+      </tbody>
+    </table>
+    <p><strong>Notas:</strong> {{ item.notas or '-' }}</p>
+  </div>
+</div>
+{% endblock %}
