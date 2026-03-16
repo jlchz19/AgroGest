@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Evento de Salud - AgroGest{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="fas fa-edit me-2"></i>Editar Evento de Salud</h2>
+                <a href="{{ url_for('eventos_salud') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0"><i class="fas fa-edit me-2"></i>Editar Evento #{{ evento.id }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="eventoSaludForm">
+                        <!-- Información Básica -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3"><i class="fas fa-info-circle me-2"></i>Información Básica</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="animal_id" name="animal_id" required>
+                                        <option value="">Seleccionar animal...</option>
+                                        {% for animal in animales %}
+                                        <option value="{{ animal.id }}" {% if animal.id == evento.animal_id %}selected{% endif %}>
+                                            {{ animal.identificacion }} - {{ animal.nombre or 'Sin nombre' }} ({{ animal.raza }})
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <label for="animal_id">Animal *</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="tipo_evento" name="tipo_evento" required onchange="mostrarCamposEspecificos()">
+                                        <option value="">Seleccionar tipo...</option>
+                                        <option value="enfermedad" {% if evento.tipo_evento == 'enfermedad' %}selected{% endif %}>Enfermedad</option>
+                                        <option value="parto" {% if evento.tipo_evento == 'parto' %}selected{% endif %}>Parto</option>
+                                        <option value="desparasitacion" {% if evento.tipo_evento == 'desparasitacion' %}selected{% endif %}>Desparasitación</option>
+                                        <option value="lesion" {% if evento.tipo_evento == 'lesion' %}selected{% endif %}>Lesión</option>
+                                        <option value="cirugia" {% if evento.tipo_evento == 'cirugia' %}selected{% endif %}>Cirugía</option>
+                                        <option value="chequeo" {% if evento.tipo_evento == 'chequeo' %}selected{% endif %}>Chequeo General</option>
+                                    </select>
+                                    <label for="tipo_evento">Tipo de Evento *</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="titulo" name="titulo" placeholder="Título del evento" value="{{ evento.titulo }}" required>
+                                    <label for="titulo">Título del Evento *</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="date" class="form-control" id="fecha_evento" name="fecha_evento" value="{{ evento.fecha_evento.strftime('%Y-%m-%d') }}" required>
+                                    <label for="fecha_evento">Fecha del Evento *</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="time" class="form-control" id="hora_evento" name="hora_evento" value="{{ evento.hora_evento.strftime('%H:%M') if evento.hora_evento else '12:00' }}">
+                                    <label for="hora_evento">Hora del Evento</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-floating mb-3">
+                                    <textarea class="form-control" id="descripcion" name="descripcion" placeholder="Descripción detallada" style="height: 100px" required>{{ evento.descripcion }}</textarea>
+                                    <label for="descripcion">Descripción Detallada *</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="estado" name="estado">
+                                        <option value="pendiente" {% if evento.estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                                        <option value="en_progreso" {% if evento.estado == 'en_progreso' %}selected{% endif %}>En Progreso</option>
+                                        <option value="completado" {% if evento.estado == 'completado' %}selected{% endif %}>Completado</option>
+                                        <option value="cancelado" {% if evento.estado == 'cancelado' %}selected{% endif %}>Cancelado</option>
+                                    </select>
+                                    <label for="estado">Estado</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campos Específicos por Tipo de Evento -->
+                        <div id="camposEnfermedad" class="row mb-4" {% if evento.tipo_evento not in ['enfermedad', 'lesion', 'cirugia'] %}style="display: none;"{% endif %}>
+                            <div class="col-12">
+                                <h6 class="text-danger mb-3"><i class="fas fa-virus me-2"></i>Detalles de Enfermedad</h6>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-floating mb-3">
+                                    <textarea class="form-control" id="diagnostico" name="diagnostico" placeholder="Diagnóstico" style="height: 80px">{{ evento.diagnostico or '' }}</textarea>
+                                    <label for="diagnostico">Diagnóstico</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <textarea class="form-control" id="tratamiento" name="tratamiento" placeholder="Tratamiento" style="height: 80px">{{ evento.tratamiento or '' }}</textarea>
+                                    <label for="tratamiento">Tratamiento</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="medicamento" name="medicamento" placeholder="Medicamento" value="{{ evento.medicamento or '' }}">
+                                    <label for="medicamento">Medicamento Principal</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="dosis" name="dosis" placeholder="Dosis" value="{{ evento.dosis or '' }}">
+                                    <label for="dosis">Dosis</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="via_administracion" name="via_administracion">
+                                        <option value="">Seleccionar...</option>
+                                        <option value="oral" {% if evento.via_administracion == 'oral' %}selected{% endif %}>Oral</option>
+                                        <option value="intramuscular" {% if evento.via_administracion == 'intramuscular' %}selected{% endif %}>Intramuscular</option>
+                                        <option value="intravenosa" {% if evento.via_administracion == 'intravenosa' %}selected{% endif %}>Intravenosa</option>
+                                        <option value="subcutanea" {% if evento.via_administracion == 'subcutanea' %}selected{% endif %}>Subcutánea</option>
+                                        <option value="topica" {% if evento.via_administracion == 'topica' %}selected{% endif %}>Tópica</option>
+                                    </select>
+                                    <label for="via_administracion">Vía de Administración</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating mb-3">
+                                    <input type="number" class="form-control" id="duracion_tratamiento" name="duracion_tratamiento" placeholder="Días" value="{{ evento.duracion_tratamiento or '' }}">
+                                    <label for="duracion_tratamiento">Duración (días)</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="date" class="form-control" id="proxima_dosis" name="proxima_dosis" value="{{ evento.proxima_dosis.strftime('%Y-%m-%d') if evento.proxima_dosis else '' }}">
+                                    <label for="proxima_dosis">Próxima Dosis</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="date" class="form-control" id="fecha_recuperacion" name="fecha_recuperacion" value="{{ evento.fecha_recuperacion.strftime('%Y-%m-%d') if evento.fecha_recuperacion else '' }}">
+                                    <label for="fecha_recuperacion">Fecha de Recuperación</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="camposParto" class="row mb-4" {% if evento.tipo_evento != 'parto' %}style="display: none;"{% endif %}>
+                            <div class="col-12">
+                                <h6 class="text-success mb-3"><i class="fas fa-baby me-2"></i>Detalles del Parto</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="tipo_parto" name="tipo_parto">
+                                        <option value="normal" {% if evento.tipo_parto == 'normal' %}selected{% endif %}>Normal</option>
+                                        <option value="distocia" {% if evento.tipo_parto == 'distocia' %}selected{% endif %}>Distocia</option>
+                                        <option value="cesarea" {% if evento.tipo_parto == 'cesarea' %}selected{% endif %}>Cesárea</option>
+                                        <option value="asistido" {% if evento.tipo_parto == 'asistido' %}selected{% endif %}>Asistido</option>
+                                    </select>
+                                    <label for="tipo_parto">Tipo de Parto</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="number" class="form-control" id="numero_crias" name="numero_crias" placeholder="Número" value="{{ evento.numero_crias or '' }}">
+                                    <label for="numero_crias">Total de Crías</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating mb-3">
+                                    <input type="number" class="form-control" id="crias_vivas" name="crias_vivas" placeholder="Número" value="{{ evento.crias_vivas or '' }}">
+                                    <label for="crias_vivas">Crias Vivas</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating mb-3">
+                                    <input type="number" class="form-control" id="crias_muertas" name="crias_muertas" placeholder="Número" value="{{ evento.crias_muertas or '' }}">
+                                    <label for="crias_muertas">Crias Muertas</label>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-floating mb-3">
+                                    <input type="number" step="0.1" class="form-control" id="peso_crias" name="peso_crias" placeholder="kg" value="{{ evento.peso_crias or '' }}">
+                                    <label for="peso_crias">Peso Promedio (kg)</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-floating mb-3">
+                                    <textarea class="form-control" id="complicaciones" name="complicaciones" placeholder="Complicaciones" style="height: 80px">{{ evento.complicaciones or '' }}</textarea>
+                                    <label for="complicaciones">Complicaciones</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="camposVacunacion" class="row mb-4" {% if evento.tipo_evento not in ['vacunacion', 'desparasitacion'] %}style="display: none;"{% endif %}>
+                            <div class="col-12">
+                                <h6 class="text-info mb-3"><i class="fas fa-syringe me-2"></i>Detalles de Vacunación</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="tipo_vacuna" name="tipo_vacuna" placeholder="Tipo de vacuna" value="{{ evento.tipo_vacuna or '' }}">
+                                    <label for="tipo_vacuna">Tipo de Vacuna</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="lote_vacuna" name="lote_vacuna" placeholder="Lote" value="{{ evento.lote_vacuna or '' }}">
+                                    <label for="lote_vacuna">Lote de Vacuna</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="date" class="form-control" id="fecha_proxima_dosis" name="fecha_proxima_dosis" value="{{ evento.fecha_proxima_dosis.strftime('%Y-%m-%d') if evento.fecha_proxima_dosis else '' }}">
+                                    <label for="fecha_proxima_dosis">Próxima Dosis</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Información Adicional -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3"><i class="fas fa-user-md me-2"></i>Información Adicional</h6>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <select class="form-select" id="veterinario" name="veterinario">
+                                        <option value="">Seleccionar veterinario...</option>
+                                        {% for vet in veterinarios %}
+                                        <option value="{{ vet.nombre }} {{ vet.apellido }}" {% if evento.veterinario == (vet.nombre + ' ' + vet.apellido) %}selected{% endif %}>
+                                            {{ vet.nombre }} {{ vet.apellido }} - {{ vet.cargo }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <label for="veterinario">Veterinario</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="responsable" name="responsable" placeholder="Nombre del responsable" value="{{ evento.responsable or '' }}">
+                                    <label for="responsable">Responsable</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input type="text" class="form-control" id="resultado" name="resultado" placeholder="Resultado" value="{{ evento.resultado or '' }}">
+                                    <label for="resultado">Resultado</label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-floating mb-3">
+                                    <textarea class="form-control" id="observaciones" name="observaciones" placeholder="Observaciones adicionales" style="height: 100px">{{ evento.observaciones or '' }}</textarea>
+                                    <label for="observaciones">Observaciones Adicionales</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="{{ url_for('eventos_salud') }}" class="btn btn-secondary">
+                                        <i class="fas fa-times me-2"></i>Cancelar
+                                    </a>
+                                    <button type="submit" class="btn btn-warning">
+                                        <i class="fas fa-save me-2"></i>Actualizar Evento
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información del Evento</h6>
+                </div>
+                <div class="card-body">
+                    <p class="small text-muted">Está editando el evento de salud #{{ evento.id }} registrado el {{ evento.fecha_registro.strftime('%d/%m/%Y %H:%M') }}.</p>
+                    
+                    <div class="mb-3">
+                        <strong>Animal:</strong><br>
+                        <span class="badge bg-primary">{{ evento.animal.identificacion }} - {{ evento.animal.nombre or 'Sin nombre' }}</span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Estado Actual:</strong><br>
+                        <span class="badge bg-{{ 
+                            'warning' if evento.estado == 'pendiente' else
+                            'info' if evento.estado == 'en_progreso' else
+                            'success' if evento.estado == 'completado' else
+                            'danger'
+                        }}">
+                            {{ evento.estado.title() }}
+                        </span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Registrado por:</strong><br>
+                        <span class="text-muted">{{ evento.usuario_registro or 'Sistema' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function mostrarCamposEspecificos() {
+    const tipoEvento = document.getElementById('tipo_evento').value;
+    
+    // Ocultar todos los campos específicos
+    document.getElementById('camposEnfermedad').style.display = 'none';
+    document.getElementById('camposParto').style.display = 'none';
+    document.getElementById('camposVacunacion').style.display = 'none';
+    
+    // Mostrar campos según el tipo de evento
+    if (tipoEvento === 'enfermedad' || tipoEvento === 'lesion' || tipoEvento === 'cirugia') {
+        document.getElementById('camposEnfermedad').style.display = 'block';
+    } else if (tipoEvento === 'parto') {
+        document.getElementById('camposParto').style.display = 'block';
+    } else if (tipoEvento === 'vacunacion' || tipoEvento === 'desparasitacion') {
+        document.getElementById('camposVacunacion').style.display = 'block';
+    }
+}
+
+// Mostrar campos correctos al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    mostrarCamposEspecificos();
+});
+</script>
+{% endblock %}

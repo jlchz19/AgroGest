@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Maquinaria{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-edit me-2"></i>Editar Maquinaria</h2>
+        <a href="{{ url_for('maquinaria') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Editar Información de la Maquinaria</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="nombre" class="form-label">Nombre *</label>
+                                    <input type="text" class="form-control" id="nombre" name="nombre" required 
+                                           value="{{ maquina.nombre }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="tipo" class="form-label">Tipo *</label>
+                                    <select class="form-select" id="tipo" name="tipo" required>
+                                        <option value="">Seleccionar...</option>
+                                        <option value="tractor" {% if maquina.tipo == 'tractor' %}selected{% endif %}>Tractor</option>
+                                        <option value="cosechadora" {% if maquina.tipo == 'cosechadora' %}selected{% endif %}>Cosechadora</option>
+                                        <option value="pulverizadora" {% if maquina.tipo == 'pulverizadora' %}selected{% endif %}>Pulverizadora</option>
+                                        <option value="sembradora" {% if maquina.tipo == 'sembradora' %}selected{% endif %}>Sembradora</option>
+                                        <option value="arado" {% if maquina.tipo == 'arado' %}selected{% endif %}>Arado</option>
+                                        <option value="rastra" {% if maquina.tipo == 'rastra' %}selected{% endif %}>Rastra</option>
+                                        <option value="cargador" {% if maquina.tipo == 'cargador' %}selected{% endif %}>Cargador Frontal</option>
+                                        <option value="retroexcavadora" {% if maquina.tipo == 'retroexcavadora' %}selected{% endif %}>Retroexcavadora</option>
+                                        <option value="motocultor" {% if maquina.tipo == 'motocultor' %}selected{% endif %}>Motocultor</option>
+                                        <option value="remolque" {% if maquina.tipo == 'remolque' %}selected{% endif %}>Remolque/Carreta</option>
+                                        <option value="otro" {% if maquina.tipo == 'otro' %}selected{% endif %}>Otro</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="marca" class="form-label">Marca</label>
+                                    <input type="text" class="form-control" id="marca" name="marca" 
+                                           value="{{ maquina.marca or '' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="modelo" class="form-label">Modelo</label>
+                                    <input type="text" class="form-control" id="modelo" name="modelo" 
+                                           value="{{ maquina.modelo or '' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="año_fabricacion" class="form-label">Año de Fabricación</label>
+                                    <input type="number" class="form-control" id="año_fabricacion" name="año_fabricacion" 
+                                           min="1950" max="{{ current_year }}" value="{{ maquina.año_fabricacion or '' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="numero_serie" class="form-label">Número de Serie</label>
+                                    <input type="text" class="form-control" id="numero_serie" name="numero_serie" 
+                                           value="{{ maquina.numero_serie or '' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="fecha_adquisicion" class="form-label">Fecha de Adquisición</label>
+                                    <input type="date" class="form-control" id="fecha_adquisicion" name="fecha_adquisicion" 
+                                           value="{{ maquina.fecha_adquisicion.strftime('%Y-%m-%d') if maquina.fecha_adquisicion else '' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="valor_compra" class="form-label">Valor de Compra</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" id="valor_compra" name="valor_compra" 
+                                               step="0.01" min="0" value="{{ maquina.valor_compra or '' }}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="estado" class="form-label">Estado</label>
+                                    <select class="form-select" id="estado" name="estado">
+                                        <option value="operativo" {% if maquina.estado == 'operativo' %}selected{% endif %}>Operativo</option>
+                                        <option value="en_mantenimiento" {% if maquina.estado == 'en_mantenimiento' %}selected{% endif %}>En Mantenimiento</option>
+                                        <option value="fuera_servicio" {% if maquina.estado == 'fuera_servicio' %}selected{% endif %}>Fuera de Servicio</option>
+                                        <option value="vendido" {% if maquina.estado == 'vendido' %}selected{% endif %}>Vendido</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="ubicacion_actual" class="form-label">Ubicación Actual</label>
+                                    <input type="text" class="form-control" id="ubicacion_actual" name="ubicacion_actual" 
+                                           value="{{ maquina.ubicacion_actual or '' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="horas_uso" class="form-label">Horas de Uso</label>
+                                    <input type="number" class="form-control" id="horas_uso" name="horas_uso" 
+                                           step="0.1" min="0" value="{{ maquina.horas_uso or 0 }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="responsable" class="form-label">Responsable</label>
+                            <input type="text" class="form-control" id="responsable" name="responsable" 
+                                   value="{{ maquina.responsable or '' }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="observaciones" class="form-label">Observaciones</label>
+                            <textarea class="form-control" id="observaciones" name="observaciones" rows="3">{{ maquina.observaciones or '' }}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="imagen" class="form-label">Imagen de la Maquinaria</label>
+                            {% if maquina.imagen %}
+                            <div class="mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <img src="{{ url_for('static', filename='uploads/maquinaria/' + maquina.imagen) }}" 
+                                         alt="Imagen de {{ maquina.nombre }}" class="img-thumbnail" style="max-width: 200px;">
+                                    <div>
+                                        <small class="text-muted d-block">Imagen actual</small>
+                                        <button type="button" class="btn btn-sm btn-outline-danger mt-1" 
+                                                onclick="confirmarEliminarImagen()">
+                                            <i class="fas fa-trash me-1"></i>Eliminar Imagen
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            <input type="file" class="form-control" id="imagen" name="imagen" accept="image/*">
+                            <div class="form-text">Formatos permitidos: PNG, JPG, JPEG, GIF. Tamaño máximo: 5MB. 
+                            {% if maquina.imagen %}Dejar en blanco para mantener la imagen actual.{% endif %}</div>
+                            <input type="hidden" id="eliminar_imagen" name="eliminar_imagen" value="0">
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('maquinaria') }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Actualizar Maquinaria
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información Actual</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Fecha de Registro:</label>
+                        <p class="mb-0">{{ maquina.fecha_registro.strftime('%d/%m/%Y %H:%M') }}</p>
+                    </div>
+                    {% if maquina.ultimo_mantenimiento %}
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Último Mantenimiento:</label>
+                        <p class="mb-0">{{ maquina.ultimo_mantenimiento.strftime('%d/%m/%Y') }}</p>
+                    </div>
+                    {% endif %}
+                    {% if maquina.proximo_mantenimiento %}
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Próximo Mantenimiento:</label>
+                        <p class="mb-0">{{ maquina.proximo_mantenimiento.strftime('%d/%m/%Y') }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-tools me-2"></i>Acciones Rápidas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-info" disabled>
+                            <i class="fas fa-wrench me-2"></i>Registrar Mantenimiento
+                        </button>
+                        <button class="btn btn-outline-warning" disabled>
+                            <i class="fas fa-clock me-2"></i>Actualizar Horas de Uso
+                        </button>
+                        <button class="btn btn-outline-success" disabled>
+                            <i class="fas fa-file-alt me-2"></i>Ver Historial
+                        </button>
+                    </div>
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <small>Estas funciones estarán disponibles próximamente.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Establecer año actual como máximo
+    const yearInput = document.getElementById('año_fabricacion');
+    if (yearInput) {
+        yearInput.max = new Date().getFullYear();
+    }
+});
+
+function confirmarEliminarImagen() {
+    if (confirm('¿Estás seguro de que deseas eliminar la imagen de esta maquinaria? Esta acción no se puede deshacer.')) {
+        document.getElementById('eliminar_imagen').value = '1';
+        
+        // Ocultar la imagen actual y el botón de eliminar
+        const imageContainer = document.querySelector('.mb-2 .d-flex');
+        if (imageContainer) {
+            imageContainer.style.display = 'none';
+        }
+        
+        // Actualizar el texto de ayuda
+        const formText = document.querySelector('.form-text');
+        if (formText) {
+            formText.textContent = 'Formatos permitidos: PNG, JPG, JPEG, GIF. Tamaño máximo: 5MB. La imagen actual será eliminada al guardar.';
+        }
+    }
+}
+</script>
+{% endblock %}

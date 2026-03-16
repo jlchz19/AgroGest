@@ -1,0 +1,1837 @@
+{% extends "base.html" %}
+
+{% block title %}Mis Fincas - AgroGest{% endblock %}
+{% block page_title %}Gestión de Fincas{% endblock %}
+
+{% block content %}
+<style>
+    /* Estilos modernos para tarjetas de fincas */
+    .finca-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border-radius: 16px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .finca-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #0ea5e9 0%, #38bdf8 100%);
+    }
+    
+    .finca-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+    }
+    
+    .finca-header {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        padding: 16px 20px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .finca-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .finca-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 18px;
+    }
+    
+    .finca-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 12px;
+        padding: 16px 20px;
+    }
+    
+    .finca-stat {
+        text-align: center;
+        padding: 12px;
+        background: rgba(14, 165, 233, 0.05);
+        border-radius: 8px;
+        border: 1px solid rgba(14, 165, 233, 0.1);
+    }
+    
+    .finca-stat-number {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #0ea5e9;
+        margin-bottom: 4px;
+    }
+    
+    .finca-stat-label {
+        font-size: 0.75rem;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .finca-body {
+        padding: 20px;
+    }
+    
+    .finca-info {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .finca-info-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.875rem;
+        color: #475569;
+    }
+    
+    .finca-info-item i {
+        color: #0ea5e9;
+        width: 16px;
+    }
+    
+    .finca-actions {
+        padding: 16px 20px;
+        border-top: 1px solid #e2e8f0;
+        display: flex;
+        gap: 8px;
+    }
+    
+    /* Dark theme fixes for farms page */
+    body.dark-theme .finca-card {
+        background: linear-gradient(135deg, #1a1b26 0%, #24283b 100%) !important;
+        border: 1px solid #2d2e3f !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+    }
+    
+    body.dark-theme .finca-card::before {
+        background: linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%) !important;
+    }
+    
+    body.dark-theme .finca-card:hover {
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6) !important;
+    }
+    
+    body.dark-theme .finca-header {
+        background: linear-gradient(135deg, #24283b 0%, #2d2e3f 100%) !important;
+        border-bottom: 1px solid #2d2e3f !important;
+    }
+    
+    body.dark-theme .finca-title {
+        color: #ffffff !important;
+    }
+    
+    body.dark-theme .finca-icon {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
+    }
+    
+    body.dark-theme .finca-stat {
+        background: rgba(79, 70, 229, 0.1) !important;
+        border: 1px solid rgba(79, 70, 229, 0.2) !important;
+    }
+    
+    body.dark-theme .finca-stat-number {
+        color: #818cf8 !important;
+    }
+    
+    body.dark-theme .finca-stat-label {
+        color: #9ca3af !important;
+    }
+    
+    body.dark-theme .finca-info-item {
+        color: #e5e7eb !important;
+    }
+    
+    body.dark-theme .finca-info-item i {
+        color: #818cf8 !important;
+    }
+    
+    body.dark-theme .finca-actions {
+        border-top: 1px solid #2d2e3f !important;
+    }
+    
+    body.dark-theme .btn-outline-primary {
+        color: #818cf8 !important;
+        border-color: #4f46e5 !important;
+    }
+    
+    body.dark-theme .btn-outline-primary:hover {
+        background: #4f46e5 !important;
+        border-color: #4f46e5 !important;
+        color: #ffffff !important;
+    }
+    
+    body.dark-theme .btn-outline-secondary {
+        color: #9ca3af !important;
+        border-color: #2d2e3f !important;
+    }
+    
+    body.dark-theme .btn-outline-secondary:hover {
+        background: #6b7280 !important;
+        border-color: #6b7280 !important;
+        color: #ffffff !important;
+    }
+    
+    .btn-finca {
+        flex: 1;
+        min-width: 100px;
+        padding: 12px 16px;
+        border-radius: 10px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        text-decoration: none;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .btn-finca-access {
+        background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+        color: white;
+    }
+    
+    .btn-finca-access:hover {
+        background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%);
+        color: white;
+        transform: translateY(-1px);
+    }
+    
+    .btn-finca-edit {
+        background: white;
+        color: #f59e0b;
+        border: 2px solid #f59e0b;
+    }
+    
+    .btn-finca-edit:hover {
+        background: #f59e0b;
+        color: white;
+        transform: translateY(-1px);
+    }
+    
+    .btn-finca-delete {
+        background: white;
+        color: #ef4444;
+        border: 2px solid #ef4444;
+        min-width: 120px;
+    }
+    
+    .btn-finca-delete:hover {
+        background: #ef4444;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+    
+    .btn-finca-delete i {
+        font-size: 16px;
+    }
+    
+    /* Estadísticas */
+    .stats-card-finca {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        transition: all 0.3s;
+    }
+    
+    .stats-card-finca:hover {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .stats-icon-finca {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    
+    .stats-icon-total {
+        background: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%);
+        color: white;
+    }
+    
+    .stats-icon-leche {
+        background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+        color: white;
+    }
+    
+    .stats-icon-carne {
+        background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+        color: white;
+    }
+    
+    .stats-icon-mixto {
+        background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+        color: white;
+    }
+    
+    .stats-content-finca {
+        flex: 1;
+    }
+    
+    .stats-number-finca {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1e293b;
+        line-height: 1;
+    }
+    
+    .stats-label-finca {
+        font-size: 0.85rem;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Filtros y búsqueda */
+    .filters-container {
+        background: white;
+        border-radius: 12px;
+        padding: 16px 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e2e8f0;
+        margin-bottom: 24px;
+    }
+    
+    /* Dark theme fixes for farms page */
+    body.dark-theme .finca-card {
+        background: linear-gradient(135deg, #1a1b26 0%, #24283b 100%) !important;
+        border: 1px solid #2d2e3f !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+    }
+    
+    body.dark-theme .finca-card::before {
+        background: linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%) !important;
+    }
+    
+    body.dark-theme .finca-card:hover {
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6) !important;
+    }
+    
+    body.dark-theme .finca-header {
+        background: linear-gradient(135deg, #24283b 0%, #2d2e3f 100%) !important;
+        border-bottom: 1px solid #2d2e3f !important;
+    }
+    
+    body.dark-theme .finca-title {
+        color: #ffffff !important;
+    }
+    
+    body.dark-theme .finca-icon {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
+    }
+    
+    body.dark-theme .finca-stat {
+        background: rgba(79, 70, 229, 0.1) !important;
+        border: 1px solid rgba(79, 70, 229, 0.2) !important;
+    }
+    
+    body.dark-theme .finca-stat-number {
+        color: #818cf8 !important;
+    }
+    
+    body.dark-theme .finca-stat-label {
+        color: #9ca3af !important;
+    }
+    
+    body.dark-theme .finca-info-item {
+        color: #e5e7eb !important;
+    }
+    
+    body.dark-theme .finca-info-item i {
+        color: #818cf8 !important;
+    }
+    
+    body.dark-theme .finca-actions {
+        border-top: 1px solid #2d2e3f !important;
+    }
+    
+    body.dark-theme .btn-outline-primary {
+        color: #818cf8 !important;
+        border-color: #4f46e5 !important;
+    }
+    
+    body.dark-theme .btn-outline-primary:hover {
+        background: #4f46e5 !important;
+        border-color: #4f46e5 !important;
+        color: #ffffff !important;
+    }
+    
+    body.dark-theme .btn-outline-secondary {
+        color: #9ca3af !important;
+        border-color: #2d2e3f !important;
+    }
+    
+    body.dark-theme .btn-outline-secondary:hover {
+        background: #6b7280 !important;
+        border-color: #6b7280 !important;
+        color: #ffffff !important;
+    }
+    
+    body.dark-theme .finca-footer {
+        background: linear-gradient(135deg, #24283b 0%, #2d2e3f 100%) !important;
+        border-top: 1px solid #2d2e3f !important;
+    }
+    
+    body.dark-theme .btn-finca-edit {
+        background: transparent !important;
+        color: #fbbf24 !important;
+        border-color: #fbbf24 !important;
+    }
+    
+    body.dark-theme .btn-finca-edit:hover {
+        background: #fbbf24 !important;
+        color: #0f0f23 !important;
+    }
+    
+    body.dark-theme .btn-finca-delete {
+        background: transparent !important;
+        color: #f87171 !important;
+        border-color: #f87171 !important;
+    }
+    
+    body.dark-theme .btn-finca-delete:hover {
+        background: #f87171 !important;
+        color: #ffffff !important;
+    }
+    
+    body.dark-theme .stats-card-finca {
+        background: linear-gradient(135deg, #1a1b26 0%, #24283b 100%) !important;
+        border: 1px solid #2d2e3f !important;
+    }
+    
+    body.dark-theme .stats-number-finca {
+        color: #ffffff !important;
+    }
+    
+    body.dark-theme .stats-label-finca {
+        color: #9ca3af !important;
+    }
+    
+    body.dark-theme .filters-container {
+        background: linear-gradient(135deg, #1a1b26 0%, #24283b 100%) !important;
+        border: 1px solid #2d2e3f !important;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .finca-footer {
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .btn-finca {
+            min-width: 100%;
+            padding: 14px 16px;
+        }
+        
+        .btn-finca-delete {
+            min-width: 100%;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .finca-footer {
+            padding: 16px;
+        }
+        
+        .btn-finca {
+            padding: 12px 14px;
+            font-size: 0.8rem;
+        }
+    }
+</style>
+
+<!-- Estadísticas -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6 col-lg-3">
+        <div class="stats-card-finca">
+            <div class="stats-icon-finca stats-icon-total">
+                <i class="fas fa-warehouse"></i>
+            </div>
+            <div class="stats-content-finca">
+                <div class="stats-number-finca">{{ fincas|length }}</div>
+                <div class="stats-label-finca">Total Fincas</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="stats-card-finca">
+            <div class="stats-icon-finca stats-icon-leche">
+                <i class="fas fa-glass-whiskey"></i>
+            </div>
+            <div class="stats-content-finca">
+                <div class="stats-number-finca">{{ fincas|selectattr('tipo_produccion', 'equalto', 'Leche')|list|length }}</div>
+                <div class="stats-label-finca">Producción Leche</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="stats-card-finca">
+            <div class="stats-icon-finca stats-icon-carne">
+                <i class="fas fa-drumstick-bite"></i>
+            </div>
+            <div class="stats-content-finca">
+                <div class="stats-number-finca">{{ fincas|selectattr('tipo_produccion', 'equalto', 'Carne')|list|length }}</div>
+                <div class="stats-label-finca">Producción Carne</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="stats-card-finca">
+            <div class="stats-icon-finca stats-icon-mixto">
+                <i class="fas fa-random"></i>
+            </div>
+            <div class="stats-content-finca">
+                <div class="stats-number-finca">{{ fincas|selectattr('tipo_produccion', 'equalto', 'Doble propósito')|list|length }}</div>
+                <div class="stats-label-finca">Doble Propósito</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros y Búsqueda -->
+<div class="filters-container">
+    <div class="d-flex flex-wrap gap-3 align-items-center">
+        <div class="input-group" style="width: 250px;">
+            <span class="input-group-text bg-light"><i class="fas fa-search text-muted"></i></span>
+            <input type="text" class="form-control" id="searchFinca" placeholder="Buscar finca...">
+        </div>
+        <div class="input-group" style="width: 180px;">
+            <span class="input-group-text bg-light"><i class="fas fa-filter text-muted"></i></span>
+            <select class="form-select" id="filterTipo">
+                <option value="">Todos los tipos</option>
+                <option value="Leche">Leche</option>
+                <option value="Carne">Carne</option>
+                <option value="Doble propósito">Doble propósito</option>
+                <option value="Porcino">Porcino</option>
+                <option value="Avícola">Avícola</option>
+                <option value="Otro">Otro</option>
+            </select>
+        </div>
+        <div class="flex-grow-1"></div>
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#nuevaFincaModal">
+            <i class="fas fa-plus me-2"></i>Agregar Finca
+        </button>
+    </div>
+</div>
+
+<!-- Modal Nueva Finca -->
+<div class="modal fade" id="nuevaFincaModal" tabindex="-1" aria-labelledby="nuevaFincaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="nuevaFincaModalLabel">
+                    <i class="fas fa-plus-circle me-2"></i>Agregar Nueva Finca
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form action="{{ url_for('fincas') }}" method="POST" id="nuevaFincaForm">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Nombre" required>
+                                <label for="nombre">Nombre de la Finca *</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="direccion" name="direccion" placeholder="Dirección" required>
+                                <label for="direccion">Dirección *</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="number" step="0.01" class="form-control" id="extension" name="extension" placeholder="Extensión">
+                                <label for="extension">Extensión (ha)</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="tipo_produccion" name="tipo_produccion">
+                                    <option value="">Seleccione...</option>
+                                    <option value="Leche">Leche</option>
+                                    <option value="Carne">Carne</option>
+                                    <option value="Doble propósito">Doble propósito</option>
+                                    <option value="Porcino">Porcino</option>
+                                    <option value="Avícola">Avícola</option>
+                                    <option value="Otro">Otro</option>
+                                </select>
+                                <label for="tipo_produccion">Tipo de Producción</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="propietario" name="propietario" placeholder="Propietario">
+                                <label for="propietario">Propietario</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="telefono" name="telefono" placeholder="Teléfono">
+                                <label for="telefono">Teléfono</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <input type="email" class="form-control" id="email" name="email" placeholder="Email">
+                                <label for="email">Email</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <textarea class="form-control" id="descripcion" name="descripcion" style="height: 80px" placeholder="Descripción"></textarea>
+                                <label for="descripcion">Descripción</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="ubicacion" name="ubicacion" placeholder="Ubicación">
+                                <label for="ubicacion">Ubicación en el mapa</label>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#mapModal">
+                                <i class="fas fa-map-marker-alt me-2"></i>Seleccionar Ubicación
+                            </button>
+                            <input type="hidden" name="lat" id="lat">
+                            <input type="hidden" name="lng" id="lng">
+                            <input type="hidden" name="polygon_geojson" id="polygon_geojson">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-plus me-1"></i>Agregar Finca
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Listado de Fincas -->
+<div class="row g-4" id="fincasContainer">
+    {% if fincas %}
+        {% for finca in fincas %}
+        <div class="col-md-6 col-lg-4 finca-item" data-nombre="{{ finca.nombre|lower }}" data-tipo="{{ finca.tipo_produccion or '' }}">
+            <div class="finca-card">
+                <div class="finca-header">
+                    <h5 class="finca-title">
+                        <div class="finca-icon">
+                            <i class="fas fa-home"></i>
+                        </div>
+                        {{ finca.nombre }}
+                    </h5>
+                </div>
+                <div class="finca-body">
+                    <div class="finca-info-row">
+                        <span class="finca-info-icon"><i class="fas fa-map-marker-alt"></i></span>
+                        <div>
+                            <span class="finca-info-label">Dirección:</span><br>
+                            {{ finca.direccion }}
+                        </div>
+                    </div>
+                    {% if finca.extension %}
+                    <div class="finca-info-row">
+                        <span class="finca-info-icon"><i class="fas fa-ruler-combined"></i></span>
+                        <div>
+                            <span class="finca-info-label">Extensión:</span>
+                            {{ finca.extension }} ha
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if finca.tipo_produccion %}
+                    <div class="finca-info-row">
+                        <span class="finca-info-icon"><i class="fas fa-tag"></i></span>
+                        <div>
+                            <span class="finca-info-label">Producción:</span>
+                            <span class="badge bg-primary">{{ finca.tipo_produccion }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if finca.propietario %}
+                    <div class="finca-info-row">
+                        <span class="finca-info-icon"><i class="fas fa-user"></i></span>
+                        <div>
+                            <span class="finca-info-label">Propietario:</span>
+                            {{ finca.propietario }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if finca.telefono %}
+                    <div class="finca-info-row">
+                        <span class="finca-info-icon"><i class="fas fa-phone"></i></span>
+                        <div>
+                            <span class="finca-info-label">Teléfono:</span>
+                            {{ finca.telefono }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if finca.email %}
+                    <div class="finca-info-row">
+                        <span class="finca-info-icon"><i class="fas fa-envelope"></i></span>
+                        <div>
+                            <span class="finca-info-label">Email:</span>
+                            {{ finca.email }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if finca.ubicacion %}
+                    <div class="finca-info-row">
+                        <span class="finca-info-icon"><i class="fas fa-globe"></i></span>
+                        <div>
+                            <span class="finca-info-label">Ubicación:</span>
+                            {{ finca.ubicacion }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if finca.latitud and finca.longitud %}
+                    <div id="mini-map-{{ finca.id }}" data-mini='{{ {"lat": finca.latitud, "lng": finca.longitud, "polygon": finca.poligono_geojson}|tojson }}' style="height:150px;border-radius:8px;margin-top:12px;"></div>
+                    {% endif %}
+                </div>
+                <div class="finca-footer">
+                    <a href="{{ url_for('seleccionar_finca', finca_id=finca.id) }}" class="btn-finca btn-finca-access">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>Acceder</span>
+                    </a>
+                    <button type="button" class="btn-finca btn-finca-edit" 
+                            data-bs-toggle="modal" data-bs-target="#editarFincaModal"
+                            data-finca-id="{{ finca.id }}" 
+                            data-nombre="{{ finca.nombre }}"
+                            data-direccion="{{ finca.direccion }}" 
+                            data-extension="{{ finca.extension or '' }}"
+                            data-tipo-produccion="{{ finca.tipo_produccion or '' }}" 
+                            data-propietario="{{ finca.propietario or '' }}" 
+                            data-telefono="{{ finca.telefono or '' }}" 
+                            data-email="{{ finca.email or '' }}" 
+                            data-descripcion="{{ finca.descripcion or '' }}" 
+                            data-ubicacion="{{ finca.ubicacion or '' }}" 
+                            data-lat="{{ finca.latitud or '' }}" 
+                            data-lng="{{ finca.longitud or '' }}" 
+                            data-polygon="{{ finca.poligono_geojson or '' }}">
+                        <i class="fas fa-edit"></i>
+                        <span>Editar</span>
+                    </button>
+                    {% if current_user.rol == 'admin' %}
+                    <a href="{{ url_for('eliminar_finca', finca_id=finca.id) }}" class="btn-finca btn-finca-delete" 
+                       onclick="return confirm('¿Está seguro de eliminar esta finca?')">
+                        <i class="fas fa-trash"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e0 100%); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+                    <i class="fas fa-warehouse fa-2x text-muted"></i>
+                </div>
+                <h4 class="text-muted mb-2">No tienes fincas registradas</h4>
+                <p class="text-muted">Comienza agregando tu primera finca para gestionar</p>
+                <a href="{{ url_for('fincas') }}" class="btn btn-primary mt-2">
+                    <i class="fas fa-plus me-2"></i>Agregar Finca
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Mensaje cuando no hay resultados -->
+<div id="noResultsMessage" class="text-center py-5" style="display: none;">
+    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+    <h5 class="text-muted">No se encontraron fincas</h5>
+    <p class="text-muted">Intenta con otros términos de búsqueda</p>
+</div>
+
+<!-- [Resto del código del modal y scripts se mantiene igual] -->
+<!-- Modal Mapa -->
+<div class="modal fade" id="mapModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-map me-2"></i>Definir ubicación y límites</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3 mb-2">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text">🔎</span>
+                        <div style="position:relative; width:100%;">
+                            <input id="searchPlace" class="form-control" placeholder="Buscar lugar (ej: Venezuela Maracaibo San Francisco Urbanización La Modelo)">
+                            <div id="searchResults" class="list-group" style="position:absolute; top:100%; left:0; right:0; z-index:1075; display:none; max-height:240px; overflow:auto;"></div>
+                        </div>
+                        <button class="btn btn-outline-secondary" type="button" id="btnSearch">Buscar</button>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="input-group">
+                    <span class="input-group-text">📍</span>
+                    <input id="gotoLat" class="form-control" placeholder="Lat">
+                    <input id="gotoLng" class="form-control" placeholder="Lng">
+                    <button class="btn btn-outline-secondary" type="button" id="btnGoto">Ir</button>
+                </div>
+            </div>
+            <div class="col-md-3 text-end">
+                <div class="btn-group">
+                    <button class="btn btn-outline-success" type="button" id="btnAddMarker">Marcador</button>
+                    <button class="btn btn-outline-warning" type="button" id="btnDrawPoly">Dibujar</button>
+                    <button class="btn btn-outline-secondary" type="button" id="btnClearPoly">Limpiar</button>
+                </div>
+            </div>
+        </div>
+        <div id="map" style="height: 520px; border-radius: 8px;"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+        <button type="button" class="btn btn-primary" id="btnSaveLocation" data-bs-dismiss="modal">Guardar ubicación</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de confirmación para eliminar finca -->
+<div class="modal fade" id="modalEliminarFinca" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que quieres eliminar la finca <strong id="nombreFinca"></strong>?</p>
+                <p class="text-danger"><small>Esta acción no se puede deshacer.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="formEliminarFinca" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Funcionalidad de búsqueda y filtro
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchFinca');
+    const filterTipo = document.getElementById('filterTipo');
+    const fincaItems = document.querySelectorAll('.finca-item');
+    const noResultsMessage = document.getElementById('noResultsMessage');
+    
+    function filterFincas() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const tipoFilter = filterTipo.value;
+        let visibleCount = 0;
+        
+        fincaItems.forEach(item => {
+            const nombre = item.dataset.nombre;
+            const tipo = item.dataset.tipo;
+            
+            const matchesSearch = nombre.includes(searchTerm);
+            const matchesTipo = !tipoFilter || tipo === tipoFilter;
+            
+            if (matchesSearch && matchesTipo) {
+                item.style.display = '';
+                visibleCount++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        // Mostrar/ocultar mensaje de no resultados
+        if (visibleCount === 0) {
+            noResultsMessage.style.display = 'block';
+        } else {
+            noResultsMessage.style.display = 'none';
+        }
+    }
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', filterFincas);
+    }
+    
+    if (filterTipo) {
+        filterTipo.addEventListener('change', filterFincas);
+    }
+    
+    // Manejar envío del formulario de nueva finca
+    const nuevaFincaForm = document.getElementById('nuevaFincaForm');
+    if (nuevaFincaForm) {
+        nuevaFincaForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Validar campos requeridos
+            const nombre = document.getElementById('nombre').value.trim();
+            const direccion = document.getElementById('direccion').value.trim();
+            
+            if (!nombre || !direccion) {
+                alert('Por favor completa los campos obligatorios (*)');
+                return;
+            }
+            
+            // Mostrar indicador de carga
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Guardando...';
+            submitBtn.disabled = true;
+            
+            // Enviar formulario
+            this.submit();
+        });
+    }
+    
+    // Resetear formulario cuando se cierra el modal
+    const nuevaFincaModal = document.getElementById('nuevaFincaModal');
+    if (nuevaFincaModal) {
+        nuevaFincaModal.addEventListener('hidden.bs.modal', function() {
+            const form = document.getElementById('nuevaFincaForm');
+            if (form) {
+                form.reset();
+            }
+        });
+    }
+});
+</script>
+
+<!-- Leaflet + Leaflet.draw -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+
+<!-- Inicializar mini-mapas diferidos (si los hay) una vez que Leaflet esté cargado -->
+
+<!-- Leaflet-Geosearch: Autocomplete/search gratis sobre OSM (fallback cuando no haya Google) -->
+<!-- Intentar con una versión más simple -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-geosearch@3.6.0/dist/geosearch.css" />
+<script src="https://cdn.jsdelivr.net/npm/leaflet-geosearch@3.6.0/dist/bundle.min.js"></script>
+
+<script>
+function _initDeferredMiniMaps(){
+    if(!window.L) {
+        console.log('Leaflet not loaded yet, retrying...');
+        setTimeout(_initDeferredMiniMaps, 100);
+        return;
+    }
+
+    console.log('Initializing mini-maps...');
+    // Primero procesar cualquier configuración push-eada a window.__miniMaps (compatibilidad)
+    if(window.__miniMaps && Array.isArray(window.__miniMaps)){
+        window.__miniMaps.forEach(function(cfg){
+            tryInitFromConfig(cfg);
+        });
+        window.__miniMaps = [];
+    }
+
+    // Luego procesar todos los nodos con data-mini attribute
+    var nodes = document.querySelectorAll('[data-mini]');
+    console.log('Found', nodes.length, 'mini-map nodes');
+    
+    // Mostrar información de depuración sobre cada nodo encontrado
+    nodes.forEach(function(node, index) {
+        console.log('Mini-map node', index, ':', node.id, node.getAttribute('data-mini'));
+    });
+    
+    nodes.forEach(function(node){
+        try {
+            var cfg = JSON.parse(node.getAttribute('data-mini'));
+            // completar cfg.id si falta
+            cfg.id = cfg.id || node.id;
+            console.log('Initializing mini-map for', cfg.id, cfg);
+            tryInitFromConfig(cfg);
+            // remover el atributo para no volver a procesar
+            node.removeAttribute('data-mini');
+        } catch(e){ console.error('Error inicializando mini-map desde data-mini', node && node.id, e); }
+    });
+
+    function tryInitFromConfig(cfg){
+        try {
+            if(!cfg || !cfg.id) return;
+            var el = document.getElementById(cfg.id);
+            if(!el) {
+                console.warn('Element not found for mini-map:', cfg.id);
+                return;
+            }
+            if(el._leaflet_id) {
+                console.log('Mini-map already initialized:', cfg.id);
+                return;
+            }
+            var lat = parseFloat(cfg.lat) || 0;
+            var lng = parseFloat(cfg.lng) || 0;
+            if(!lat || !lng){
+                console.warn('Invalid coordinates for mini-map:', cfg.id, lat, lng);
+                return;
+            }
+            console.log('Creating mini-map for', cfg.id, 'at', lat, lng);
+            var m = L.map(el, {zoomControl:false, attributionControl:false, scrollWheelZoom:false}).setView([lat, lng], (lat && lng) ? 15 : 6);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(m);
+            L.marker([lat, lng]).addTo(m);
+            if(cfg.polygon){
+                try {
+                    var geo = (typeof cfg.polygon === 'string') ? JSON.parse(cfg.polygon) : cfg.polygon;
+                    L.geoJSON(geo, { style: geoDisplayStyle }).addTo(m);
+                } catch(e){ console.error('Error parseando polígono mini-map', cfg.id, e); }
+            }
+            el._leaflet_map = m;
+            console.log('Mini-map initialized successfully:', cfg.id);
+        } catch(e){ console.error('Error inicializando mini-map', cfg && cfg.id, e); }
+    }
+}
+
+// Esperar a que todas las librerías estén cargadas
+function waitForLibrariesAndInit() {
+    if (window.L && window.L.map) {
+        console.log('Libraries loaded, initializing mini-maps');
+        _initDeferredMiniMaps();
+    } else {
+        console.log('Waiting for libraries to load...');
+        setTimeout(waitForLibrariesAndInit, 100);
+    }
+}
+
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+    // Ejecutar en el siguiente tick para asegurar que las librerías hayan terminado de inicializar
+    setTimeout(waitForLibrariesAndInit, 100);
+} else {
+    window.addEventListener('DOMContentLoaded', function() {
+        setTimeout(waitForLibrariesAndInit, 100);
+    });
+}
+</script>
+
+<style>
+/* Asegurar interacción dentro del modal */
+.modal #map { height: 520px; min-height: 520px; width: 100%; touch-action: pan-x pan-y; }
+.modal .leaflet-container, .modal .leaflet-pane, .modal .leaflet-top, .modal .leaflet-bottom, .modal .leaflet-control-container { z-index: 1065; }
+</style>
+
+<script>
+let map, searchMarker, drawnItems, drawControl;
+let flagMarker = null;
+let geosearchProvider = null; // Declarar globalmente
+const mapModalEl = document.getElementById('mapModal');
+// estilo consistente para mini-mapas / polígonos
+const geoDisplayStyle = { color: '#1e90ff', weight: 2, fillColor: '#1e90ff', fillOpacity: 0.18 };
+
+// Inicializar modal
+if (mapModalEl) {
+    mapModalEl.addEventListener('shown.bs.modal', function(){
+        setTimeout(()=>{
+            initMap();
+            if(map && map.invalidateSize){ map.invalidateSize(); }
+        }, 150);
+    });
+}
+
+function initMap(){
+    if(map) { map.invalidateSize(); return; }
+    const latVal = parseFloat(document.getElementById('lat').value) || 4.711;
+    const lngVal = parseFloat(document.getElementById('lng').value) || -74.072;
+    map = L.map('map').setView([latVal, lngVal], (latVal && lngVal) ? 15 : 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+
+    drawnItems = new L.FeatureGroup();
+    map.addLayer(drawnItems);
+    drawControl = new L.Control.Draw({
+        draw: { polygon: { allowIntersection:false, showArea:true }, polyline:false, rectangle:false, circle:false, circlemarker:false, marker:false },
+        edit: { featureGroup: drawnItems }
+    });
+    map.addControl(drawControl);
+
+    document.getElementById('btnDrawPoly').onclick = () => { new L.Draw.Polygon(map, drawControl.options.draw.polygon).enable(); };
+    document.getElementById('btnClearPoly').onclick = () => { drawnItems.clearLayers(); };
+    document.getElementById('btnAddMarker').onclick = addDraggableMarker;
+    document.getElementById('btnGoto').onclick = gotoCoords;
+    document.getElementById('btnSearch').onclick = searchPlace;
+
+    // Añadir control GeoSearch si está disponible
+    console.log('GeoSearch library check:', {
+        'window.GeoSearch': typeof window.GeoSearch,
+        'GeoSearch.OpenStreetMapProvider': typeof window.GeoSearch?.OpenStreetMapProvider,
+        'GeoSearch.GeoSearchControl': typeof window.GeoSearch?.GeoSearchControl,
+        'GeoSearch available': !!(window.GeoSearch && window.GeoSearch.OpenStreetMapProvider && window.GeoSearch.GeoSearchControl)
+    });
+    
+    // Temporarily disabled GeoSearch to prevent initialization errors
+    console.log('GeoSearch temporarily disabled to prevent errors');
+    
+    /*
+    if (window.GeoSearch && window.GeoSearch.OpenStreetMapProvider && window.GeoSearch.GeoSearchControl) {
+        try {
+            console.log('Creating GeoSearch provider...');
+            const provider = new window.GeoSearch.OpenStreetMapProvider();
+            console.log('Provider created:', provider);
+            
+            const searchControl = new window.GeoSearch.GeoSearchControl({
+                provider: provider,
+                style: 'bar',
+                showMarker: true,
+                marker: {
+                    icon: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+                    draggable: false
+                }
+            }); 
+            console.log('Search control created:', searchControl);
+            
+            // Verificar que el control tenga el método addTo antes de añadirlo
+            if (typeof searchControl.addTo === 'function') {
+                map.addControl(searchControl); 
+                console.log('GeoSearch control added successfully');
+            } else {
+                console.warn('GeoSearch control does not have addTo method, skipping...');
+            }
+        } catch(e){ 
+            console.error('GeoSearch control failed', e); 
+            console.error('Error details:', e.stack);
+        }
+    } else {
+        console.warn('GeoSearch library not fully loaded. Available properties:', Object.keys(window.GeoSearch || {}));
+    }
+    */
+
+    map.on(L.Draw.Event.CREATED, function (e) { drawnItems.clearLayers(); drawnItems.addLayer(e.layer); });
+
+    // Si ya hay lat/lng en inputs, centrar y colocar marcador
+    const latInputVal = parseFloat(document.getElementById('lat')?.value) || null;
+    const lngInputVal = parseFloat(document.getElementById('lng')?.value) || null;
+    const polyVal = document.getElementById('polygon_geojson')?.value || '';
+    if(latInputVal && lngInputVal){
+        searchMarker = L.marker([latInputVal, lngInputVal], {draggable:true}).addTo(map);
+        map.setView([latInputVal, lngInputVal], 15);
+        searchMarker.on('dragend', ()=>{ const p = searchMarker.getLatLng(); document.getElementById('gotoLat').value = p.lat.toFixed(6); document.getElementById('gotoLng').value = p.lng.toFixed(6); });
+    }
+    if(polyVal){ try{ const geo = JSON.parse(polyVal); L.geoJSON(geo, { style: geoDisplayStyle }).addTo(drawnItems); } catch(e){ console.error('Polígono inválido', e); } }
+}
+
+function addDraggableMarker(){
+    const lat = parseFloat(document.getElementById('gotoLat').value) || map.getCenter().lat;
+    const lng = parseFloat(document.getElementById('gotoLng').value) || map.getCenter().lng;
+    if(searchMarker) map.removeLayer(searchMarker);
+    searchMarker = L.marker([lat,lng], {draggable:true}).addTo(map);
+    searchMarker.on('dragend', ()=>{ const p = searchMarker.getLatLng(); document.getElementById('gotoLat').value = p.lat.toFixed(6); document.getElementById('gotoLng').value = p.lng.toFixed(6); });
+}
+
+function gotoCoords(){
+    const lat = parseFloat(document.getElementById('gotoLat').value);
+    const lng = parseFloat(document.getElementById('gotoLng').value);
+    if(!isFinite(lat) || !isFinite(lng)) return;
+    map.setView([lat,lng], 16);
+    if(searchMarker) searchMarker.setLatLng([lat,lng]);
+}
+
+function searchPlace(){
+    const q = document.getElementById('searchPlace').value; if(!q) return;
+    const container = document.getElementById('searchResults'); if(container){ container.innerHTML = '<div class="list-group-item">Buscando...</div>'; container.style.display = 'block'; }
+    if(geosearchProvider){
+        geosearchProvider.search({ query: q }).then(results=>{
+            if(results && results.length){
+                showSearchResults(results.slice(0,6));
+            } else {
+                fallbackNominatim(q);
+            }
+        }).catch(()=>fallbackNominatim(q));
+        return;
+    }
+    fallbackNominatim(q);
+}
+
+// Attach button handlers defensively
+function attachSearchHandlers(){
+    const btn = document.getElementById('btnSearch');
+    const input = document.getElementById('searchPlace');
+    if(btn && !btn._bound){ btn.addEventListener('click', function(){ console.log('btnSearch clicked'); searchPlace(); }); btn._bound = true; }
+    if(input && !input._bound){ input.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); searchPlace(); } }); input._bound = true; }
+}
+
+attachSearchHandlers();
+if (mapModalEl) { mapModalEl.addEventListener('shown.bs.modal', attachSearchHandlers); }
+
+function showSearchResults(results){
+    const container = document.getElementById('searchResults');
+    if(!container) return;
+    container.innerHTML = '';
+    results.forEach(r => {
+        const title = r.label || (r.raw && (r.raw.display_name || r.raw.displayName)) || `${r.x}, ${r.y}`;
+        const lat = parseFloat(r.y || r.lat);
+        const lng = parseFloat(r.x || r.lon || r.lng);
+        const item = document.createElement('a');
+        item.className = 'list-group-item list-group-item-action search-result';
+        item.textContent = title;
+        item.href = '#';
+        item.addEventListener('click', function(ev){ ev.preventDefault(); selectSearchResult({lat:lat,lng:lng,title:title}); });
+        container.appendChild(item);
+    });
+    container.style.display = results.length ? 'block' : 'none';
+}
+
+function selectSearchResult(obj){
+    const lat = obj.lat; const lng = obj.lng; const title = obj.title || '';
+    if(!isFinite(lat) || !isFinite(lng)) return;
+    map.setView([lat,lng], 16);
+    const flagIcon = L.divIcon({ html: '<div style="font-size:24px;line-height:24px">🚩</div>', className: '', iconSize: [24,24], iconAnchor: [12,24] });
+    if(flagMarker) map.removeLayer(flagMarker);
+    flagMarker = L.marker([lat,lng], {icon: flagIcon, draggable:true}).addTo(map);
+    flagMarker.on('dragend', ()=>{ const p = flagMarker.getLatLng(); document.getElementById('gotoLat').value = p.lat.toFixed(6); document.getElementById('gotoLng').value = p.lng.toFixed(6); });
+    document.getElementById('gotoLat').value = lat.toFixed(6);
+    document.getElementById('gotoLng').value = lng.toFixed(6);
+    const container = document.getElementById('searchResults'); if(container){ container.innerHTML=''; container.style.display='none'; }
+}
+
+// Enter key triggers search
+document.getElementById('searchPlace')?.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); searchPlace(); } });
+
+function fallbackNominatim(q){
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}`)
+        .then(r=>r.json()).then(list=>{
+            if(list && list.length){
+                const mapped = list.map(it => ({ label: it.display_name, x: it.lon, y: it.lat, raw: it }));
+                showSearchResults(mapped.slice(0,6));
+            } else {
+                const container = document.getElementById('searchResults'); if(container){ container.innerHTML = '<div class="list-group-item">No se encontraron resultados</div>'; }
+            }
+        }).catch(e=>{ console.error('Nominatim error', e); const container = document.getElementById('searchResults'); if(container){ container.innerHTML = '<div class="list-group-item text-danger">Error buscando</div>'; } });
+}
+
+document.getElementById('btnSaveLocation').onclick = () => {
+    const latInput = document.getElementById('lat');
+    const lngInput = document.getElementById('lng');
+    const polyInput = document.getElementById('polygon_geojson');
+    const chosenMarker = flagMarker || searchMarker;
+    if(chosenMarker){ const p = chosenMarker.getLatLng(); latInput.value = p.lat.toFixed(6); lngInput.value = p.lng.toFixed(6); }
+    const layer = drawnItems.getLayers()[0];
+    if(layer){ polyInput.value = JSON.stringify(layer.toGeoJSON()); } else { polyInput.value = ''; }
+    // Cerrar el modal
+    const mapModal = bootstrap.Modal.getInstance(document.getElementById('mapModal'));
+    if (mapModal) { mapModal.hide(); }
+};
+
+// Función para actualizar/recrear el mini-map en la lista (si existe el elemento #mini-map-<id>)
+function updateMiniMapForFinca(id, lat, lng, polygon_geojson){
+    console.log('=== updateMiniMapForFinca START ===');
+    console.log('Parameters:', {id, lat, lng, polygon_geojson});
+    
+    try{
+        console.log('Looking for element: mini-map-' + id);
+        const el = document.getElementById('mini-map-' + id);
+        if(!el) {
+            console.warn('Mini-map element not found:', 'mini-map-' + id);
+            return;
+        }
+        
+        console.log('Element found:', el);
+        console.log('Current element HTML (before):', el.innerHTML.substring(0, 100) + '...');
+        
+        // Mostrar el contenedor si estaba oculto
+        el.style.display = 'block';
+        
+        // Eliminar el mapa anterior si existe
+        if(el._leaflet_map){ 
+            console.log('Removing existing map...');
+            try{ 
+                el._leaflet_map.remove(); 
+            } catch(e){ 
+                console.warn('Error removing old mini-map:', e); 
+            } 
+            delete el._leaflet_map; 
+        }
+        
+        // Limpiar el contenedor
+        el.innerHTML = '';
+        
+        const latf = parseFloat(lat) || 0;
+        const lngf = parseFloat(lng) || 0;
+        
+        console.log('Parsed coordinates:', {latf, lngf});
+        
+        if(!latf || !lngf) {
+            console.warn('Invalid coordinates for mini-map:', latf, lngf);
+            el.innerHTML = '<div style="text-align:center;padding:20px;color:#999;">Sin coordenadas</div>';
+            return;
+        }
+        
+        // Crear el nuevo mapa
+        console.log('Creating new map for finca', id, 'at coordinates', latf, lngf);
+        const m = L.map(el, {zoomControl:false, attributionControl:false, scrollWheelZoom:false}).setView([latf, lngf], 15);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(m);
+        L.marker([latf, lngf]).addTo(m);
+        
+        if(polygon_geojson){ 
+            console.log('Adding polygon to mini-map:', polygon_geojson);
+            try{ 
+                const geo = (typeof polygon_geojson === 'string' && polygon_geojson.length) ? JSON.parse(polygon_geojson) : polygon_geojson; 
+                if(geo) {
+                    L.geoJSON(geo, { style: geoDisplayStyle }).addTo(m);
+                    console.log('Polygon added successfully');
+                }
+            } catch(e){ 
+                console.warn('mini-map polygon parse error:', e); 
+            } 
+        }
+        
+        el._leaflet_map = m;
+        console.log('Mini-map updated successfully for finca:', id);
+        console.log('Final element HTML (after):', el.innerHTML.substring(0, 100) + '...');
+        console.log('=== updateMiniMapForFinca END ===');
+    } catch(e){ 
+        console.error('updateMiniMapForFinca failed:', e); 
+        console.error('Stack trace:', e.stack);
+    }
+}
+
+document.addEventListener('click', function(evt) {
+    const btn = evt.target.closest && evt.target.closest('[data-bs-target="#modalEliminarFinca"]');
+    if (!btn) return;
+    const fincaId = btn.getAttribute('data-finca-id');
+    const fincaNombre = btn.getAttribute('data-finca-nombre');
+    if (fincaId) {
+        document.getElementById('nombreFinca').textContent = fincaNombre;
+        document.getElementById('formEliminarFinca').action = `/fincas/eliminar/${fincaId}`;
+    }
+});
+</script>
+
+<!-- Script para inicializar el menú móvil en fincas -->
+<script>
+// Función para cerrar el sidebar (disponible en todas las ventanas)
+function closeSidebar() {
+    console.log('closeSidebar llamada desde fincas'); // Debug
+    const sidebar = document.getElementById('sidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const contentElement = document.getElementById('content');
+    
+    if (sidebar) {
+        sidebar.classList.remove('show-mobile');
+        console.log('Sidebar cerrado'); // Debug
+    }
+    
+    if (sidebarOverlay) {
+        sidebarOverlay.classList.remove('show');
+        console.log('Overlay cerrado'); // Debug
+    }
+    
+    if (contentElement) {
+        contentElement.classList.remove('show-mobile-overlay');
+        console.log('Content overlay cerrado'); // Debug
+    }
+    
+    document.body.style.overflow = '';
+    console.log('Sidebar completamente cerrado'); // Debug
+}
+
+// Hacer la función globalmente disponible
+window.closeSidebar = closeSidebar;
+
+// Función para actualizar los mapas de miniatura
+function actualizarMapasMiniatura() {
+    console.log('=== Starting actualizarMapasMiniatura ===');
+    console.log('window.editarFincaForm:', !!window.editarFincaForm);
+    console.log('window.lastEditedFincaId:', window.lastEditedFincaId);
+    console.log('window.lastEditedFincaData:', window.lastEditedFincaData);
+    
+    // Recargar todos los mini-mapas de Leaflet
+    const miniMapElements = document.querySelectorAll('[id^="mini-map-"]');
+    console.log('Found mini-map elements:', miniMapElements.length);
+    
+    miniMapElements.forEach(el => {
+        const id = el.id;
+        const fincaId = id.replace('mini-map-', '');
+        console.log('--- Processing mini-map for finca:', fincaId, '---');
+        
+        // Obtener los datos actualizados del formulario de edición si está disponible
+        if (window.editarFincaForm) {
+            const formFincaId = window.editarFincaForm.querySelector('#editFincaId').value;
+            console.log('Form finca ID:', formFincaId, 'Current finca ID:', fincaId);
+            
+            if (formFincaId === fincaId) {
+                const lat = window.editarFincaForm.querySelector('#editLat').value;
+                const lng = window.editarFincaForm.querySelector('#editLng').value;
+                const polygon = window.editarFincaForm.querySelector('#editPolygon').value;
+                
+                console.log('Form data for finca', fincaId, '- lat:', lat, 'lng:', lng, 'polygon:', polygon);
+                
+                if (lat && lng && lat !== '0' && lng !== '0') {
+                    console.log('Calling updateMiniMapForFinca with form data');
+                    updateMiniMapForFinca(fincaId, lat, lng, polygon);
+                } else {
+                    console.log('No valid coordinates for finca', fincaId, '- lat:', lat, 'lng:', lng);
+                }
+            } else {
+                console.log('Form data not for this finca, skipping update');
+            }
+        } else {
+            // Si no hay formulario, pero tenemos el ID de la finca editada recientemente, 
+            // intentamos actualizar desde los datos guardados temporalmente
+            if (window.lastEditedFincaId && window.lastEditedFincaId === fincaId) {
+                const lat = window.lastEditedFincaData?.lat;
+                const lng = window.lastEditedFincaData?.lng;
+                const polygon = window.lastEditedFincaData?.polygon;
+                
+                console.log('Using cached data for finca', fincaId, '- lat:', lat, 'lng:', lng, 'polygon:', polygon);
+                
+                if (lat && lng && lat !== '0' && lng !== '0') {
+                    console.log('Calling updateMiniMapForFinca with cached data');
+                    updateMiniMapForFinca(fincaId, lat, lng, polygon);
+                } else {
+                    console.log('No valid cached coordinates for finca', fincaId, '- lat:', lat, 'lng:', lng);
+                }
+            } else {
+                // Si no hay formulario ni datos cacheados, simplemente recargar el mapa existente
+                console.log('No form or cached data, just invalidating map size');
+                if (el._leaflet_map) {
+                    try {
+                        el._leaflet_map.invalidateSize();
+                        console.log('Invalidated mini-map size for finca:', fincaId);
+                    } catch(e) {
+                        console.warn('Error invalidating mini-map size:', e);
+                    }
+                } else {
+                    console.log('No existing map to invalidate for finca:', fincaId);
+                }
+            }
+        }
+    });
+    
+    console.log('=== Finished actualizarMapasMiniatura ===');
+}
+
+// Función para actualizar el campo de ubicación desde el mapa
+window.actualizarUbicacionDesdeMapa = function(lat, lng, direccion, polygon) {
+    console.log('actualizarUbicacionDesdeMapa called with:', {lat, lng, direccion, polygon});
+    
+    // Si estamos en el modal de edición, actualizar esos campos
+    if (window.editarFincaForm) {
+        const ubicacionInput = window.editarFincaForm.querySelector('#editUbicacion');
+        const latInput = window.editarFincaForm.querySelector('#editLat');
+        const lngInput = window.editarFincaForm.querySelector('#editLng');
+        const polygonInput = window.editarFincaForm.querySelector('#editPolygon');
+        
+        console.log('Form inputs found:', {
+            ubicacion: !!ubicacionInput,
+            lat: !!latInput,
+            lng: !!lngInput,
+            polygon: !!polygonInput
+        });
+        
+        if (ubicacionInput && direccion) {
+            ubicacionInput.value = direccion;
+            console.log('Updated ubicacion:', direccion);
+        }
+        if (latInput) {
+            latInput.value = lat || '';
+            console.log('Updated lat:', lat);
+        }
+        if (lngInput) {
+            lngInput.value = lng || '';
+            console.log('Updated lng:', lng);
+        }
+        if (polygonInput && polygon) {
+            polygonInput.value = polygon;
+            console.log('Updated polygon:', polygon);
+        }
+    }
+    
+    // Si estamos en el formulario de nueva finca, actualizar esos campos
+    const nuevaFincaForm = document.querySelector('form[action="/fincas"]');
+    if (nuevaFincaForm) {
+        const ubicacionInput = nuevaFincaForm.querySelector('#ubicacion');
+        const latInput = nuevaFincaForm.querySelector('#lat');
+        const lngInput = nuevaFincaForm.querySelector('#lng');
+        const polygonInput = nuevaFincaForm.querySelector('#polygon_geojson');
+        
+        if (ubicacionInput && direccion) {
+            ubicacionInput.value = direccion;
+        }
+        if (latInput) latInput.value = lat || '';
+        if (lngInput) lngInput.value = lng || '';
+        if (polygonInput && polygon) polygonInput.value = polygon;
+    }
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar el menú móvil inmediatamente
+    if (typeof window.initializeMobileMenu === 'function') {
+        window.initializeMobileMenu();
+    }
+
+    // Verificar y reinicializar el menú móvil después de que el DOM esté completamente cargado
+    window.addEventListener('load', function() {
+        if (typeof window.initializeMobileMenu === 'function') {
+            window.initializeMobileMenu();
+        }
+    });
+
+    // Asegurar que el botón hamburguesa funcione específicamente en esta vista
+    setTimeout(function() {
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const sidebarCollapse = document.getElementById('sidebarCollapse');
+        const sidebar = document.getElementById('sidebar');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        
+        if (mobileMenuToggle && sidebar && sidebarOverlay) {
+            // Remover cualquier event listener existente
+            mobileMenuToggle.removeEventListener('click', handleMobileMenuClick);
+            // Agregar el event listener
+            mobileMenuToggle.addEventListener('click', handleMobileMenuClick);
+        }
+        
+        if (sidebarCollapse && sidebar) {
+            // Remover cualquier event listener existente
+            sidebarCollapse.removeEventListener('click', handleSidebarCollapse);
+            // Agregar el event listener
+            sidebarCollapse.addEventListener('click', handleSidebarCollapse);
+        }
+        
+        function handleMobileMenuClick() {
+            sidebar.classList.toggle('show-mobile');
+            sidebarOverlay.classList.toggle('show');
+            document.body.style.overflow = sidebar.classList.contains('show-mobile') ? 'hidden' : '';
+        }
+        
+        function handleSidebarCollapse() {
+            sidebar.classList.toggle('active');
+            const contentDiv = document.getElementById('content');
+            contentDiv.classList.toggle('active');
+        }
+    }, 100);
+});
+
+    // Inicializar el modal de edición de finca
+    let editarFincaModal;
+    document.addEventListener('DOMContentLoaded', function() {
+        const modalElement = document.getElementById('editarFincaModal');
+        if (modalElement) {
+            editarFincaModal = new bootstrap.Modal(modalElement);
+            console.log('Modal de edición inicializado correctamente');
+        } else {
+            console.error('No se pudo encontrar el elemento del modal de edición');
+        }
+    });
+    
+    // Manejar la apertura del modal de edición
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('[data-bs-target="#editarFincaModal"]');
+        if (!btn) return;
+        
+        console.log('Botón de edición clickeado');
+        console.log('Atributos del botón:', {
+            id: btn.getAttribute('data-finca-id'),
+            nombre: btn.getAttribute('data-nombre'),
+            direccion: btn.getAttribute('data-direccion')
+            // Agrega más atributos si es necesario
+        });
+        
+        // Obtener los datos de la finca
+        const fincaId = btn.getAttribute('data-finca-id');
+        const nombre = btn.getAttribute('data-nombre');
+        const direccion = btn.getAttribute('data-direccion');
+        const extension = btn.getAttribute('data-extension');
+        const tipoProduccion = btn.getAttribute('data-tipo-produccion');
+        const propietario = btn.getAttribute('data-propietario');
+        const telefono = btn.getAttribute('data-telefono');
+        const email = btn.getAttribute('data-email');
+        const descripcion = btn.getAttribute('data-descripcion');
+        const ubicacion = btn.getAttribute('data-ubicacion');
+        const lat = btn.getAttribute('data-lat');
+        const lng = btn.getAttribute('data-lng');
+        
+        // Llenar el formulario con los datos de la finca
+        const form = document.getElementById('editarFincaForm');
+        if (!form) {
+            console.error('No se encontró el formulario con ID editarFincaForm');
+            return;
+        }
+        
+        console.log('Formulario encontrado, estableciendo acción...');
+        form.action = `/finca/editar/${fincaId}`;
+        console.log('Acción del formulario:', form.action);
+        // Verificar y llenar los campos del formulario
+        const nombreInput = form.querySelector('#editNombre');
+        const direccionInput = form.querySelector('#editDireccion');
+        
+        if (!nombreInput) console.error('No se encontró el campo editNombre');
+        if (!direccionInput) console.error('No se encontró el campo editDireccion');
+        
+        if (nombreInput) nombreInput.value = nombre || '';
+        if (direccionInput) direccionInput.value = direccion || '';
+        
+        console.log('Campos del formulario llenados:', {
+            nombre: nombreInput ? nombreInput.value : 'no encontrado',
+            direccion: direccionInput ? direccionInput.value : 'no encontrado'
+        });
+        form.querySelector('#editExtension').value = extension || '';
+        form.querySelector('#editTipoProduccion').value = tipoProduccion || '';
+        form.querySelector('#editPropietario').value = propietario || '';
+        form.querySelector('#editTelefono').value = telefono || '';
+        form.querySelector('#editEmail').value = email || '';
+        form.querySelector('#editDescripcion').value = descripcion || '';
+        form.querySelector('#editUbicacion').value = ubicacion || '';
+        form.querySelector('#editLat').value = lat || '';
+        form.querySelector('#editLng').value = lng || '';
+        
+        // Si hay un polígono, lo cargamos en el mapa cuando se abra el modal del mapa
+        const polygonData = btn.getAttribute('data-polygon');
+        if (polygonData) {
+            form.querySelector('#editPolygon').value = polygonData;
+        }
+        
+        // Guardar referencia al formulario de edición para uso posterior
+        window.editarFincaForm = form;
+        
+        // Mostrar el modal
+        if (editarFincaModal) {
+            console.log('Mostrando modal de edición...');
+            editarFincaModal.show();
+            
+            // Forzar el enfoque en el primer campo del formulario
+            const firstInput = document.querySelector('#editarFincaForm input:not([type="hidden"]), #editarFincaForm select, #editarFincaForm textarea');
+            if (firstInput) {
+                setTimeout(() => {
+                    firstInput.focus();
+                }, 500);
+            }
+        } else {
+            console.error('El modal de edición no está inicializado');
+        }
+    });
+    
+    // Manejar el envío del formulario de edición
+    const editarFincaForm = document.getElementById('editarFincaForm');
+    if (editarFincaForm) {
+        editarFincaForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(editarFincaForm);
+            const submitBtn = editarFincaForm.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            
+            // Mostrar indicador de carga
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...';
+            
+            // Enviar el formulario
+            // Log para depurar qué datos se están enviando
+            console.log('Form data being sent:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`${key}: ${value}`);
+            }
+            
+            fetch(editarFincaForm.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Error al guardar');
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Guardar los datos del formulario antes de cerrar el modal
+                    if (window.editarFincaForm) {
+                        const fincaId = window.editarFincaForm.querySelector('#editFincaId').value;
+                        const lat = window.editarFincaForm.querySelector('#editLat').value;
+                        const lng = window.editarFincaForm.querySelector('#editLng').value;
+                        const polygon = window.editarFincaForm.querySelector('#editPolygon').value;
+                        
+                        window.lastEditedFincaId = fincaId;
+                        window.lastEditedFincaData = {
+                            lat: lat,
+                            lng: lng,
+                            polygon: polygon
+                        };
+                        
+                        console.log('Saved form data for mini map update:', {
+                            fincaId: fincaId,
+                            lat: lat,
+                            lng: lng,
+                            polygon: polygon
+                        });
+                    }
+                    
+                    // Cerrar el modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('editarFincaModal'));
+                    if (modal) {
+                        modal.hide();
+                    }
+                    
+                    // Mostrar mensaje de éxito
+                    showAlert('success', 'Finca actualizada correctamente');
+                    
+                    // Actualizar el mini mapa de la finca editada directamente
+                    setTimeout(() => {
+                        actualizarMapasMiniatura();
+                    }, 500);
+                } else {
+                    throw new Error(data.message || 'Error al guardar los cambios');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('danger', error.message || 'Error al guardar los cambios');
+            })
+            .finally(() => {
+                // Restaurar el botón
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+            });
+        });
+    }
+    
+    // Función para mostrar alertas
+    function showAlert(type, message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+        alertDiv.role = 'alert';
+        alertDiv.style.zIndex = '1100';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        `;
+        document.body.appendChild(alertDiv);
+        
+        // Eliminar la alerta después de 5 segundos
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+    }
+</script>
+
+<!-- Modal Editar Finca -->
+<div class="modal fade" id="editarFincaModal" tabindex="-1" aria-labelledby="editarFincaModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="editarFincaModalLabel">
+                    <i class="fas fa-edit me-2"></i>Editar Finca
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form id="editarFincaForm" method="POST" action="">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="editNombre" name="nombre" required>
+                                <label for="editNombre">Nombre de la Finca *</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="editDireccion" name="direccion" required>
+                                <label for="editDireccion">Dirección *</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="number" step="0.01" class="form-control" id="editExtension" name="extension">
+                                <label for="editExtension">Extensión (hectáreas)</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <select class="form-select" id="editTipoProduccion" name="tipo_produccion">
+                                    <option value="">Seleccione...</option>
+                                    <option value="Ganadería">Ganadería</option>
+                                    <option value="Agricultura">Agricultura</option>
+                                    <option value="Mixto">Mixto</option>
+                                    <option value="Otro">Otro</option>
+                                </select>
+                                <label for="editTipoProduccion">Tipo de Producción</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="editPropietario" name="propietario">
+                                <label for="editPropietario">Propietario</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                <input type="tel" class="form-control" id="editTelefono" name="telefono">
+                                <label for="editTelefono">Teléfono</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-floating mb-3">
+                                <input type="email" class="form-control" id="editEmail" name="email">
+                                <label for="editEmail">Email</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-floating mb-3">
+                                <textarea class="form-control" id="editDescripcion" name="descripcion" style="height: 100px"></textarea>
+                                <label for="editDescripcion">Descripción</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" id="editUbicacion" name="ubicacion" placeholder="Ingresa la dirección o selecciona en el mapa">
+                                <label for="editUbicacion">Ubicación en el mapa</label>
+                                <div class="form-text">Puedes escribir la dirección manualmente o usar el botón para seleccionar en el mapa</div>
+                            </div>
+                            <button type="button" class="btn btn-outline-primary mb-3" data-bs-toggle="modal" data-bs-target="#mapModal">
+                                <i class="fas fa-map-marker-alt me-2"></i>Seleccionar Ubicación
+                            </button>
+                            <input type="hidden" id="editLat" name="lat">
+                            <input type="hidden" id="editLng" name="lng">
+                            <input type="hidden" id="editPolygon" name="polygon_geojson">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i> Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

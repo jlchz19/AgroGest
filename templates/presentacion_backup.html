@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroGest - Control Total de tu Finca Ganadera</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+    body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: #fafbfc;
+            color: #1a1a1a;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+        
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 50;
+            transition: all 0.3s;
+            padding: 16px 0;
+        }
+        
+        nav.scrolled {
+            background: rgba(250, 251, 252, 0.95);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        
+        nav .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #22c55e;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+        
+        .nav-links a {
+            color: #1a1a1a;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .nav-links a:hover {
+            color: #22c55e;
+        }
+        
+        .btn {
+            padding: 10px 32px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #22c55e;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #16a34a;
+        }
+        
+        .btn-secondary {
+            background: #34d399;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #10b981;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        /* Hero Section */
+        .hero {
+            position: relative;
+            height: 100vh;
+            width: 100%;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: #fafbfc;
+        }
+        
+        .hero-3d-text {
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%) perspective(1000px) rotateX(15deg);
+            font-size: 15rem;
+            font-weight: 900;
+            color: #22c55e;
+            opacity: 0.15;
+            z-index: 1;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+            animation: rotate3D 10s linear infinite;
+            transform-style: preserve-3d;
+        }
+        
+        @keyframes rotate3D {
+            0% { 
+                transform: translate(-50%, -50%) perspective(1000px) rotateX(15deg) rotateY(0deg);
+            }
+            25% { 
+                transform: translate(-50%, -50%) perspective(1000px) rotateX(15deg) rotateY(10deg);
+            }
+            50% { 
+                transform: translate(-50%, -50%) perspective(1000px) rotateX(15deg) rotateY(0deg);
+            }
+            75% { 
+                transform: translate(-50%, -50%) perspective(1000px) rotateX(15deg) rotateY(-10deg);
+            }
+            100% { 
+                transform: translate(-50%, -50%) perspective(1000px) rotateX(15deg) rotateY(0deg);
+            }
+        }
+        
+        .hero-content {
+            max-width: 56rem;
+            margin: 0 auto;
+            padding: 0 16px;
+            z-index: 10;
+            position: relative;
+        }
+        
+        .hero-content h1 {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 16px;
+            color: #1a1a1a;
+            line-height: 1.1;
+        }
+        
+        .hero-content p {
+            font-size: 1.5rem;
+            color: #6b7280;
+            margin-bottom: 32px;
+            max-width: 42rem;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .hero-actions {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 32px;
+        }
+        
+        .scroll-indicator {
+            position: absolute;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-10px); }
+        }
+        
+        /* Sections */
+        section {
+            padding: 96px 16px;
+        }
+        
+        .section-title {
+            text-align: center;
+            margin-bottom: 64px;
+        }
+        
+        .section-title h2 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+        
+        .section-title p {
+            font-size: 1.25rem;
+            color: #6b7280;
+            max-width: 48rem;
+            margin: 0 auto;
+        }
+        
+        /* Cards */
+        .cards-grid {
+            display: grid;
+            gap: 32px;
+            margin-bottom: 64px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: box-shadow 0.3s;
+        }
+        
+        .card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+        
+        .card-icon {
+            width: 64px;
+            height: 64px;
+            background: rgba(34,197,94,0.1);
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 32px;
+        }
+        
+        .card h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        
+        .card p {
+            color: #6b7280;
+        }
+        
+        /* Image Section */
+        .image-section {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            height: 400px;
+        }
+        
+        .image-section img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .image-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            display: flex;
+            align-items: flex-end;
+            padding: 32px;
+        }
+        
+        .image-overlay h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 8px;
+        }
+        
+        .image-overlay p {
+            font-size: 1.125rem;
+            color: rgba(255,255,255,0.9);
+            max-width: 32rem;
+        }
+        
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 64px;
+        }
+        
+        .feature-card {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-4px);
+        }
+        
+        .feature-icon {
+            width: 56px;
+            height: 56px;
+            background: #f3f4f6;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            font-size: 28px;
+        }
+        
+        .feature-card h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .feature-card p {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+        
+        /* Steps Grid */
+        .steps-grid {
+            display: grid;
+            gap: 32px;
+            margin-bottom: 64px;
+        }
+        
+        .step-card {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        
+        .step-number {
+            font-size: 4rem;
+            font-weight: 700;
+            color: rgba(34,197,94,0.1);
+            margin-bottom: 16px;
+        }
+        
+        .step-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(34,197,94,0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            font-size: 24px;
+        }
+        
+        .step-card h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        /* Support Section */
+        .support-card {
+            background: white;
+            border-radius: 16px;
+            padding: 48px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+        
+        .support-grid {
+            display: grid;
+            gap: 32px;
+            align-items: center;
+        }
+        
+        .support-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .support-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .support-bullet {
+            width: 24px;
+            height: 24px;
+            border-radius: 9999px;
+            background: rgba(34,197,94,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        
+        .support-bullet::after {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 9999px;
+            background: #22c55e;
+        }
+
+    /* Footer */
+        footer {
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            padding: 48px 16px;
+        }
+        
+        .footer-grid {
+            display: grid;
+            gap: 32px;
+            margin-bottom: 32px;
+        }
+        
+        .footer-links {
+            list-style: none;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .footer-links a {
+            color: #6b7280;
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: color 0.3s;
+        }
+        
+        .footer-links a:hover {
+            color: #22c55e;
+        }
+        
+        .footer-bottom {
+            border-top: 1px solid #e5e7eb;
+            padding-top: 32px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .social-links {
+            display: flex;
+            gap: 16px;
+        }
+        
+        .social-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 9999px;
+            background: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        
+        .social-icon:hover {
+            background: #22c55e;
+            color: white;
+        }
+
+    /* Responsive */
+        @media (min-width: 1024px) {
+            .cards-grid { grid-template-columns: repeat(3, 1fr); }
+            .features-grid { grid-template-columns: repeat(4, 1fr); }
+            .steps-grid { grid-template-columns: repeat(4, 1fr); }
+            .support-grid { grid-template-columns: repeat(2, 1fr); }
+            .footer-grid { grid-template-columns: repeat(4, 1fr); }
+        }
+        
+        @media (min-width: 768px) and (max-width: 1023px) {
+            .cards-grid { grid-template-columns: repeat(2, 1fr); }
+            .features-grid { grid-template-columns: repeat(2, 1fr); }
+            .steps-grid { grid-template-columns: repeat(2, 1fr); }
+            .support-grid { grid-template-columns: repeat(2, 1fr); }
+            .footer-grid { grid-template-columns: repeat(2, 1fr); }
+            .hero-3d-text { font-size: 12rem; }
+        }
+        
+        .mobile-menu-btn {
+            display: none;
+        }
+        
+        .mobile-menu {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .mobile-menu-btn { display: block; }
+            .hero-content h1 { font-size: 2rem; }
+            .hero-content p { font-size: 1.125rem; }
+            .section-title h2 { font-size: 1.875rem; }
+            .section-title p { font-size: 1rem; }
+            .features-grid { grid-template-columns: 1fr; }
+            .steps-grid { grid-template-columns: 1fr; }
+            .hero-3d-text { 
+                font-size: 6rem;
+                top: 25%;
+            }
+            section { padding: 48px 16px; }
+            .hero-actions { flex-direction: column; width: 100%; }
+            .hero-actions a, .hero-actions button { width: 100%; }
+            .support-grid { grid-template-columns: 1fr; }
+            .image-section { height: 250px; }
+        }
+        
+        @media (max-width: 480px) {
+            .hero-3d-text { font-size: 4rem; }
+            .hero-content h1 { font-size: 1.75rem; }
+            .hero-content p { font-size: 1rem; }
+            .section-title h2 { font-size: 1.5rem; }
+            section { padding: 32px 16px; }
+            .card { padding: 24px; }
+            .feature-card { padding: 20px; }
+        }
+  </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav id="navigation">
+  <div class="container">
+            <div class="logo">AgroGest</div>
+            <div class="nav-links">
+                <a href="#inicio">Inicio</a>
+                <a href="#nosotros">Quiénes Somos</a>
+                <a href="#funciones">Qué Ofrecemos</a>
+                <a href="#como-funciona">Cómo Funciona</a>
+                <a href="{{ url_for('login') }}" class="btn btn-primary">Ingresar</a>
+            </div>
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()" style="display: none; background: none; border: none; font-size: 24px; cursor: pointer;">☰</button>
+        </div>
+        <div id="mobileMenu" class="mobile-menu" style="display: none; padding: 16px; background: white; border-top: 1px solid #e5e7eb;">
+            <a href="#inicio" onclick="scrollToSection('inicio'); toggleMobileMenu();" style="display: block; padding: 12px 0; color: #1a1a1a; text-decoration: none;">Inicio</a>
+            <a href="#nosotros" onclick="scrollToSection('nosotros'); toggleMobileMenu();" style="display: block; padding: 12px 0; color: #1a1a1a; text-decoration: none;">Quiénes Somos</a>
+            <a href="#funciones" onclick="scrollToSection('funciones'); toggleMobileMenu();" style="display: block; padding: 12px 0; color: #1a1a1a; text-decoration: none;">Qué Ofrecemos</a>
+            <a href="#como-funciona" onclick="scrollToSection('como-funciona'); toggleMobileMenu();" style="display: block; padding: 12px 0; color: #1a1a1a; text-decoration: none;">Cómo Funciona</a>
+            <a href="{{ url_for('login') }}" class="btn btn-primary" style="display: block; width: 100%; text-align: center; margin-top: 12px;">Ingresar</a>
+        </div>
+      </nav>
+
+    <!-- Hero Section -->
+    <section id="inicio" class="hero">
+        <div class="hero-3d-text">AgroGest</div>
+        <div class="hero-content">
+            <h1>Control Total de tu Finca Ganadera</h1>
+            <p>Gestiona animales, empleados, inventario y producción desde una sola plataforma inteligente</p>
+        <div class="hero-actions">
+                <a href="{{ url_for('login') }}" class="btn btn-primary" style="font-size: 1.125rem; padding: 16px 32px;">
+                    Comenzar Ahora →
+                </a>
+                <button onclick="scrollToSection('funciones')" class="btn btn-secondary" style="background: #34d399; color: white; border: none; font-size: 1.125rem; padding: 16px 32px;">
+                    Ver Funciones
+                </button>
+            </div>
+        </div>
+        <div class="scroll-indicator">
+            <div style="width: 24px; height: 40px; border: 2px solid rgba(0,0,0,0.3); border-radius: 9999px; display: flex; align-items: flex-start; justify-content: center; padding: 8px;">
+                <div style="width: 6px; height: 12px; background: rgba(0,0,0,0.3); border-radius: 9999px;"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="nosotros" style="background: rgba(243,244,246,0.3);">
+        <div class="container">
+            <div class="section-title">
+                <h2>Quiénes Somos</h2>
+                <p>AgroGest es la plataforma líder en gestión ganadera digital, diseñada por expertos del campo para revolucionar la administración de fincas modernas</p>
+            </div>
+
+            <div class="cards-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+                <div class="card">
+                    <div class="card-icon">🎯</div>
+                    <h3>Nuestra Misión</h3>
+                    <p>Empoderar a ganaderos con tecnología de punta para optimizar cada aspecto de su operación</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">👥</div>
+                    <h3>Nuestro Equipo</h3>
+                    <p>Profesionales con más de 20 años de experiencia en ganadería y desarrollo tecnológico</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">⚡</div>
+                    <h3>Nuestra Visión</h3>
+                    <p>Ser la solución integral preferida por ganaderos en toda Latinoamérica</p>
+                </div>
+            </div>
+
+            <div class="image-section">
+                <img src="{{ url_for('static', filename='images/modern-cattle-farm-with-technology--aerial-view--g.jpg') }}" alt="Finca ganadera moderna">
+                <div class="image-overlay">
+                    <div>
+                        <h3>Tecnología al Servicio del Campo</h3>
+                        <p>Combinamos la tradición ganadera con innovación digital para crear la herramienta perfecta de gestión</p>
+                    </div>
+        </div>
+      </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="funciones">
+        <div class="container">
+            <div class="section-title">
+                <h2>Qué Ofrecemos</h2>
+                <p>Una suite completa de herramientas diseñadas para llevar tu finca al siguiente nivel</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🐄</div>
+                    <h3>Control de Animales</h3>
+                    <p>Registro completo de cada animal: historial médico, genealogía, peso y desarrollo</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">👨‍🌾</div>
+                    <h3>Gestión de Empleados</h3>
+                    <p>Administra turnos, tareas y rendimiento de tu equipo de trabajo</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💉</div>
+                    <h3>Control de Vacunas</h3>
+                    <p>Calendario automático de vacunación y tratamientos veterinarios</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📹</div>
+                    <h3>Monitoreo con Cámaras</h3>
+                    <p>Vigilancia en tiempo real de tus instalaciones desde cualquier lugar</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📦</div>
+                    <h3>Control de Inventario</h3>
+                    <p>Gestiona alimentos, medicamentos y suministros con alertas de stock</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📈</div>
+                    <h3>Análisis de Producción</h3>
+                    <p>Reportes detallados de leche, carne y otros productos de tu finca</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔔</div>
+                    <h3>Sistema de Alertas</h3>
+                    <p>Notificaciones inteligentes para eventos críticos y recordatorios</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📍</div>
+                    <h3>Ubicación GPS</h3>
+                    <p>Rastreo en tiempo real de animales con tecnología de geolocalización</p>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 32px;">
+                <div style="border-radius: 16px; overflow: hidden; height: 300px;">
+                    <img src="{{ url_for('static', filename='images/cattle-with-gps-tracking-collar-in-green-pasture--.jpg') }}" alt="Ganado con GPS" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+                <div style="border-radius: 16px; overflow: hidden; height: 300px;">
+                    <img src="{{ url_for('static', filename='images/farmer-using-tablet-in-modern-cattle-farm--digital.jpg') }}" alt="Ganadero con tecnología" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+            </div>
+      </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="como-funciona" style="background: rgba(243,244,246,0.3);">
+        <div class="container">
+            <div class="section-title">
+                <h2>Cómo Funciona</h2>
+                <p>Implementar AgroGest en tu finca es simple y rápido. Sigue estos pasos para comenzar</p>
+            </div>
+
+            <div class="steps-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+                <div class="step-card">
+                    <div class="step-number">01</div>
+                    <div class="step-icon">📥</div>
+                    <h3>Regístrate</h3>
+                    <p style="color: #6b7280;">Crea tu cuenta en minutos y configura tu perfil de finca</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">02</div>
+                    <div class="step-icon">⚙️</div>
+                    <h3>Configura</h3>
+                    <p style="color: #6b7280;">Ingresa la información de tus animales, empleados e inventario</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">03</div>
+                    <div class="step-icon">🚀</div>
+                    <h3>Comienza</h3>
+                    <p style="color: #6b7280;">Empieza a gestionar tu finca desde cualquier dispositivo</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">04</div>
+                    <div class="step-icon">📊</div>
+                    <h3>Optimiza</h3>
+                    <p style="color: #6b7280;">Analiza datos y toma decisiones informadas para mejorar tu producción</p>
+                </div>
+            </div>
+
+            <div class="support-card">
+                <div class="support-grid">
+                    <div>
+                        <h3 style="font-size: 2rem; font-weight: 700; margin-bottom: 16px;">Soporte Técnico 24/7</h3>
+                        <p style="color: #6b7280; margin-bottom: 24px;">
+                            Nuestro equipo de expertos está disponible en todo momento para ayudarte con cualquier duda o problema.
+                            Incluye capacitación completa para ti y tu equipo.
+                        </p>
+                        <ul class="support-list">
+                            <li>
+                                <div class="support-bullet"></div>
+                                <span>Asistencia técnica por chat, email y teléfono</span>
+                            </li>
+                            <li>
+                                <div class="support-bullet"></div>
+                                <span>Capacitación personalizada para tu equipo</span>
+                            </li>
+                            <li>
+                                <div class="support-bullet"></div>
+                                <span>Actualizaciones constantes sin costo adicional</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div style="border-radius: 12px; overflow: hidden; height: 300px;">
+                        <img src="{{ url_for('static', filename='images/customer-support-team-helping-farmer-with-tablet--.jpg') }}" alt="Soporte técnico" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contacto">
+        <div class="container">
+            <div class="section-title">
+                <h2>Contáctanos</h2>
+                <p>¿Listo para transformar tu finca? Escríbenos y te ayudaremos a comenzar</p>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 32px;">
+                <div>
+                    <div class="card" style="text-align: left;">
+                        <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 24px;">Envíanos un mensaje</h3>
+                        <form onsubmit="handleSubmit(event)" style="display: flex; flex-direction: column; gap: 16px;">
+                            <div>
+                                <label style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 8px;">Nombre completo</label>
+                                <input type="text" name="name" required style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px;" placeholder="Juan Pérez">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 8px;">Email</label>
+                                <input type="email" name="email" required style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px;" placeholder="juan@ejemplo.com">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 8px;">Teléfono</label>
+                                <input type="tel" name="phone" required style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px;" placeholder="+57 300 123 4567">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 8px;">Mensaje</label>
+                                <textarea name="message" required rows="4" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 16px; resize: vertical;" placeholder="Cuéntanos sobre tu finca y cómo podemos ayudarte..."></textarea>
+                            </div>
+                            <button type="submit" style="background: #22c55e; color: white; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; border: none;">Enviar Mensaje</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 24px;">
+                    <div class="card" style="text-align: left;">
+                        <div style="display: flex; align-items: flex-start; gap: 16px;">
+                            <div style="width: 48px; height: 48px; background: rgba(34,197,94,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 24px;">📧</div>
+                            <div>
+                                <h4 style="font-weight: 700; margin-bottom: 4px;">Email</h4>
+                                <p style="color: #6b7280;">contacto@agrogest.com</p>
+                                <p style="color: #6b7280;">soporte@agrogest.com</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card" style="text-align: left;">
+                        <div style="display: flex; align-items: flex-start; gap: 16px;">
+                            <div style="width: 48px; height: 48px; background: rgba(34,197,94,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 24px;">📞</div>
+                            <div>
+                                <h4 style="font-weight: 700; margin-bottom: 4px;">Teléfono</h4>
+                                <p style="color: #6b7280;">+57 (1) 234 5678</p>
+                                <p style="color: #6b7280;">WhatsApp: +57 300 123 4567</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card" style="text-align: left;">
+                        <div style="display: flex; align-items: flex-start; gap: 16px;">
+                            <div style="width: 48px; height: 48px; background: rgba(34,197,94,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 24px;">📍</div>
+      <div>
+                                <h4 style="font-weight: 700; margin-bottom: 4px;">Oficina</h4>
+                                <p style="color: #6b7280;">
+                                    Calle 123 #45-67, Edificio AgroTech<br>
+                                    Bogotá, Colombia
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="border-radius: 12px; overflow: hidden; height: 200px;">
+                        <img src="{{ url_for('static', filename='images/modern-office-building-with-green-surroundings--ag.jpg') }}" alt="Oficinas" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                </div>
+            </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div>
+                    <h3 style="font-size: 1.5rem; font-weight: 700; color: #22c55e; margin-bottom: 16px;">AgroGest</h3>
+                    <p style="color: #6b7280; font-size: 0.875rem;">La plataforma líder en gestión ganadera digital para fincas modernas</p>
+                </div>
+                <div>
+                    <h4 style="font-weight: 700; margin-bottom: 16px;">Producto</h4>
+                    <ul class="footer-links">
+                        <li><a href="#funciones">Funciones</a></li>
+                        <li><a href="#">Precios</a></li>
+                        <li><a href="#">Demo</a></li>
+                        <li><a href="#">Actualizaciones</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 style="font-weight: 700; margin-bottom: 16px;">Empresa</h4>
+                    <ul class="footer-links">
+                        <li><a href="#nosotros">Quiénes Somos</a></li>
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#">Carreras</a></li>
+                        <li><a href="#contacto">Contacto</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 style="font-weight: 700; margin-bottom: 16px;">Legal</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">Privacidad</a></li>
+                        <li><a href="#">Términos</a></li>
+                        <li><a href="#">Cookies</a></li>
+                        <li><a href="#">Licencias</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p style="font-size: 0.875rem; color: #6b7280;">© 2025 AgroGest. Todos los derechos reservados.</p>
+                <div class="social-links">
+                    <a href="#" class="social-icon">🔵</a>
+                    <a href="#" class="social-icon">📷</a>
+                    <a href="#" class="social-icon">🐦</a>
+                    <a href="#" class="social-icon">💼</a>
+                </div>
+            </div>
+  </div>
+    </footer>
+
+    <script>
+        function scrollToSection(id) {
+            const element = document.getElementById(id);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+        
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobileMenu');
+            if (menu.style.display === 'none') {
+                menu.style.display = 'block';
+            } else {
+                menu.style.display = 'none';
+            }
+        }
+
+        function handleSubmit(event) {
+            event.preventDefault();
+            alert('¡Gracias por contactarnos! Te responderemos pronto.');
+            event.target.reset();
+        }
+
+        // Navigation scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('navigation');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+    </script>
+</body>
+</html>

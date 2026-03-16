@@ -1,0 +1,518 @@
+// Dashboard functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize progress bars
+    const progressBars = document.querySelectorAll('.progress-bar[data-width]');
+    progressBars.forEach(bar => {
+        const width = bar.getAttribute('data-width');
+        bar.style.width = `${width}%`;
+    });
+
+    // Initialize charts
+    initializeCharts();
+
+    // Solución para eliminar backdrops persistentes y restaurar interactividad
+    document.addEventListener('hidden.bs.modal', function() {
+        // Eliminar todos los backdrops persistentes
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(backdrop => backdrop.remove());
+        
+        // Restaurar el scroll del body
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+    });
+
+    // Event listeners for summary cards
+    const cardAnimales = document.getElementById('cardAnimales');
+    const cardPotreros = document.getElementById('cardPotreros');
+    const cardEmpleados = document.getElementById('cardEmpleados');
+    const cardInventario = document.getElementById('cardInventario');
+
+    if (cardAnimales) cardAnimales.addEventListener('click', showAnimalesResumen);
+    if (cardPotreros) cardPotreros.addEventListener('click', showPotrerosResumen);
+    if (cardEmpleados) cardEmpleados.addEventListener('click', showEmpleadosResumen);
+    if (cardInventario) cardInventario.addEventListener('click', showInventarioResumen);
+});
+
+// Helper para colores
+function getChartColors() {
+    return {
+        primary: 'rgba(54, 162, 235, 0.6)',
+        success: 'rgba(75, 192, 192, 0.6)',
+        warning: 'rgba(255, 206, 86, 0.6)',
+        info: 'rgba(153, 102, 255, 0.6)',
+        danger: 'rgba(255, 99, 132, 0.6)',
+        blue: '#36A2EB',
+        green: '#4BC0C0',
+        yellow: '#FFCE56',
+        purple: '#9966FF',
+        red: '#FF6384',
+        orange: '#FF9F40'
+    };
+}
+
+// Inicializar gráficos
+function initializeCharts() {
+    const colors = getChartColors();
+    
+    // Gráfico de fincas (si existe el elemento)
+    const fincaCtx = document.getElementById('finca-chart');
+    if (fincaCtx) {
+        try {
+            const fincaLabels = JSON.parse(fincaCtx.dataset.labels || '[]');
+            const fincaData = JSON.parse(fincaCtx.dataset.values || '[]');
+            
+            new Chart(fincaCtx, {
+                type: 'bar',
+                data: {
+                    labels: fincaLabels,
+                    datasets: [{
+                        label: 'Nº de Animales',
+                        data: fincaData,
+                        backgroundColor: [
+                            colors.primary, 
+                            colors.success, 
+                            colors.warning, 
+                            colors.info, 
+                            colors.danger, 
+                            colors.orange
+                        ],
+                        borderColor: 'rgba(255, 255, 255, 0)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false } 
+                    },
+                    scales: { 
+                        y: { 
+                            beginAtZero: true 
+                        } 
+                    }
+                }
+            });
+        } catch (error) {
+            console.error('Error al cargar gráfico de fincas:', error);
+        }
+    }
+}
+
+// Funciones de resumen
+async function showAnimalesResumen() {
+    const modal = new bootstrap.Modal(document.getElementById('animalesModal'));
+    const content = document.getElementById('animalesContent');
+    
+    if (!content) return;
+    
+    content.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div><p class="mt-2">Cargando datos de animales...</p></div>';
+    modal.show();
+    
+    try {
+        const response = await fetch('/api/resumen/animales');
+        
+        if (!response.ok) throw new Error('Error en la respuesta del servidor');
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            content.innerHTML = `
+                <div class="alert alert-warning m-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ${data.error}
+                </div>`;
+            return;
+        }
+        
+        // Build a small resumen header: total animals and top type
+        const tiposUnicos = data.tipos_unicos && data.tipos_unicos.length ? data.tipos_unicos.join(', ') : '—';
+        const topTipo = data.top_tipo || '—';
+
+        content.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">Resumen de Animales</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-6">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <h2 class="mb-1 text-primary">${data.total || 0}</h2>
+                            <p class="text-muted mb-0">Total Animales (incluye inactivos)</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-6">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <h6 class="mb-1">Tipo más frecuente</h6>
+                            <div class="small text-muted mb-2">${topTipo}</div>
+                            <h6 class="mb-0">Tipos registrados</h6>
+                            <div class="small text-muted">${tiposUnicos}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <h6 class="mb-3">Distribución por Tipo</h6>
+            <div class="list-group">
+                ${(data.por_tipo && data.por_tipo.length > 0) ? 
+                    data.por_tipo.map(item => `
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-cow me-2 text-primary"></i>
+                                <span>${item.tipo || 'Sin especificar'}</span>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">${item.cantidad || 0}</span>
+                        </div>
+                    `).join('')
+                    : '<div class="alert alert-info mb-0">No hay datos disponibles</div>'
+                }
+            </div>`;
+    } catch (error) {
+        console.error('Error al cargar datos de animales:', error);
+        content.innerHTML = `
+            <div class="alert alert-danger m-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                ${error.name === 'AbortError' ? 'Tiempo de espera agotado.' : 'Error al cargar los datos.'}
+            </div>
+            <div class="text-center mt-3">
+                <button class="btn btn-primary btn-sm" onclick="showAnimalesResumen()">
+                    <i class="fas fa-sync-alt me-1"></i> Reintentar
+                </button>
+            </div>`;
+    }
+}
+
+async function showPotrerosResumen() {
+    const modal = new bootstrap.Modal(document.getElementById('potrerosModal'));
+    const content = document.getElementById('potrerosContent');
+    
+    if (!content) return;
+    
+    content.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div><p class="mt-2">Cargando datos de potreros...</p></div>';
+    modal.show();
+    
+    try {
+        const response = await fetch('/api/resumen/potreros');
+        
+        if (!response.ok) throw new Error('Error en la respuesta del servidor');
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            content.innerHTML = `
+                <div class="alert alert-warning m-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ${data.error}
+                </div>`;
+            return;
+        }
+        
+        content.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">Resumen de Potreros</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="row g-3 mb-4">
+                <div class="col-6">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <h2 class="mb-1 text-primary">${data.total_potreros || 0}</h2>
+                            <p class="text-muted mb-0">Total Potreros</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body text-center">
+                            <h2 class="mb-1 text-success">${data.total_animales || 0}</h2>
+                            <p class="text-muted mb-0">Animales en Potreros</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <h6 class="mb-3">Estado de los Potreros</h6>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Potrero</th>
+                            <th class="text-center">Capacidad</th>
+                            <th class="text-center">Uso</th>
+                            <th class="text-center">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${(data.potreros && data.potreros.length > 0) ? 
+                            data.potreros.map(potrero => `
+                                <tr>
+                                    <td>
+                                        <strong>${potrero.nombre || 'Sin nombre'}</strong>
+                                        <div class="small text-muted">${potrero.tipo_pasto || 'Sin tipo'}</div>
+                                    </td>
+                                    <td class="text-center">${potrero.capacidad || 0}</td>
+                                    <td class="text-center">
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar ${potrero.porcentaje_uso > 80 ? 'bg-danger' : potrero.porcentaje_uso > 50 ? 'bg-warning' : 'bg-success'}" 
+                                                 role="progressbar" 
+                                                 style="width: ${Math.min(potrero.porcentaje_uso || 0, 100)}%" 
+                                                 aria-valuenow="${potrero.porcentaje_uso || 0}" 
+                                                 aria-valuemin="0" 
+                                                 aria-valuemax="100">
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">${potrero.animales_actuales || 0} / ${potrero.capacidad || 0}</small>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge ${potrero.estado === 'disponible' ? 'bg-success' : 'bg-secondary'}">
+                                            ${potrero.estado || 'Desconocido'}
+                                        </span>
+                                    </td>
+                                </tr>
+                            `).join('')
+                            : '<tr><td colspan="4" class="text-center py-3">No hay potreros registrados</td></tr>'
+                        }
+                    </tbody>
+                </table>
+            </div>`;
+    } catch (error) {
+        console.error('Error al cargar datos de potreros:', error);
+        content.innerHTML = `
+            <div class="alert alert-danger m-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Error al cargar los datos de potreros.
+            </div>
+            <div class="text-center mt-3">
+                <button class="btn btn-primary btn-sm" onclick="showPotrerosResumen()">
+                    <i class="fas fa-sync-alt me-1"></i> Reintentar
+                </button>
+            </div>`;
+    }
+}
+
+async function showEmpleadosResumen() {
+    const modal = new bootstrap.Modal(document.getElementById('empleadosModal'));
+    const content = document.getElementById('empleadosContent');
+    
+    if (!content) return;
+    
+    content.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div><p class="mt-2">Cargando datos de empleados...</p></div>';
+    modal.show();
+    
+    try {
+        const response = await fetch('/api/resumen/empleados');
+        
+        if (!response.ok) throw new Error('Error en la respuesta del servidor');
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            content.innerHTML = `
+                <div class="alert alert-warning m-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ${data.error}
+                </div>`;
+            return;
+        }
+        
+        content.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">Resumen de Empleados</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-body text-center">
+                            <h2 class="mb-1 text-primary">${data.total_empleados || 0}</h2>
+                            <p class="text-muted mb-0">Total Empleados Activos</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <h6 class="mb-3">Distribución por Cargo</h6>
+                    <div class="list-group">
+                        ${(data.por_cargo && data.por_cargo.length > 0) ? 
+                            data.por_cargo.map(item => `
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span>${item.cargo || 'Sin especificar'}</span>
+                                    <span class="badge bg-primary rounded-pill">${item.cantidad || 0}</span>
+                                </div>
+                            `).join('')
+                            : '<div class="alert alert-info mb-0">No hay datos de cargos</div>'
+                        }
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="mb-3">Últimos Empleados</h6>
+                    <div class="list-group">
+                        ${(data.empleados_recientes && data.empleados_recientes.length > 0) ? 
+                            data.empleados_recientes.map(emp => `
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">${emp.nombre || 'Sin nombre'}</h6>
+                                        <small>${emp.fecha_ingreso || ''}</small>
+                                    </div>
+                                    <p class="mb-1 text-muted small">${emp.cargo || 'Sin cargo'}</p>
+                                </div>
+                            `).join('')
+                            : '<div class="alert alert-info mb-0">No hay empleados recientes</div>'
+                        }
+                    </div>
+                </div>
+            </div>`;
+    } catch (error) {
+        console.error('Error al cargar datos de empleados:', error);
+        content.innerHTML = `
+            <div class="alert alert-danger m-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Error al cargar los datos de empleados.
+            </div>
+            <div class="text-center mt-3">
+                <button class="btn btn-primary btn-sm" onclick="showEmpleadosResumen()">
+                    <i class="fas fa-sync-alt me-1"></i> Reintentar
+                </button>
+            </div>`;
+    }
+}
+
+async function showInventarioResumen() {
+    const modal = new bootstrap.Modal(document.getElementById('inventarioModal'));
+    const content = document.getElementById('inventarioContent');
+    
+    if (!content) return;
+    
+    content.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div><p class="mt-2">Cargando datos de inventario...</p></div>';
+    modal.show();
+    
+    try {
+        const response = await fetch('/api/resumen/inventario');
+        
+        if (!response.ok) throw new Error('Error en la respuesta del servidor');
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            content.innerHTML = `
+                <div class="alert alert-warning m-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ${data.error}
+                </div>`;
+            return;
+        }
+        
+        content.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">Resumen de Inventario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center">
+                            <h2 class="mb-1 text-primary">${data.total_items || 0}</h2>
+                            <p class="text-muted mb-0">Total de Productos</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center">
+                            <h2 class="mb-1 text-success">$${data.valor_total ? data.valor_total.toLocaleString() : '0'}</h2>
+                            <p class="text-muted mb-0">Valor Total</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <h6 class="mb-3">Por Categoría</h6>
+                    <div class="list-group">
+                        ${(data.por_categoria && data.por_categoria.length > 0) ? 
+                            data.por_categoria.map(cat => `
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">${cat.categoria || 'Sin categoría'}</h6>
+                                        <span class="badge bg-primary rounded-pill">${cat.total_items || 0}</span>
+                                    </div>
+                                    <p class="mb-0 text-muted small">Valor: $${cat.valor_total ? cat.valor_total.toLocaleString() : '0'}</p>
+                                </div>
+                            `).join('')
+                            : '<div class="alert alert-info mb-0">No hay categorías disponibles</div>'
+                        }
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="mb-3">Productos con Stock Bajo</h6>
+                    <div class="list-group">
+                        ${(data.productos_bajos && data.productos_bajos.length > 0) ? 
+                            data.productos_bajos.map(prod => `
+                                <div class="list-group-item list-group-item-warning">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">${prod.producto || 'Sin nombre'}</h6>
+                                        <span class="text-danger">${prod.cantidad || 0} ${prod.unidad || 'un'}</span>
+                                    </div>
+                                    <p class="mb-0 small">Mínimo recomendado: ${prod.minimo_recomendado || 'N/A'}</p>
+                                </div>
+                            `).join('')
+                            : '<div class="alert alert-success mb-0">No hay productos con stock bajo</div>'
+                        }
+                    </div>
+                </div>
+            </div>`;
+    } catch (error) {
+        console.error('Error al cargar datos de inventario:', error);
+        content.innerHTML = `
+            <div class="alert alert-danger m-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Error al cargar los datos de inventario.
+            </div>
+            <div class="text-center mt-3">
+                <button class="btn btn-primary btn-sm" onclick="showInventarioResumen()">
+                    <i class="fas fa-sync-alt me-1"></i> Reintentar
+                </button>
+            </div>`;
+    }
+}
+
+// Inicializar tooltips y popovers cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Inicializar popovers
+    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+    var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
+        return new bootstrap.Popover(popoverTriggerEl);
+    });
+    
+    // Cerrar modales cuando se hace clic fuera de ellos
+    var modals = document.querySelectorAll('.modal');
+    modals.forEach(function(modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                var modalInstance = bootstrap.Modal.getInstance(modal);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+            }
+        });
+        
+        // Solucionar problema de modales bloqueados
+        modal.addEventListener('hidden.bs.modal', function () {
+            // Eliminar cualquier backdrop persistente
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            backdrops.forEach(backdrop => backdrop.remove());
+            
+            // Restaurar scroll del body
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        });
+    });
+});

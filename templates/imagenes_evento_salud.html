@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block title %}Imágenes del Evento de Salud - AgroGest{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="fas fa-images me-2"></i>Imágenes del Evento de Salud</h2>
+                <a href="{{ url_for('eventos_salud') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver a Eventos
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información del Evento -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-heartbeat me-2"></i>Información del Evento</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <p><strong>Animal:</strong><br>
+                                <a href="{{ url_for('historial_animal', animal_id=evento.animal.id) }}" class="text-decoration-none">
+                                    {{ evento.animal.identificacion }} - {{ evento.animal.nombre or 'Sin nombre' }}
+                                </a>
+                            </p>
+                        </div>
+                        <div class="col-md-3">
+                            <p><strong>Tipo:</strong><br>
+                                <span class="badge bg-{{ 
+                                    'danger' if evento.tipo_evento == 'enfermedad' else
+                                    'success' if evento.tipo_evento == 'parto' else
+                                    'info' if evento.tipo_evento == 'vacunacion' else
+                                    'warning' if evento.tipo_evento == 'desparasitacion' else
+                                    'secondary'
+                                }}">
+                                    {{ evento.tipo_evento.title() }}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-3">
+                            <p><strong>Fecha:</strong><br>
+                                {{ evento.fecha_evento.strftime('%d/%m/%Y') }}
+                                {% if evento.hora_evento %}a las {{ evento.hora_evento.strftime('%H:%M') }}{% endif %}
+                            </p>
+                        </div>
+                        <div class="col-md-3">
+                            <p><strong>Estado:</strong><br>
+                                <span class="badge bg-{{ 
+                                    'warning' if evento.estado == 'pendiente' else
+                                    'info' if evento.estado == 'en_progreso' else
+                                    'success' if evento.estado == 'completado' else
+                                    'danger'
+                                }}">
+                                    {{ evento.estado.title() }}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <p><strong>Título:</strong> {{ evento.titulo }}</p>
+                            <p><strong>Descripción:</strong> {{ evento.descripcion }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Subir Imagen -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-upload me-2"></i>Subir Nueva Imagen</h5>
+                </div>
+                <div class="card-body">
+                    <form id="uploadForm" enctype="multipart/form-data">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="imagen" class="form-label">Seleccionar Imagen</label>
+                                    <input type="file" class="form-control" id="imagen" name="imagen" accept="image/*" required>
+                                    <small class="text-muted">Formatos permitidos: PNG, JPG, JPEG, GIF, WebP</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="descripcion" class="form-label">Descripción (opcional)</label>
+                                    <textarea class="form-control" id="descripcion" name="descripcion" rows="3" placeholder="Describe la imagen..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-upload me-2"></i>Subir Imagen
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Galería de Imágenes -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-images me-2"></i>Galería de Imágenes ({{ imagenes|length }})</h5>
+                </div>
+                <div class="card-body">
+                    {% if imagenes %}
+                    <div class="row" id="galeriaImagenes">
+                        {% for imagen in imagenes %}
+                        <div class="col-md-4 col-lg-3 mb-4" id="imagen-{{ imagen.id }}">
+                            <div class="card h-100">
+                                <div class="position-relative">
+                                    <img src="{{ url_for('static', filename=imagen.ruta_archivo) }}" 
+                                         class="card-img-top" alt="{{ imagen.nombre_archivo }}" 
+                                         style="height: 200px; object-fit: cover; cursor: pointer;"
+                                         onclick="verImagen('{{ url_for('static', filename=imagen.ruta_archivo) }}', '{{ imagen.nombre_archivo }}', '{{ imagen.descripcion }}')">
+                                    <div class="position-absolute top-0 end-0 p-2">
+                                        <span class="badge bg-dark">{{ imagen.fecha_subida.strftime('%d/%m/%Y') }}</span>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ imagen.nombre_archivo }}</h6>
+                                    {% if imagen.descripcion %}
+                                    <p class="card-text small text-muted">{{ imagen.descripcion }}</p>
+                                    {% endif %}
+                                    <p class="card-text small">
+                                        <i class="fas fa-user me-1"></i>{{ imagen.usuario_registro or 'Sistema' }}
+                                    </p>
+                                    <div class="btn-group btn-group-sm w-100">
+                                        <a href="{{ url_for('descargar_imagen_evento_salud', imagen_id=imagen.id) }}" class="btn btn-outline-primary" title="Descargar">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                        <button class="btn btn-outline-danger" onclick="eliminarImagen({{ imagen.id }})" title="Eliminar">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-images fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">No hay imágenes registradas</h5>
+                        <p class="text-muted">Comienza subiendo imágenes para este evento de salud.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para ver imagen -->
+<div class="modal fade" id="modalImagen" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalImagenTitle">Vista de Imagen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modalImagenSrc" src="" alt="" class="img-fluid" style="max-height: 500px;">
+                <p id="modalImagenDescripcion" class="mt-3"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Subir imagen con AJAX
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Subiendo...';
+    
+    fetch(`/eventos_salud/{{ evento.id }}/imagenes/subir`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Agregar nueva imagen a la galería
+            agregarImagenAGaleria(data.imagen);
+            
+            // Resetear formulario
+            this.reset();
+            
+            // Mostrar mensaje de éxito
+            alert('Imagen subida exitosamente');
+        } else {
+            // Mostrar error específico
+            console.error('Error del servidor:', data.error);
+            alert('Error al subir la imagen: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error de red:', error);
+        alert('Error de conexión al subir la imagen. Por favor, intenta nuevamente.');
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    });
+});
+
+// Agregar imagen a la galería dinámicamente
+function agregarImagenAGaleria(imagen) {
+    const galeria = document.getElementById('galeriaImagenes');
+    
+    const imagenCard = document.createElement('div');
+    imagenCard.className = 'col-md-4 col-lg-3 mb-4';
+    imagenCard.id = 'imagen-' + imagen.id;
+    
+    imagenCard.innerHTML = `
+        <div class="card h-100">
+            <div class="position-relative">
+                <img src="${imagen.ruta}" class="card-img-top" alt="${imagen.nombre}" 
+                     style="height: 200px; object-fit: cover; cursor: pointer;"
+                     onclick="verImagen('${imagen.ruta}', '${imagen.nombre}', '${imagen.descripcion || ''}')">
+                <div class="position-absolute top-0 end-0 p-2">
+                    <span class="badge bg-dark">${imagen.fecha}</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <h6 class="card-title">${imagen.nombre}</h6>
+                <p class="card-text small text-muted">${imagen.descripcion || ''}</p>
+                <div class="btn-group btn-group-sm w-100">
+                    <a href="/eventos_salud/imagenes/${imagen.id}/descargar" class="btn btn-outline-primary" title="Descargar">
+                        <i class="fas fa-download"></i>
+                    </a>
+                    <button class="btn btn-outline-danger" onclick="eliminarImagen(${imagen.id})" title="Eliminar">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    galeria.insertBefore(imagenCard, galeria.firstChild);
+}
+
+// Ver imagen en modal
+function verImagen(src, titulo, descripcion) {
+    document.getElementById('modalImagenSrc').src = src;
+    document.getElementById('modalImagenTitle').textContent = titulo;
+    document.getElementById('modalImagenDescripcion').textContent = descripcion || '';
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalImagen'));
+    modal.show();
+}
+
+// Eliminar imagen
+function eliminarImagen(imagenId) {
+    if (confirm('¿Está seguro de eliminar esta imagen?')) {
+        fetch(`/eventos_salud/imagenes/${imagenId}/eliminar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Eliminar imagen de la galería
+                const imagenCard = document.getElementById(`imagen-${imagenId}`);
+                if (imagenCard) {
+                    imagenCard.remove();
+                }
+                alert('Imagen eliminada exitosamente');
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al eliminar la imagen');
+        });
+    }
+}
+</script>
+{% endblock %}

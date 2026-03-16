@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Ubicación - AgroGest{% endblock %}
+{% block page_title %}Editar Ubicación{% endblock %}
+
+{% block page_actions %}
+<a href="{{ url_for('potreros') }}" class="btn btn-secondary">
+    <i class="fas fa-arrow-left me-2"></i>Volver
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-edit me-2"></i>Editar Ubicación: {{ ubicacion.nombre }}
+            </div>
+            <div class="card-body">
+                <form method="POST" class="needs-validation" novalidate enctype="multipart/form-data">
+                    <input type="hidden" name="_method" value="PUT">
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="nombre" name="nombre" 
+                                       value="{{ ubicacion.nombre }}" required>
+                                <label for="nombre">Nombre de la Ubicación *</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="tipo_ubicacion" name="tipo_ubicacion" required>
+                                    <option value="cochiquera" {% if ubicacion.tipo_ubicacion == 'cochiquera' %}selected{% endif %}>Cochiquera</option>
+                                    <option value="gallinero" {% if ubicacion.tipo_ubicacion == 'gallinero' %}selected{% endif %}>Gallinero</option>
+                                    <option value="establo" {% if ubicacion.tipo_ubicacion == 'establo' %}selected{% endif %}>Establo</option>
+                                    <option value="corral" {% if ubicacion.tipo_ubicacion == 'corral' %}selected{% endif %}>Corral</option>
+                                    <option value="aprisco" {% if ubicacion.tipo_ubicacion == 'aprisco' %}selected{% endif %}>Aprisco (Ovejas)</option>
+                                    <option value="caballeriza" {% if ubicacion.tipo_ubicacion == 'caballeriza' %}selected{% endif %}>Caballeriza</option>
+                                    <option value="conejera" {% if ubicacion.tipo_ubicacion == 'conejera' %}selected{% endif %}>Conejera</option>
+                                </select>
+                                <label for="tipo_ubicacion">Tipo de Ubicación *</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="tipo_animal" name="tipo_animal" required>
+                                    <option value="Porcino" {% if ubicacion.tipo_animal == 'Porcino' %}selected{% endif %}>Porcino (Cerdos)</option>
+                                    <option value="Aviar" {% if ubicacion.tipo_animal == 'Aviar' %}selected{% endif %}>Aviar (Gallinas, Pollos)</option>
+                                    <option value="Equino" {% if ubicacion.tipo_animal == 'Equino' %}selected{% endif %}>Equino (Caballos, Yeguas)</option>
+                                    <option value="Ovino" {% if ubicacion.tipo_animal == 'Ovino' %}selected{% endif %}>Ovino (Ovejas)</option>
+                                    <option value="Caprino" {% if ubicacion.tipo_animal == 'Caprino' %}selected{% endif %}>Caprino (Cabras)</option>
+                                    <option value="Cunícola" {% if ubicacion.tipo_animal == 'Cunícola' %}selected{% endif %}>Cunícola (Conejos)</option>
+                                </select>
+                                <label for="tipo_animal">Tipo de Animal *</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="number" class="form-control" id="capacidad" name="capacidad" 
+                                       min="1" value="{{ ubicacion.capacidad }}" required>
+                                <label for="capacidad">Capacidad (Número de Animales) *</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="number" step="0.1" class="form-control" id="area" 
+                                       name="area" value="{{ ubicacion.area }}">
+                                <label for="area">Área (m²)</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="estado" name="estado">
+                                    <option value="disponible" {% if ubicacion.estado == 'disponible' %}selected{% endif %}>Disponible</option>
+                                    <option value="ocupado" {% if ubicacion.estado == 'ocupado' %}selected{% endif %}>Ocupado</option>
+                                    <option value="mantenimiento" {% if ubicacion.estado == 'mantenimiento' %}selected{% endif %}>En Mantenimiento</option>
+                                </select>
+                                <label for="estado">Estado</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <textarea class="form-control" id="descripcion" name="descripcion" 
+                                          style="height: 100px">{{ ubicacion.descripcion or '' }}</textarea>
+                                <label for="descripcion">Descripción</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="mb-3">
+                                <label for="imagen" class="form-label">Imagen de la Ubicación</label>
+                                <input class="form-control" type="file" id="imagen" name="imagen" accept="image/*">
+                                {% if ubicacion.imagen %}
+                                    <div class="mt-2">
+                                        <img src="{{ url_for('static', filename='imagenes_ubicaciones/' + ubicacion.imagen) }}" 
+                                             alt="Imagen actual" style="max-height: 150px; max-width: 100%;" class="img-thumbnail mt-2">
+                                        <div class="form-check mt-2">
+                                            <input class="form-check-input" type="checkbox" id="eliminar_imagen" name="eliminar_imagen">
+                                            <label class="form-check-label" for="eliminar_imagen">
+                                                Eliminar imagen actual
+                                            </label>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="fas fa-trash-alt me-2"></i>Eliminar
+                        </button>
+                        <div>
+                            <a href="{{ url_for('potreros') }}" class="btn btn-secondary me-2">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Guardar Cambios
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación de Eliminación -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro que deseas eliminar la ubicación <strong>{{ ubicacion.nombre }}</strong>?</p>
+                <p class="text-danger mb-0">
+                    <i class="fas fa-exclamation-circle me-1"></i>
+                    Esta acción no se puede deshacer y se eliminarán todos los datos asociados.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form action="{{ url_for('eliminar_ubicacion', id=ubicacion.id) }}" method="POST" style="display: inline;">
+                    <input type="hidden" name="_method" value="DELETE">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt me-1"></i> Eliminar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+// Inicializar validación de formulario
+(function () {
+    'use strict'
+    var forms = document.querySelectorAll('.needs-validation')
+    Array.prototype.slice.call(forms)
+        .forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+})();
+
+// Mostrar vista previa de la imagen
+document.getElementById('imagen').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('imagen-preview');
+            if (!preview) {
+                const previewDiv = document.createElement('div');
+                previewDiv.id = 'imagen-preview';
+                previewDiv.className = 'mt-2';
+                previewDiv.innerHTML = `
+                    <img src="${e.target.result}" class="img-thumbnail" style="max-height: 150px; max-width: 100%;">
+                `;
+                document.querySelector('.mb-3').appendChild(previewDiv);
+            } else {
+                preview.querySelector('img').src = e.target.result;
+            }
+        }
+        reader.readAsDataURL(file);
+    }
+});
+
+// Manejar el botón de eliminar imagen
+const eliminarImagenCheckbox = document.getElementById('eliminar_imagen');
+if (eliminarImagenCheckbox) {
+    eliminarImagenCheckbox.addEventListener('change', function() {
+        const imagenInput = document.getElementById('imagen');
+        if (this.checked) {
+            imagenInput.disabled = true;
+        } else {
+            imagenInput.disabled = false;
+        }
+    });
+}
+</script>
+{% endblock %}

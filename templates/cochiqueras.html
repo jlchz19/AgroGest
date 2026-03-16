@@ -1,0 +1,791 @@
+{% extends "base.html" %}
+
+{% block title %}Cochiqueras - AgroGest{% endblock %}
+{% block page_title %}Gestión de Cochiqueras{% endblock %}
+
+{% block content %}
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+            <div class="icon-circle me-3">
+                <i class="fas fa-piggy-bank text-white"></i>
+            </div>
+            <h5 class="mb-0 fw-semibold">Gestión de Cochiqueras</h5>
+        </div>
+        <a href="{{ url_for('nueva_ubicacion') }}?tipo=cochiquera" class="btn btn-light btn-sm shadow-sm">
+            <i class="fas fa-plus me-1"></i> Nueva Cochiquera
+        </a>
+    </div>
+</div>
+
+{% if cochiqueras %}
+<div class="row">
+    {% for cochiquera in cochiqueras %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100 border-0 shadow-sm hover-card">
+            <div class="position-relative">
+                {% if cochiquera.imagen %}
+                <div style="height: 180px; overflow: hidden; border-radius: 8px 8px 0 0;">
+                    <img src="{{ url_for('static', filename='imagenes_ubicaciones/' + cochiquera.imagen) }}" 
+                         class="card-img-top" 
+                         alt="{{ cochiquera.nombre }}"
+                         style="object-fit: cover; width: 100%; height: 100%; transition: transform 0.3s ease;">
+                </div>
+                {% else %}
+                <div class="bg-light text-center py-5" style="height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 8px 8px 0 0;">
+                    <i class="fas fa-piggy-bank fa-3x text-muted mb-2"></i>
+                    <p class="small text-muted mb-0">Sin imagen</p>
+                </div>
+                {% endif %}
+                <div class="position-absolute top-0 end-0 m-2">
+                    <span class="badge rounded-pill {% if cochiquera.estado == 'disponible' %}bg-success{% elif cochiquera.estado == 'ocupado' %}bg-warning text-dark{% else %}bg-danger{% endif %} bg-opacity-90">
+                        {{ cochiquera.estado|title }}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                <h5 class="card-title fw-semibold mb-2">{{ cochiquera.nombre }}</h5>
+                <p class="text-muted small mb-3">
+                    <i class="fas fa-info-circle me-1"></i> {{ cochiquera.descripcion or 'Cochiquera de cerdos' }}
+                </p>
+                
+                <div class="row text-center g-3 mb-3">
+                    <div class="col-4">
+                        <div class="stat-item">
+                            <div class="fw-bold fs-5 text-primary">{{ animales_por_cochiquera.get(cochiquera.id, 0) }}</div>
+                            <small class="text-muted">Cerdos</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-item">
+                            <div class="fw-bold fs-5 text-info">{{ cochiquera.capacidad }}</div>
+                            <small class="text-muted">Capacidad</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="stat-item">
+                            <div class="fw-bold fs-5 text-success">{{ cochiquera.area or '0' }} m²</div>
+                            <small class="text-muted">Área</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#cochiqueraModal{{ cochiquera.id }}">
+                        <i class="fas fa-eye me-1"></i> Ver Detalles
+                    </button>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('editar_ubicacion', id=cochiquera.id) }}" class="btn btn-outline-secondary btn-sm flex-grow-1">
+                            <i class="fas fa-edit me-1"></i> Editar
+                        </a>
+                        <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ cochiquera.id }}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="fas fa-piggy-bank fa-4x text-muted mb-3"></i>
+            <h5 class="text-muted">No hay cochiqueras registradas</h5>
+            <p class="text-muted">Comienza registrando tu primera cochiquera</p>
+            <a href="{{ url_for('nueva_ubicacion') }}?tipo=cochiquera" class="btn btn-primary mt-2">
+                <i class="fas fa-plus me-2"></i>Crear Primera Cochiquera
+            </a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal Detalles de la Cochiquera -->
+{% for cochiquera in cochiqueras %}
+<div class="modal fade" id="cochiqueraModal{{ cochiquera.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header py-2">
+                <h5 class="modal-title d-flex align-items-center">
+                    <i class="fas fa-piggy-bank me-2"></i>{{ cochiquera.nombre }}
+                    <span class="badge ms-2 {% if cochiquera.estado == 'disponible' %}bg-success{% elif cochiquera.estado == 'ocupado' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                        {{ cochiquera.estado|title }}
+                    </span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <!-- Imagen principal -->
+                <div class="position-relative">
+                    {% if cochiquera.imagen %}
+                    <img src="{{ url_for('static', filename='imagenes_ubicaciones/' + cochiquera.imagen) }}" 
+                         class="img-fluid w-100" 
+                         alt="{{ cochiquera.nombre }}"
+                         style="height: 180px; object-fit: cover; border-radius: 0;">
+                    {% else %}
+                    <div class="bg-light text-center py-4" style="height: 180px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                        <i class="fas fa-image fa-2x text-muted mb-2"></i>
+                        <p class="small text-muted mb-0">Sin imagen</p>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Estadísticas rápidas -->
+                    <div class="position-absolute bottom-0 start-0 end-0 p-2" style="background: rgba(0,0,0,0.6);">
+                        <div class="d-flex justify-content-around text-white small">
+                            <div class="text-center">
+                                <div class="fw-bold">{{ cochiquera.capacidad }}</div>
+                                <div>Capacidad</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="fw-bold">{{ animales_por_cochiquera.get(cochiquera.id, 0) }}</div>
+                                <div>Ocupados</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="fw-bold">{{ cochiquera.capacidad - animales_por_cochiquera.get(cochiquera.id, 0) }}</div>
+                                <div>Disponibles</div>
+                            </div>
+                            {% if cochiquera.area %}
+                            <div class="text-center">
+                                <div class="fw-bold">{{ cochiquera.area }}</div>
+                                <div>m²</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Información detallada en pestañas -->
+                <div class="p-3">
+                    <ul class="nav nav-tabs nav-fill mb-3" id="cochiqueraTabs{{ cochiquera.id }}" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info{{ cochiquera.id }}" type="button" role="tab">
+                                <i class="fas fa-info-circle me-1"></i> Información
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="animales-tab" data-bs-toggle="tab" data-bs-target="#animales{{ cochiquera.id }}" type="button" role="tab">
+                                <i class="fas fa-piggy-bank me-1"></i> Cerdos
+                                <span class="badge bg-primary rounded-pill ms-1">{{ animales_por_cochiquera.get(cochiquera.id, 0) }}</span>
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content" id="cochiqueraTabsContent">
+                        <!-- Pestaña de Información -->
+                        <div class="tab-pane fade show active" id="info{{ cochiquera.id }}" role="tabpanel">
+                            {% if cochiquera.descripcion %}
+                            <div class="mb-3">
+                                <h6 class="text-muted small text-uppercase mb-2">Descripción</h6>
+                                <p class="mb-0">{{ cochiquera.descripcion }}</p>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="row small">
+                                <div class="col-6">
+                                    <div class="mb-2">
+                                        <span class="text-muted">Tipo:</span>
+                                        <span class="fw-medium">Cochiquera</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <span class="text-muted">Capacidad:</span>
+                                        <span class="fw-medium">{{ cochiquera.capacidad }} cerdos</span>
+                                    </div>
+                                </div>
+                                {% if cochiquera.area %}
+                                <div class="col-6">
+                                    <div class="mb-2">
+                                        <span class="text-muted">Área:</span>
+                                        <span class="fw-medium">{{ cochiquera.area }} m²</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <span class="text-muted">Estado:</span>
+                                        <span class="badge {% if cochiquera.estado == 'disponible' %}bg-success{% elif cochiquera.estado == 'ocupado' %}bg-warning text-dark{% else %}bg-danger{% endif %} bg-opacity-25 text-{% if cochiquera.estado == 'disponible' %}success{% elif cochiquera.estado == 'ocupado' %}warning{% else %}danger{% endif %}">
+                                            {{ cochiquera.estado|title }}
+                                        </span>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Pestaña de Cerdos -->
+                        <div class="tab-pane fade" id="animales{{ cochiquera.id }}" role="tabpanel">
+                            <div id="cerdosCochiquera{{ cochiquera.id }}" class="table-responsive" style="max-height: 200px; overflow-y: auto;">
+                                <div class="text-center py-4">
+                                    <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
+                                    <p class="small text-muted mt-2">Cargando cerdos...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> Cerrar
+                </button>
+                <a href="{{ url_for('editar_ubicacion', id=cochiquera.id) }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-edit me-1"></i> Editar
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Cargar cerdos al abrir el modal
+$('#cochiqueraModal{{ cochiquera.id }}').on('show.bs.modal', function () {
+    const container = $('#cerdosCochiquera{{ cochiquera.id }}');
+    const cochiqueraId = {{ cochiquera.id }};
+    
+    // Mostrar spinner
+    container.html(`
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+    `);
+    
+    // Simular carga de datos (reemplazar con llamada AJAX real si es necesario)
+    setTimeout(() => {
+        const cerdos = [
+            {% for cerdo in animales %}
+            {% if cerdo.ubicacion_id == cochiquera.id %}
+            {
+                id: '{{ cerdo.identificacion }}',
+                nombre: '{{ cerdo.nombre or "Sin nombre" }}',
+                raza: '{{ cerdo.raza or "-" }}',
+                edad: '{{ ((now - cerdo.fecha_nacimiento).days / 30)|round|int if cerdo.fecha_nacimiento else "-" }}',
+                peso: '{{ cerdo.peso or "-" }}',
+                imagen: '{{ cerdo.imagen or "" }}'
+            }{% if not loop.last %},{% endif %}
+            {% endif %}
+            {% endfor %}
+        ];
+        
+        if (cerdos.length > 0) {
+            let html = `
+                <table class="table table-sm table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Raza</th>
+                            <th>Edad</th>
+                            <th>Peso</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            cerdos.forEach(cerdo => {
+                html += `
+                    <tr>
+                        <td>${cerdo.id}</td>
+                        <td>${cerdo.nombre}</td>
+                        <td>${cerdo.raza}</td>
+                        <td>${cerdo.edad} ${cerdo.edad !== '-' ? 'meses' : ''}</td>
+                        <td>${cerdo.peso} ${cerdo.peso !== '-' ? 'kg' : ''}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                    </tbody>
+                </table>
+            `;
+            
+            container.html(html);
+        } else {
+            container.html(`
+                <div class="text-center py-4">
+                    <i class="fas fa-info-circle fa-2x text-muted mb-2"></i>
+                    <p class="text-muted mb-0">No hay cerdos en esta cochiquera</p>
+                </div>
+            `);
+        }
+    }, 500);
+});
+</script>
+
+<!-- Modal de Confirmación de Eliminación -->
+<div class="modal fade" id="deleteModal{{ cochiquera.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ cochiquera.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel{{ cochiquera.id }}">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro que deseas eliminar la cochiquera <strong>{{ cochiquera.nombre }}</strong>?</p>
+                <p class="text-danger mb-0"><i class="fas fa-exclamation-circle me-1"></i>Esta acción no se puede deshacer.</p>
+                {% set cerdos_en_cochiquera = animales_por_cochiquera.get(cochiquera.id, 0) %}
+                {% if cerdos_en_cochiquera > 0 %}
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ¡Atención! Esta cochiquera tiene {{ cerdos_en_cochiquera }} cerdo(s) registrado(s). Al eliminarla, los cerdos quedarán sin ubicación asignada.
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> Cancelar
+                </button>
+                <form action="{{ url_for('eliminar_ubicacion', id=cochiquera.id) }}" method="POST" style="display: inline;">
+                    <input type="hidden" name="_method" value="DELETE">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash-alt me-1"></i> Eliminar
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+.hover-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.1) !important;
+}
+
+.hover-card:hover .card-img-top {
+    transform: scale(1.05);
+}
+
+.icon-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.stat-item {
+    text-align: center;
+    padding: 0.5rem;
+    border-radius: 8px;
+    background-color: #f8f9fc;
+    height: 100%;
+    transition: all 0.2s ease;
+}
+
+.stat-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.stat-item .fw-bold {
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+}
+
+.stat-item .text-muted {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.card-header {
+    border-bottom: none;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+.modal-lg {
+    max-width: 800px;
+}
+
+.table-sm th,
+.table-sm td {
+    padding: 0.5rem;
+    vertical-align: middle;
+}
+
+/* Responsive adjustments */
+@media (max-width: 767.98px) {
+    .stat-item .fw-bold {
+        font-size: 1.1rem;
+    }
+    
+    .btn-sm {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.4rem;
+    }
+    
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+// Función para mostrar detalles de la cochiquera
+function showUbicacionDetails(ubicacionId, tipo) {
+    const button = document.querySelector(`[data-ubicacion-id="${ubicacionId}"]`);
+    const data = button.dataset;
+    
+    document.getElementById('modalUbicacionTitle').innerHTML = '<i class="fas fa-home me-2"></i>' + data.ubicacionTipo + ': ' + data.ubicacionNombre;
+    document.getElementById('modalUbicacionNombre').textContent = data.ubicacionNombre;
+    document.getElementById('modalUbicacionTipo').textContent = data.ubicacionTipo;
+    document.getElementById('modalUbicacionArea').textContent = data.ubicacionArea ? data.ubicacionArea + ' m²' : 'No especificada';
+    document.getElementById('modalUbicacionDescripcion').textContent = data.ubicacionDescripcion || 'Sin descripción';
+    
+    // Cargar lista de animales
+    loadAnimalsInLocation('ubicacion', ubicacionId);
+    
+    document.getElementById('ubicacionDetailsModal').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+// Función para cargar animales en la ubicación
+function loadAnimalsInLocation(locationType, locationId) {
+    const animalesList = document.getElementById('modalAnimalesList');
+    if (!animalesList) return;
+    
+    animalesList.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Cargando animales...</div>';
+    
+    fetch(`/api/animales_en_ubicacion?tipo=${locationType}&id=${locationId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.animales && data.animales.length > 0) {
+                let html = '';
+                data.animales.forEach(animal => {
+                    let animalEmoji = '🐄'; // Default cow
+                    if (animal.tipo === 'Cerdo') animalEmoji = '🐷';
+                    else if (animal.tipo === 'Cabra') animalEmoji = '🐐';
+                    else if (animal.tipo === 'Oveja') animalEmoji = '🐑';
+                    else if (animal.tipo === 'Caballo') animalEmoji = '🐴';
+                    else if (animal.tipo === 'Pollo') animalEmoji = '🐔';
+                    else if (animal.tipo === 'Pato') animalEmoji = '🦆';
+                    else if (animal.tipo === 'Conejo') animalEmoji = '🐰';
+                    
+                    html += `
+                        <div class="animal-item">
+                            <div class="animal-info">
+                                <div class="animal-icon">
+                                    <span class="animal-emoji">${animalEmoji}</span>
+                                </div>
+                                <div class="animal-details">
+                                    <h6>${animal.identificacion}</h6>
+                                    <small>${animal.nombre || 'Sin nombre'} - ${animal.tipo} ${animal.raza || ''}</small>
+                                </div>
+                            </div>
+                            <div class="animal-stats">
+                                <small class="text-muted">${animal.peso || 'N/A'} kg</small>
+                            </div>
+                        </div>
+                    `;
+                });
+                animalesList.innerHTML = html;
+            } else {
+                animalesList.innerHTML = `
+                    <div class="no-animals">
+                        <i class="fas fa-pig fa-2x mb-2"></i>
+                        <p>No hay animales en esta ubicación</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            animalesList.innerHTML = `
+                <div class="no-animals">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-2 text-warning"></i>
+                    <p>Error al cargar los animales</p>
+                </div>
+            `;
+        });
+}
+
+function closeUbicacionModal() {
+    const modal = document.getElementById('ubicacionDetailsModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// Cerrar modal con tecla ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeUbicacionModal();
+        
+        // También cerramos cualquier otro modal de Bootstrap que esté abierto
+        var modals = document.querySelectorAll('.modal.show');
+        if (modals.length > 0) {
+            var modal = bootstrap.Modal.getInstance(modals[0]);
+            if (modal) modal.hide();
+        }
+    }
+});
+
+// Inicializar tooltips al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %}
+
+<!-- Modal para detalles de ubicación -->
+<div id="ubicacionDetailsModal" class="custom-modal" style="display: none;">
+    <div class="modal-overlay" onclick="closeUbicacionModal()"></div>
+    <div class="modal-container">
+        <div class="modal-header">
+            <h5 id="modalUbicacionTitle" class="modal-title"></h5>
+            <button type="button" class="modal-close" onclick="closeUbicacionModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="info-card">
+                        <h6 class="info-title">Información General</h6>
+                        <div class="info-item">
+                            <span class="info-label">Nombre:</span>
+                            <span id="modalUbicacionNombre" class="info-value"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Tipo:</span>
+                            <span id="modalUbicacionTipo" class="info-value"></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Área:</span>
+                            <span id="modalUbicacionArea" class="info-value"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="info-card">
+                        <h6 class="info-title">Descripción</h6>
+                        <div class="info-item">
+                            <span id="modalUbicacionDescripcion" class="info-value"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Lista de animales en la ubicación -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="info-card">
+                        <h6 class="info-title">
+                            <i class="fas fa-pig me-2"></i>Animales en esta Ubicación
+                        </h6>
+                        <div id="modalAnimalesList" class="animals-list">
+                            <!-- Se llenará dinámicamente con JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeUbicacionModal()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.custom-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-container {
+    background: white;
+    border-radius: 12px;
+    max-width: 800px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px 12px 0 0;
+}
+
+.modal-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: white;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: white;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.modal-close:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.info-card {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-left: 4px solid #007bff;
+}
+
+.info-title {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 15px;
+    font-size: 1rem;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.info-label {
+    font-weight: 500;
+    color: #6c757d;
+}
+
+.info-value {
+    font-weight: 600;
+    color: #495057;
+}
+
+.animals-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.animal-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    margin: 5px 0;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    transition: all 0.2s;
+}
+
+.animal-item:hover {
+    background: #f8f9fa;
+    border-color: #007bff;
+}
+
+.animal-info {
+    display: flex;
+    align-items: center;
+}
+
+.animal-icon {
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    transition: all 0.2s;
+}
+
+.animal-emoji {
+    font-size: 20px;
+    line-height: 1;
+}
+
+.animal-item:hover .animal-icon {
+    background: #fff;
+    border-color: #007bff;
+    transform: scale(1.05);
+}
+
+.animal-details h6 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.animal-details small {
+    color: #6c757d;
+    font-size: 12px;
+}
+
+.no-animals {
+    text-align: center;
+    padding: 30px;
+    color: #6c757d;
+}
+
+.modal-footer {
+    padding: 15px 20px;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    background: #f8f9fa;
+    border-radius: 0 0 12px 12px;
+}
+</style>

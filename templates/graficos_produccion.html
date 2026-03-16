@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Gráficos de Producción - AgroGest{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">Gráficos de Producción</h1>
+    </div>
+
+    <div class="row">
+        <!-- Gráfico de producción por tipo -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Producción por Tipo</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="produccionTipoChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Producción mensual -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">Producción Mensual</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="produccionMensualChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Incluir Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Datos de ejemplo - reemplazar con datos reales de tu base de datos
+const produccionPorTipoData = {
+    labels: ['Leche', 'Carne', 'Huevos', 'Otros'],
+    datasets: [{
+        data: [65, 25, 15, 10],
+        backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e'],
+        hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf', '#dda20a'],
+        hoverBorderColor: "rgba(234, 236, 244, 1)",
+    }]
+};
+
+const produccionMensualData = {
+    labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+    datasets: [{
+        label: 'Leche (L)',
+        data: [1200, 1250, 1300, 1280, 1350, 1400, 1450, 1500, 1480, 1520, 1500, 1550],
+        backgroundColor: 'rgba(78, 115, 223, 0.05)',
+        borderColor: 'rgba(78, 115, 223, 1)',
+        pointRadius: 3,
+        pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+        pointBorderColor: 'rgba(78, 115, 223, 1)',
+        pointHoverRadius: 3,
+        pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
+        pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+        pointHitRadius: 10,
+        pointBorderWidth: 2,
+        fill: true
+    }]
+};
+
+// Inicializar gráficos cuando el documento esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    // Gráfico de producción por tipo
+    const tipoCtx = document.getElementById('produccionTipoChart');
+    new Chart(tipoCtx, {
+        type: 'doughnut',
+        data: produccionPorTipoData,
+        options: {
+            maintainAspectRatio: false,
+            tooltips: {
+                backgroundColor: "rgb(255,255,255)",
+                bodyFontColor: "#858796",
+                borderColor: '#dddfeb',
+                borderWidth: 1,
+                xPadding: 15,
+                yPadding: 15,
+                displayColors: false,
+                caretPadding: 10,
+            },
+            legend: {
+                display: true,
+                position: 'right'
+            },
+            cutoutPercentage: 60,
+        },
+    });
+
+    // Gráfico de producción mensual
+    const mensualCtx = document.getElementById('produccionMensualChart');
+    new Chart(mensualCtx, {
+        type: 'line',
+        data: produccionMensualData,
+        options: {
+            maintainAspectRatio: false,
+            layout: {
+                padding: {
+                    left: 10,
+                    right: 25,
+                    top: 25,
+                    bottom: 0
+                }
+            },
+            scales: {
+                xAxes: [{
+                    gridLines: {
+                        display: false,
+                        drawBorder: false
+                    },
+                    ticks: {
+                        maxTicksLimit: 12
+                    }
+                }],
+                yAxes: [{
+                    ticks: {
+                        maxTicksLimit: 5,
+                        padding: 10,
+                    },
+                    gridLines: {
+                        color: "rgb(234, 236, 244)",
+                        zeroLineColor: "rgb(234, 236, 244)",
+                        drawBorder: false,
+                        borderDash: [2],
+                        zeroLineBorderDash: [2]
+                    }
+                }],
+            },
+            legend: {
+                display: false
+            },
+            tooltips: {
+                backgroundColor: "rgb(255,255,255)",
+                bodyFontColor: "#858796",
+                titleMarginBottom: 10,
+                titleFontColor: '#6e707e',
+                titleFontSize: 14,
+                borderColor: '#dddfeb',
+                borderWidth: 1,
+                xPadding: 15,
+                yPadding: 15,
+                displayColors: false,
+                intersect: false,
+                caretPadding: 10,
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

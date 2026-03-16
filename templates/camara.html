@@ -1,0 +1,365 @@
+{% extends 'base.html' %}
+{% block title %}Gestión de Cámaras{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="mb-0 fw-bold">
+        <i class="fas fa-video text-primary me-3"></i>
+        <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Cámaras en Vivo</span>
+      </h2>
+      <p class="text-muted mb-0 mt-1">Monitorea tus cámaras de seguridad en tiempo real</p>
+    </div>
+    <button type="button" class="btn btn-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 12px; padding: 12px 24px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);" data-bs-toggle="modal" data-bs-target="#addCameraModal">
+      <i class="fas fa-plus me-2"></i>Agregar Cámara
+    </button>
+  </div>
+
+  <!-- Camera Grid -->
+  <div class="row g-3" id="camerasGrid">
+    {% for camera in cameras %}
+    <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+      <div class="card h-100 border-0 shadow-sm" style="border-radius: 12px;">
+        <!-- Camera Preview -->
+        <div class="position-relative" style="height: 180px; background: #000; cursor: pointer;" 
+             onclick="openCameraModal('{{ camera.nombre|e }}', '{{ camera.url|e }}')">
+          <img src="{{ camera.url }}" class="w-100 h-100" alt="{{ camera.nombre }}" 
+               style="object-fit: cover;"
+               data-url="{{ camera.url }}">
+          
+          <!-- Live Badge -->
+          <div class="position-absolute top-2 end-2">
+            <span class="badge bg-success">EN VIVO</span>
+          </div>
+        </div>
+
+        <!-- Camera Info -->
+        <div class="card-body p-3">
+          <h6 class="card-title mb-2">{{ camera.nombre }}</h6>
+          <p class="card-text small text-muted mb-3 text-truncate" title="{{ camera.url }}">{{ camera.url }}</p>
+          
+          <!-- Action Buttons -->
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-primary flex-fill" onclick="openCameraModal('{{ camera.nombre|e }}', '{{ camera.url|e }}')">
+              <i class="fas fa-eye me-1"></i>Ver
+            </button>
+            <div class="dropdown">
+              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-ellipsis-v"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item edit-camera" href="#" data-bs-toggle="modal" data-bs-target="#editCameraModal" 
+                      data-id="{{ camera.id }}" data-name="{{ camera.nombre }}" data-url="{{ camera.url }}">
+                  <i class="fas fa-edit me-2"></i>Editar</a></li>
+                <li><a class="dropdown-item text-danger" onclick="confirmDelete({{ camera.id }}, '{{ camera.nombre|e }}')">
+                  <i class="fas fa-trash me-2"></i>Eliminar</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% else %}
+    <div class="col-12">
+      <div class="text-center py-5">
+        <i class="fas fa-video-slash fa-3x text-muted mb-3"></i>
+        <h5>No hay cámaras configuradas</h5>
+        <p class="text-muted">Agrega tu primera cámara para comenzar</p>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCameraModal">
+          <i class="fas fa-plus me-2"></i>Agregar Cámara
+        </button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Add Camera Modal -->
+<div class="modal fade" id="addCameraModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border: none; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.15);">
+      <div class="modal-header border-0 p-4">
+        <h5 class="modal-title fw-bold">
+          <i class="fas fa-plus-circle text-primary me-2"></i>Agregar Nueva Cámara
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" action="{{ url_for('agregar_camara') }}">
+        <div class="modal-body p-4">
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Nombre de la Cámara</label>
+            <input type="text" name="nombre" class="form-control form-control-lg" required 
+                   placeholder="Ej: Entrada Principal" style="border-radius: 10px; border: 2px solid #e9ecef;">
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold">URL del Stream</label>
+            <input type="url" name="url" class="form-control form-control-lg" required 
+                   placeholder="Ej: http://192.168.1.100:8080/video" 
+                   style="border-radius: 10px; border: 2px solid #e9ecef;">
+            <div class="form-text mt-2">
+              <i class="fas fa-info-circle me-1"></i>
+              Para IP Webcam (Android), usa la ruta /video (MJPEG)
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-0 p-4">
+          <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal" style="border-radius: 10px;">Cancelar</button>
+          <button type="submit" class="btn btn-primary btn-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 10px;">
+            <i class="fas fa-save me-2"></i>Guardar Cámara
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Camera Modal -->
+<div class="modal fade" id="editCameraModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border: none; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.15);">
+      <div class="modal-header border-0 p-4">
+        <h5 class="modal-title fw-bold">
+          <i class="fas fa-edit text-primary me-2"></i>Editar Cámara
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" id="editCameraForm">
+        <div class="modal-body p-4">
+          <input type="hidden" name="id" id="editCameraId">
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Nombre de la Cámara</label>
+            <input type="text" name="nombre" id="editCameraNombre" class="form-control form-control-lg" required 
+                   placeholder="Ej: Entrada Principal" style="border-radius: 10px; border: 2px solid #e9ecef;">
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold">URL del Stream</label>
+            <input type="url" name="url" id="editCameraUrl" class="form-control form-control-lg" required 
+                   placeholder="Ej: http://192.168.1.100:8080/video" 
+                   style="border-radius: 10px; border: 2px solid #e9ecef;">
+            <div class="form-text mt-2">
+              <i class="fas fa-info-circle me-1"></i>
+              Para IP Webcam (Android), usa la ruta /video (MJPEG)
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-0 p-4">
+          <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal" style="border-radius: 10px;">Cancelar</button>
+          <button type="submit" class="btn btn-primary btn-lg" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 10px;">
+            <i class="fas fa-save me-2"></i>Actualizar Cámara
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- View Camera Modal -->
+<div class="modal fade" id="viewCameraModal" tabindex="-1">
+  <div class="modal-dialog modal-fullscreen-lg">
+    <div class="modal-content" style="border: none; border-radius: 16px; overflow: hidden;">
+      <div class="modal-header border-0 p-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <h5 class="modal-title text-white fw-bold" id="viewCameraModalLabel">
+          <i class="fas fa-video me-2"></i>Vista de Cámara
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0" style="background: #000; height: 70vh; position: relative;">
+        <div class="w-100 h-100 d-flex align-items-center justify-content-center">
+          <img id="cameraStream" src="" style="object-fit: contain; width: 100%; height: 100%;">
+        </div>
+        
+        <!-- Controls -->
+        <div class="position-absolute top-0 end-0 m-3">
+          <div class="d-flex gap-2">
+            <button class="btn btn-light btn-lg" onclick="toggleFullscreen()" title="Pantalla completa" style="border-radius: 50%; width: 48px; height: 48px;">
+              <i class="fas fa-expand"></i>
+            </button>
+            <button class="btn btn-light btn-lg" onclick="refreshStream()" title="Refrescar" style="border-radius: 50%; width: 48px; height: 48px;">
+              <i class="fas fa-sync-alt"></i>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Status -->
+        <div class="position-absolute bottom-0 start-0 m-3">
+          <div class="bg-dark bg-opacity-75 text-white px-4 py-2 rounded-pill" style="backdrop-filter: blur(10px);">
+            <small id="streamStatus">
+              <i class="fas fa-circle text-success me-1"></i>
+              Conectado
+            </small>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 p-4 bg-light">
+        <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal" style="border-radius: 10px;">
+          <i class="fas fa-times me-2"></i>Cerrar
+        </button>
+        <button type="button" class="btn btn-danger btn-lg" onclick="startRecording()" style="border-radius: 10px;">
+          <i class="fas fa-record-vinyl me-2"></i>Grabar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.card {
+  transition: transform 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+.card-img-top {
+  transition: transform 0.2s ease;
+}
+
+.card:hover .card-img-top {
+  transform: scale(1.02);
+}
+</style>
+
+<script>
+// Function to open camera modal directly
+function openCameraModal(name, url) {
+  var modal = document.getElementById('viewCameraModal');
+  var modalTitle = modal.querySelector('.modal-title');
+  var cameraStream = modal.querySelector('#cameraStream');
+  
+  modalTitle.innerHTML = '<i class="fas fa-video me-2"></i>' + name;
+  cameraStream.src = url;
+  
+  var modalInstance = new bootstrap.Modal(modal);
+  modalInstance.show();
+}
+
+// Edit Camera Modal
+var editCameraModal = document.getElementById('editCameraModal');
+editCameraModal.addEventListener('show.bs.modal', function (event) {
+  var button = event.relatedTarget;
+  var cameraId = button.getAttribute('data-id');
+  var cameraName = button.getAttribute('data-name');
+  var cameraUrl = button.getAttribute('data-url');
+  
+  var modalTitle = editCameraModal.querySelector('.modal-title');
+  var idInput = editCameraModal.querySelector('#editCameraId');
+  var nombreInput = editCameraModal.querySelector('#editCameraNombre');
+  var urlInput = editCameraModal.querySelector('#editCameraUrl');
+  var form = editCameraModal.querySelector('#editCameraForm');
+  
+  modalTitle.innerHTML = '<i class="fas fa-edit text-primary me-2"></i>Editar Cámara';
+  idInput.value = cameraId;
+  nombreInput.value = cameraName;
+  urlInput.value = cameraUrl;
+  
+  // Set the form action dynamically
+  form.action = '/editar_camara/' + cameraId;
+});
+
+// Function to refresh stream
+function refreshStream() {
+  var cameraStream = document.getElementById('cameraStream');
+  var currentSrc = cameraStream.src;
+  var separator = currentSrc.includes('?') ? '&' : '?';
+  cameraStream.src = currentSrc + separator + '_t=' + Date.now();
+  
+  var status = document.getElementById('streamStatus');
+  status.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Actualizando...';
+  
+  setTimeout(() => {
+    status.innerHTML = '<i class="fas fa-circle text-success me-1"></i>Conectado';
+  }, 1000);
+}
+
+// Function to toggle fullscreen
+function toggleFullscreen() {
+  var modalBody = document.querySelector('.modal-body');
+  if (!document.fullscreenElement) {
+    modalBody.requestFullscreen().catch(err => {
+      console.log('Error attempting to enable fullscreen:', err);
+    });
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+// View Camera Modal
+var viewCameraModal = document.getElementById('viewCameraModal');
+viewCameraModal.addEventListener('show.bs.modal', function (event) {
+  var button = event.relatedTarget;
+  var cameraName = button.getAttribute('data-name');
+  var cameraUrl = button.getAttribute('data-url');
+  
+  var modalTitle = viewCameraModal.querySelector('.modal-title');
+  var cameraStream = viewCameraModal.querySelector('#cameraStream');
+  
+  modalTitle.innerHTML = '<i class="fas fa-video me-2"></i>' + cameraName;
+  cameraStream.src = cameraUrl;
+});
+
+// Auto-refresh stream
+viewCameraModal.addEventListener('shown.bs.modal', function () {
+  var cameraStream = document.getElementById('cameraStream');
+  var src = cameraStream.src;
+  cameraStream.src = '';
+  setTimeout(() => { cameraStream.src = src; }, 100);
+  
+  var status = document.getElementById('streamStatus');
+  status.innerHTML = '<i class="fas fa-circle text-success me-1"></i>Conectado';
+});
+
+var refreshInterval;
+viewCameraModal.addEventListener('shown.bs.modal', function () {
+  refreshInterval = setInterval(refreshStream, 30000);
+});
+
+viewCameraModal.addEventListener('hidden.bs.modal', function () {
+  clearInterval(refreshInterval);
+});
+
+// Update thumbnails
+function updateThumbnails() {
+  document.querySelectorAll('.camera-preview img').forEach(img => {
+    try {
+      const originalUrl = img.getAttribute('data-url') || img.src.split('?')[0];
+      if (originalUrl) {
+        img.src = addTimestamp(originalUrl);
+      }
+    } catch (e) {
+      console.error('Error updating thumbnail:', e);
+    }
+  });
+  
+  document.querySelectorAll('.last-update').forEach(span => {
+    const now = new Date();
+    span.textContent = 'Actualizado: ' + now.toLocaleTimeString();
+  });
+}
+
+function addTimestamp(url) {
+  if (!url) return '';
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}_t=${Date.now()}`;
+}
+
+// Confirm delete
+function confirmDelete(id, name) {
+  if (confirm(`¿Estás seguro de eliminar la cámara "${name}"?`)) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/eliminar_camara/${id}`;
+    document.body.appendChild(form);
+    form.submit();
+  }
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+  updateThumbnails();
+  setInterval(updateThumbnails, 30000);
+});
+</script>
+{% endblock %}

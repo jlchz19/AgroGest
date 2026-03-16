@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+
+{% block title %}Reporte de Maquinaria{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-chart-bar me-2"></i>Reporte de Maquinaria</h2>
+        <div>
+            <a href="{{ url_for('maquinaria') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+            <a href="{{ url_for('reporte_maquinaria_pdf') }}" class="btn btn-danger">
+                <i class="fas fa-file-pdf me-2"></i>Descargar PDF
+            </a>
+            <button class="btn btn-primary" onclick="window.print()">
+                <i class="fas fa-print me-2"></i>Imprimir
+            </button>
+        </div>
+    </div>
+
+    <!-- Información de la Finca -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-home me-2"></i>Información de la Finca</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <strong>Nombre:</strong> {{ finca.nombre }}
+                </div>
+                <div class="col-md-6">
+                    <strong>Ubicación:</strong> {{ finca.ubicacion or 'No especificada' }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen Estadístico -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h4 class="mb-0">{{ total_maquinaria }}</h4>
+                            <small>Total Máquinas</small>
+                        </div>
+                        <div class="fs-1 opacity-50">
+                            <i class="fas fa-tractor"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h4 class="mb-0">{{ operativas }}</h4>
+                            <small>Operativas</small>
+                        </div>
+                        <div class="fs-1 opacity-50">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h4 class="mb-0">{{ en_mantenimiento }}</h4>
+                            <small>En Mantenimiento</small>
+                        </div>
+                        <div class="fs-1 opacity-50">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h4 class="mb-0">{{ fuera_servicio }}</h4>
+                            <small>Fuera de Servicio</small>
+                        </div>
+                        <div class="fs-1 opacity-50">
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Valor Total de la Inversión -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-dollar-sign me-2"></i>Valor de la Inversión</h5>
+        </div>
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h3 class="text-primary">${{ "{:,.2f}".format(total_valor) }}</h3>
+                    <p class="text-muted mb-0">Valor total de la maquinaria registrada</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <small class="text-muted">Promedio por máquina:</small><br>
+                    <strong>${{ "{:,.2f}".format(total_valor / total_maquinaria if total_maquinaria > 0 else 0) }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Distribución por Tipo -->
+    {% if tipos %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Distribución por Tipo</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for tipo, cantidad in tipos.items() %}
+                <div class="col-md-3 col-sm-6 mb-3">
+                    <div class="text-center">
+                        <div class="progress mb-2" style="height: 10px;">
+                            <div class="progress-bar bg-info" style="width: {{ (cantidad / total_maquinaria * 100)|round(0) }}%"></div>
+                        </div>
+                        <strong>{{ tipo|title }}</strong><br>
+                        <span class="text-muted">{{ cantidad }} máquina{{ 's' if cantidad != 1 else '' }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Lista Detallada de Maquinaria -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-list me-2"></i>Lista Detallada de Maquinaria</h5>
+        </div>
+        <div class="card-body">
+            {% if maquinarias %}
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Tipo</th>
+                            <th>Marca/Modelo</th>
+                            <th>Año</th>
+                            <th>Estado</th>
+                            <th>Ubicación</th>
+                            <th>Valor Compra</th>
+                            <th>Responsable</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for maquina in maquinarias %}
+                        <tr>
+                            <td><strong>{{ maquina.nombre }}</strong></td>
+                            <td>{{ maquina.tipo|title }}</td>
+                            <td>
+                                {% if maquina.marca or maquina.modelo %}
+                                    {{ maquina.marca or '' }}{% if maquina.marca and maquina.modelo %} / {% endif %}{{ maquina.modelo or '' }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>{{ maquina.año_fabricacion or 'N/A' }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if maquina.estado == 'operativo' %}bg-success
+                                    {% elif maquina.estado == 'en_mantenimiento' %}bg-warning
+                                    {% elif maquina.estado == 'fuera_servicio' %}bg-danger
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ maquina.estado|title }}
+                                </span>
+                            </td>
+                            <td>{{ maquina.ubicacion_actual or 'N/A' }}</td>
+                            <td>
+                                {% if maquina.valor_compra %}
+                                    ${{ "{:,.2f}".format(maquina.valor_compra) }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>{{ maquina.responsable or 'N/A' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-info">
+                            <th colspan="6">TOTAL</th>
+                            <th>${{ "{:,.2f}".format(total_valor) }}</th>
+                            <th>{{ total_maquinaria }} máquinas</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-tractor fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">No hay maquinaria registrada</h4>
+                <p class="text-muted">No se encontraron máquinas en esta finca</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Observaciones y Recomendaciones -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Observaciones y Recomendaciones</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Estado Actual</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check-circle text-success me-2"></i>{{ operativas }} máquinas operativas ({{ (operativas / total_maquinaria * 100)|round(1) if total_maquinaria > 0 else 0 }}%)</li>
+                        <li><i class="fas fa-tools text-warning me-2"></i>{{ en_mantenimiento }} en mantenimiento ({{ (en_mantenimiento / total_maquinaria * 100)|round(1) if total_maquinaria > 0 else 0 }}%)</li>
+                        <li><i class="fas fa-times-circle text-danger me-2"></i>{{ fuera_servicio }} fuera de servicio ({{ (fuera_servicio / total_maquinaria * 100)|round(1) if total_maquinaria > 0 else 0 }}%)</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6>Recomendaciones</h6>
+                    <ul class="list-unstyled">
+                        {% if en_mantenimiento > 0 %}
+                        <li><i class="fas fa-exclamation-triangle text-warning me-2"></i>Atender las {{ en_mantenimiento }} máquina{{ 's' if en_mantenimiento != 1 else '' }} en mantenimiento</li>
+                        {% endif %}
+                        {% if fuera_servicio > 0 %}
+                        <li><i class="fas fa-exclamation-circle text-danger me-2"></i>Evaluar reparación o reemplazo de {{ fuera_servicio }} máquina{{ 's' if fuera_servicio != 1 else '' }} fuera de servicio</li>
+                        {% endif %}
+                        {% if operativas == total_maquinaria and total_maquinaria > 0 %}
+                        <li><i class="fas fa-check-circle text-success me-2"></i>Toda la maquinaria está operativa - ¡Excelente!</li>
+                        {% endif %}
+                        <li><i class="fas fa-calendar text-info me-2"></i>Programar mantenimiento preventivo regular</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estilos para impresión -->
+<style>
+@media print {
+    .btn, .d-flex.justify-content-between {
+        display: none !important;
+    }
+    .card {
+        page-break-inside: avoid;
+        margin-bottom: 1rem;
+    }
+    table {
+        page-break-inside: auto;
+    }
+}
+</style>
+{% endblock %}
