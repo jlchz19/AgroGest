@@ -124,7 +124,7 @@
                 <i class="fas fa-skull-crossbones"></i>
             </div>
             <div class="stats-content-modern">
-                <div class="stats-number-modern">{{ eventos|selectattr('0.tipo_evento', 'equalto', 'fallecido')|list|length }}</div>
+                <div class="stats-number-modern">{{ eventos|selectattr('tipo_evento', 'equalto', 'fallecido')|list|length }}</div>
                 <div class="stats-label-modern">Fallecidos</div>
             </div>
         </div>
@@ -135,7 +135,7 @@
                 <i class="fas fa-hand-holding-usd"></i>
             </div>
             <div class="stats-content-modern">
-                <div class="stats-number-modern">{{ eventos|selectattr('0.tipo_evento', 'equalto', 'vendido')|list|length }}</div>
+                <div class="stats-number-modern">{{ eventos|selectattr('tipo_evento', 'equalto', 'vendido')|list|length }}</div>
                 <div class="stats-label-modern">Vendidos</div>
             </div>
         </div>
@@ -146,7 +146,7 @@
                 <i class="fas fa-exchange-alt"></i>
             </div>
             <div class="stats-content-modern">
-                <div class="stats-number-modern">{{ eventos|selectattr('0.tipo_evento', 'equalto', 'transferido')|list|length }}</div>
+                <div class="stats-number-modern">{{ eventos|selectattr('tipo_evento', 'equalto', 'transferido')|list|length }}</div>
                 <div class="stats-label-modern">Transferidos</div>
             </div>
         </div>
@@ -186,12 +186,12 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for evento, animal in eventos %}
+                    {% for evento in eventos %}
                     <tr>
                         <td>{{ evento.fecha_evento.strftime('%d/%m/%Y') }}</td>
                         <td>
-                            <a href="{{ url_for('historial_animal', animal_id=animal.id) }}" class="text-decoration-none">
-                                {{ animal.identificacion }} - {{ animal.nombre or 'Sin nombre' }}
+                            <a href="{{ url_for('historial_animal', animal_id=evento.animal.id) }}" class="text-decoration-none">
+                                {{ evento.animal.identificacion }} - {{ evento.animal.nombre or 'Sin nombre' }}
                             </a>
                         </td>
                         <td>
@@ -221,12 +221,12 @@
                         </td>
                         <td>
                             <div class="btn-group btn-group-sm">
-                                <a href="{{ url_for('historial_animal', animal_id=animal.id) }}" class="btn btn-outline-primary btn-sm" title="Ver Animal">
+                                <a href="{{ url_for('historial_animal', animal_id=evento.animal.id) }}" class="btn btn-outline-primary btn-sm" title="Ver Animal">
                                     <i class="fas fa-eye"></i>
                                 </a>
                                 <button class="btn btn-outline-danger btn-sm eliminar-evento-btn" title="Eliminar Evento"
                                         data-event-id="{{ evento.id }}" 
-                                        data-animal-info="{{ animal.identificacion }} - {{ animal.nombre or &quot;Sin nombre&quot; }}">
+                                        data-animal-info="{{ evento.animal.identificacion }} - {{ evento.animal.nombre or 'Sin nombre' }}">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
