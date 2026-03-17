@@ -8125,7 +8125,9 @@ if __name__ == '__main__':
         scheduler = iniciar_scheduler()
         
         # Escuchar en todas las interfaces para permitir acceso desde otros dispositivos
-        app.run(host='0.0.0.0', port=5000, debug=True)
+        # Usar el puerto proporcionado por Render o 5000 por defecto
+        port = int(os.environ.get('PORT', 5000))
+        app.run(host='0.0.0.0', port=port, debug=False)
     except Exception as e:
         import traceback
         print('[ERROR] Excepción al iniciar la app:')
