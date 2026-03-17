@@ -1,14 +1,14 @@
 # AgroGest Web - Dependencias para Sistema de Gestión Ganadera
 # Flask Web Application with Modern Features
 
+# Servidor WSGI para producción (primero para asegurar instalación)
+gunicorn==21.2.0
+
 # Framework web principal
 Flask>=2.3.0
 Flask-SQLAlchemy>=3.0.0
 Flask-Login>=0.6.0
 Werkzeug>=2.3.0
-
-# Servidor WSGI para producción (asegurar instalación)
-gunicorn==21.2.0
 
 # Base de datos y manipulación de datos
 pandas>=2.0.0           # Manipulación de datos
