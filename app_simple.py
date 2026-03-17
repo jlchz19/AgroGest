@@ -5218,7 +5218,7 @@ def eventos_salud_ver(evento_id):
         flash('Acción no autorizada', 'danger')
         return redirect(url_for('eventos_salud'))
     
-    return render_template('ver_evento_salud.html', evento=evento)
+    return render_template('ver_evento_salud.html', evento=evento, dt=datetime)
 
 @app.route('/reporte/eventos_salud/pdf')
 @login_required
@@ -7687,6 +7687,7 @@ def seguimiento_peso():
     for fila in filas_recientes:
         (_id, _animal_id, peso, fecha, condicion_corporal, observaciones, identificacion, nombre) = fila
         registro_like = SimpleNamespace(
+            id=_id,
             peso=peso,
             condicion_corporal=condicion_corporal,
             fecha=fecha,
@@ -7980,6 +7981,102 @@ def nuevo_registro_peso():
     animales = Animal.query.filter_by(finca_id=finca_id).order_by(Animal.identificacion).all()
     
     return render_template('nuevo_registro_peso.html', animales=animales)
+
+@app.route('/peso/<int:registro_id>/editar', methods=['GET', 'POST'])
+@login_required
+def editar_registro_peso(registro_id):
+    """Editar un registro de peso existente"""
+    if 'finca_id' not in session:
+        flash('Selecciona una finca para editar registros', 'error')
+        return redirect(url_for('fincas'))
+    
+    finca_id = session['finca_id']
+    
+    # Obtener el registro con su animal
+    registro = db.session.query(RegistroPeso, Animal).join(Animal).filter(
+        RegistroPeso.id == registro_id,
+        Animal.finca_id == finca_id
+    ).first()
+    
+    if not registro:
+        flash('Registro no encontrado', 'error')
+        return redirect(url_for('seguimiento_peso'))
+    
+    registro_peso, animal = registro
+    
+    if request.method == 'POST':
+        try:
+            registro_peso.peso = float(request.form['peso'])
+            registro_peso.fecha = datetime.strptime(request.form['fecha'], '%Y-%m-%d').date()
+            registro_peso.condicion_corporal = request.form.get('condicion_corporal', type=int)
+            registro_peso.observaciones = request.form.get('observaciones', '')
+            
+            db.session.commit()
+            flash('Registro de peso actualizado exitosamente', 'success')
+            return redirect(url_for('seguimiento_peso'))
+            
+        except ValueError as e:
+            flash('Error en los datos ingresados', 'error')
+        except Exception as e:
+            flash('Error al actualizar el registro', 'error')
+            db.session.rollback()
+    
+    # Obtener animales de la finca
+    animales = Animal.query.filter_by(finca_id=finca_id).order_by(Animal.identificacion).all()
+    
+    return render_template('editar_registro_peso.html', registro=registro_peso, animal=animal, animales=animales)
+
+@app.route('/peso/<int:registro_id>/detalle')
+@login_required
+def detalle_registro_peso(registro_id):
+    """Ver detalles de un registro de peso"""
+    if 'finca_id' not in session:
+        flash('Selecciona una finca para ver detalles', 'error')
+        return redirect(url_for('fincas'))
+    
+    finca_id = session['finca_id']
+    
+    # Obtener el registro con su animal
+    registro = db.session.query(RegistroPeso, Animal).join(Animal).filter(
+        RegistroPeso.id == registro_id,
+        Animal.finca_id == finca_id
+    ).first()
+    
+    if not registro:
+        flash('Registro no encontrado', 'error')
+        return redirect(url_for('seguimiento_peso'))
+    
+    registro_peso, animal = registro
+    
+    return render_template('detalle_registro_peso.html', registro=registro_peso, animal=animal, dt=datetime)
+
+@app.route('/peso/<int:registro_id>/eliminar', methods=['POST'])
+@login_required
+def eliminar_registro_peso(registro_id):
+    """Eliminar un registro de peso"""
+    if 'finca_id' not in session:
+        return jsonify({'success': False, 'message': 'No hay finca seleccionada'}), 400
+    
+    finca_id = session['finca_id']
+    
+    try:
+        # Verificar que el registro pertenezca a la finca
+        registro = db.session.query(RegistroPeso).join(Animal).filter(
+            RegistroPeso.id == registro_id,
+            Animal.finca_id == finca_id
+        ).first()
+        
+        if not registro:
+            return jsonify({'success': False, 'message': 'Registro no encontrado'}), 404
+        
+        db.session.delete(registro)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Registro eliminado exitosamente'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error al eliminar el registro: {str(e)}'}), 500
 
 # ============================================================================
 # CONFIGURACIÓN DE FINCA MEJORADA
