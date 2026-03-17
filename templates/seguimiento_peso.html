@@ -176,6 +176,7 @@ body.dark-theme .table-hover tbody tr:hover {
                             <th class="border-0">Condición Corporal</th>
                             <th class="border-0">Fecha</th>
                             <th class="border-0">Observaciones</th>
+                            <th class="border-0">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -222,6 +223,21 @@ body.dark-theme .table-hover tbody tr:hover {
                                 <span class="text-muted">-</span>
                                 {% endif %}
                             </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('detalle_registro_peso', registro_id=registro.id) }}" class="btn btn-action btn-info" title="Ver Detalles">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('editar_registro_peso', registro_id=registro.id) }}" class="btn btn-action btn-outline-secondary" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button class="btn btn-action btn-outline-danger eliminar-peso-btn" title="Eliminar" 
+                                        data-registro-id="{{ registro.id }}" 
+                                        data-animal-nombre="{{ (numero ~ ' - ' ~ (nombre or 'Sin nombre'))|e }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -263,15 +279,66 @@ body.dark-theme .table-hover tbody tr:hover {
 }
 </style>
 <script>
+function verDetallePeso(id) {
+    // Redirigir a la página de detalles del registro de peso
+    window.location.href = `/peso/${id}/detalle`;
+}
+
+function editarPeso(id) {
+    // Redirigir a la página de edición del registro de peso
+    window.location.href = `/peso/${id}/editar`;
+}
+
+// Event listener para botones de eliminar
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.eliminar-peso-btn')) {
+        e.preventDefault();
+        var button = e.target.closest('.eliminar-peso-btn');
+        var id = button.getAttribute('data-registro-id');
+        var nombreAnimal = button.getAttribute('data-animal-nombre');
+        
+        if (!id) {
+            console.error('Registro ID not found');
+            return;
+        }
+        
+        if (!nombreAnimal) {
+            nombreAnimal = 'este animal';
+        }
+        
+        if (confirm('¿Estás seguro de que deseas eliminar el registro de peso de ' + nombreAnimal + '?')) {
+            fetch(`/peso/${id}/eliminar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error al eliminar el registro: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al eliminar el registro');
+            });
+        }
+    }
+});
+</script>
+<script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Set width for body condition score bars from data-cc (1-9 scale)
-  document.querySelectorAll('.cc-bar').forEach(function(el){
-    var cc = parseFloat(el.getAttribute('data-cc') || '0');
-    if (isNaN(cc) || cc < 0) cc = 0;
-    if (cc > 9) cc = 9;
-    var pct = Math.round(cc / 9 * 100);
-    el.style.width = pct + '%';
-  });
+    // Set width for body condition score bars from data-cc (1-9 scale)
+    document.querySelectorAll('.cc-bar').forEach(function(el){
+        var cc = parseFloat(el.getAttribute('data-cc') || '0');
+        if (isNaN(cc) || cc < 0) cc = 0;
+        if (cc > 9) cc = 9;
+        var pct = Math.round(cc / 9 * 100);
+        el.style.width = pct + '%';
+    });
 });
 </script>
 {% endblock %}

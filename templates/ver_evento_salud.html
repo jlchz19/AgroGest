@@ -303,7 +303,7 @@
                     <p><strong>Raza:</strong> {{ evento.animal.raza }}</p>
                     <p><strong>Sexo:</strong> {{ evento.animal.sexo|title }}</p>
                     <p><strong>Edad:</strong>
-                        {% set edad = ((now().date() - evento.animal.fecha_nacimiento).days // 365) %}
+                        {% set edad = ((dt.now().date() - evento.animal.fecha_nacimiento).days // 365) %}
                         {{ edad }} años
                     </p>
                     <p><strong>Estado Actual:</strong><br>
