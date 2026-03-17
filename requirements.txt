@@ -10,6 +10,7 @@ Flask-SQLAlchemy>=3.0.0
 Flask-Migrate>=4.0.0
 Flask-Login>=0.6.0
 Werkzeug>=2.3.0
+python-dotenv>=1.0.0
 
 # Base de datos y manipulación de datos
 pandas>=2.0.0           # Manipulación de datos
