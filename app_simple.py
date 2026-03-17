@@ -1,5 +1,5 @@
 
-print('[DEBUG] Inicio absoluto de app_simple.py')
+
 import os
 import uuid
 from werkzeug.utils import secure_filename
@@ -417,7 +417,9 @@ def imagen_static(filename):
 def update_database():
     with app.app_context():
         # This will add the new column if it doesn't exist
-        db.engine.execute('ALTER TABLE ubicacion ADD COLUMN IF NOT EXISTS imagen VARCHAR(255)')
+        with db.engine.connect() as conn:
+            conn.execute(text('ALTER TABLE ubicacion ADD COLUMN IF NOT EXISTS imagen VARCHAR(255)'))
+            conn.commit()
         db.session.commit()
         print("Database updated successfully!")
 
@@ -425,7 +427,9 @@ with app.app_context():
     try:
         db.create_all()
         # Add the imagen column to ubicacion table if it doesn't exist
-        db.engine.execute('ALTER TABLE ubicacion ADD COLUMN IF NOT EXISTS imagen VARCHAR(255)')
+        with db.engine.connect() as conn:
+            conn.execute(text('ALTER TABLE ubicacion ADD COLUMN IF NOT EXISTS imagen VARCHAR(255)'))
+            conn.commit()
         db.session.commit()
         print("[INFO] Base de datos inicializada correctamente.")
     except Exception as e:
@@ -1029,7 +1033,7 @@ def home():
 def index():
     user_id = session['user_id']
     # Ensure empleado table has expected columns before running queries
-    ensure_empleado_columns()
+    # ensure_empleado_columns()
     if 'finca_id' not in session:
         # Dashboard global si no hay finca seleccionada
         total_fincas = Finca.query.filter_by(usuario_id=user_id).count()
@@ -1075,7 +1079,7 @@ def index():
         total_empleados = db.session.execute(text("SELECT count(*) FROM empleado WHERE finca_id = :fid"), {"fid": finca_id}).scalar() or 0
     except SAOperationalError:
         # attempt to ensure columns then retry once
-        ensure_empleado_columns()
+        # ensure_empleado_columns()
         total_empleados = db.session.execute(text("SELECT count(*) FROM empleado WHERE finca_id = :fid"), {"fid": finca_id}).scalar() or 0
     total_vacunas = Vacuna.query.filter_by(finca_id=finca_id).count()
     
@@ -1876,7 +1880,7 @@ def potreros():
         return redirect(url_for('fincas'))
     
     # Asegurar que la columna imagen exista
-    ensure_potrero_columns()
+    # ensure_potrero_columns()
     
     finca_id = session['finca_id']
     potreros = Potrero.query.filter_by(finca_id=finca_id).all()
@@ -2446,7 +2450,7 @@ def maquinaria():
         return redirect(url_for('fincas'))
     
     # Asegurar que la columna imagen exista
-    ensure_maquinaria_columns()
+    # ensure_maquinaria_columns()
     
     maquinarias = Maquinaria.query.filter_by(finca_id=session['finca_id']).all()
     
@@ -3699,18 +3703,24 @@ def graficos_produccion():
 @app.route('/eventos')
 @login_required
 def eventos():
-    if 'finca_id' not in session:
-        flash('Selecciona una finca para ver eventos')
-        return redirect(url_for('fincas'))
+    try:
+        if 'finca_id' not in session:
+            flash('Selecciona una finca para ver eventos')
+            return redirect(url_for('fincas'))
+        
+        finca_id = session['finca_id']
+        
+        # Obtener todos los eventos de la finca con sus animales relacionados
+        eventos = db.session.query(Evento).join(Animal).filter(
+            Animal.finca_id == finca_id
+        ).order_by(Evento.fecha_evento.desc()).all()
+        
+        return render_template('eventos.html', eventos=eventos)
     
-    finca_id = session['finca_id']
-    
-    # Obtener todos los eventos de la finca, ordenados por fecha descendente
-    eventos = db.session.query(Evento, Animal).join(Animal).filter(
-        Animal.finca_id == finca_id
-    ).order_by(Evento.fecha_evento.desc()).all()
-    
-    return render_template('eventos.html', eventos=eventos)
+    except Exception as e:
+        print(f"Error en la ruta eventos: {e}")
+        flash('Error al cargar los eventos. Por favor, intenta nuevamente.')
+        return render_template('eventos.html', eventos=[])
 
 @app.route('/reporte_eventos_pdf')
 @login_required
@@ -8085,49 +8095,24 @@ if __name__ == '__main__':
                 print('OK Usuario administrador creado:')
                 print('   Usuario: admin')
                 print('   Contraseña: admin123')
-        # Mensajes de inicio mejorados en consola
-        # Detectar IP LAN automáticamente
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.connect(("8.8.8.8", 80))
-            lan_ip = s.getsockname()[0]
-            s.close()
-        except Exception:
-            lan_ip = "127.0.0.1"
 
-        public_url_env = os.getenv('APP_PUBLIC_URL')
-        public_url = public_url_env if public_url_env else f"http://{lan_ip}:5000"
+        # Para Render, usar el puerto proporcionado por la variable de entorno
+        port = int(os.environ.get('PORT', 5000))
+        print(f'[INFO] Iniciando servidor en puerto {port}')
 
-        print("\n" + "=" * 80)
-        print("                         INICIO DE APLICACIÓN AGROGEST")
-        print("=" * 80 + "\n")
-
-        print("----- Iniciando sistema... -----------------------------------------------------")
-        print("• Inicializando: En progreso")
-
-        print("\n----- Base de datos ------------------------------------------------------------")
-        print("• Inicializando base de datos: Completado")
-
-        print("\n----- Iniciando servidor -------------------------------------------------------")
-        print("• Sistema: Sistema de Gestión Ganadera AgroGest")
-        print("• Modo: Desarrollo (Flask debug=True)")
-        print("• Puerto: 5000")
-        print("• Host: 0.0.0.0 (accesible desde la red local)")
-        print("\n🔗 URLs de acceso:")
-        print("   • Local : http://localhost:5000")
-        print(f"   • Red LAN: http://{lan_ip}:5000")
-        if public_url_env:
-            print(f"   • Personalizada (APP_PUBLIC_URL): {public_url_env}")
-        print("\n   Copia y pega alguna de estas URLs en el navegador de tu teléfono.\n")
-        print("=" * 80 + "\n")
-        
         # Iniciar el scheduler de alertas
         scheduler = iniciar_scheduler()
+
+        # Escuchar en todas las interfaces y mostrar todas las direcciones IP disponibles
+        import socket
+        hostname = socket.gethostname()
+        local_ip = socket.gethostbyname(hostname)
+        print(f'[INFO] Tu dirección IP local es: {local_ip}')
+        print(f'[INFO] Puedes acceder desde otros dispositivos en: http://{local_ip}:{port}')
+        print(f'[INFO] También puedes intentar: http://192.168.1.112:{port}')
         
-        # Escuchar en todas las interfaces para permitir acceso desde otros dispositivos
-        # Usar el puerto proporcionado por Render o 5000 por defecto
-        port = int(os.environ.get('PORT', 5000))
         app.run(host='0.0.0.0', port=port, debug=False)
+
     except Exception as e:
         import traceback
         print('[ERROR] Excepción al iniciar la app:')
