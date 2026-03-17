@@ -635,12 +635,7 @@
 
         /* Mobile/touch fixes: ensure hamburger button is on top and tappable */
         @media (max-width: 768px) {
-            #mobileMenuToggle {
-                z-index: 9999;
-                position: relative;
-                -webkit-tap-highlight-color: transparent;
-                touch-action: manipulation;
-            }
+            /* #mobileMenuButton styles REMOVED - Using styles.css instead */
             
             #sidebar {
                 position: fixed;
@@ -1449,7 +1444,7 @@
         }
         
         .alert-content {
-            background: white;
+            background: #007bff;
             border-radius: 12px;
             width: 100%;
             max-width: 400px;
@@ -1681,7 +1676,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: #f8f9fa;
+            background-color: #007bff;
         }
         
         .mobile-nav-body {
@@ -1717,20 +1712,26 @@
             align-items: center;
             padding: 15px 20px;
             border-bottom: 1px solid #eee;
-            background-color: #f8f9fa;
+            background-color: #007bff;
         }
         
         .mobile-nav-header h4 {
             margin: 0;
             font-size: 1.25rem;
-            color: #333;
+            color: white;
+        }
+        
+        .mobile-nav-header h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            color: white;
         }
         
         .close-nav {
             background: none;
             border: none;
             font-size: 1.5rem;
-            color: #6c757d;
+            color: white;
             cursor: pointer;
             padding: 5px;
             line-height: 1;
@@ -1791,19 +1792,7 @@
         
         /* Mobile Menu Styles */
         @media (max-width: 768px) {
-            /* Mobile menu button */
-            #mobileMenuButton {
-                z-index: 1001;
-                position: relative;
-                -webkit-tap-highlight-color: transparent;
-                touch-action: manipulation;
-                padding: 10px 12px;
-                min-width: 48px;
-                display: inline-block !important;
-                background: transparent;
-                border: none;
-                cursor: pointer;
-            }
+            /* Mobile menu button - REMOVED - Using styles.css instead */
             
             /* Sidebar styles for mobile */
             #sidebar {
@@ -2007,14 +1996,17 @@
         </style>
         </head>
 <body>
+    
+
+    
     <!-- Overlay para el menú móvil -->
     <div class="mobile-menu-overlay" onclick="window.toggleMobileMenu()"></div>
     
     <div class="wrapper">
-        <!-- Sidebar para escritorio -->
-        <nav id="sidebar" class="d-none d-md-block">
+        <!-- Sidebar para escritorio y móvil -->
+        <nav id="sidebar">
             <div class="sidebar-header">
-                <h3><span style="font-size: 1.5rem;">🌾</span> AgroGest</h3>
+                <h3>AgroGest</h3>
                 <!-- Botón de cerrar para móvil -->
                 <button type="button" id="sidebarCloseBtn" class="btn btn-sm d-md-none" style="position: absolute; top: 15px; right: 15px; z-index: 1000; background: rgba(255,255,255,0.2); border: 2px solid white; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;" onclick="closeSidebar()">
                     <i class="fas fa-times" style="font-size: 1.2rem;"></i>
@@ -2116,9 +2108,10 @@
         <div id="content">
             <nav class="navbar navbar-main navbar-expand-lg navbar-light">
                 <div class="container-fluid">
-                    <!-- Mobile Hamburger Button - Only visible on mobile -->
-                    <button id="sidebarToggle" class="btn btn-link text-dark d-md-none" style="position: relative; z-index: 1001;" onclick="if(window.toggleMobileMenu) window.toggleMobileMenu(); return false;">
-                        <i class="fas fa-bars" style="font-size: 1.5rem;"></i>
+                    <!-- Mobile Hamburger Button - Solo visible en móviles -->
+                    <!-- Mobile Hamburger Button -->
+                    <button id="mobileMenuButton" class="btn btn-link mobile-menu-toggler" type="button" aria-label="Menú" onclick="window.toggleMobileMenu()">
+                        <i class="fas fa-bars"></i>
                     </button>
                     
                     <!-- Finca Activa Section - Moved to Left -->
@@ -2252,7 +2245,7 @@
     <div id="mobileNav" class="mobile-nav d-md-none">
         <div class="mobile-nav-content">
             <div class="mobile-nav-header">
-                <h3><span style="font-size: 1.5rem;">🌾</span> AgroGest</h3>
+                <h3><i class="fas fa-tractor" style="font-size: 1.2rem; margin-right: 8px;"></i>AgroGest</h3>
                 <button class="close-nav" onclick="window.toggleMobileMenu()">
                     <i class="fas fa-times"></i>
                 </button>
@@ -3175,7 +3168,7 @@
             .catch((error) => {
                 console.error('Error al actualizar perfil:', error);
                 showToast('Error al actualizar perfil', 'error');
-                                             });
+            });
         }
 
         function saveSettings() {
