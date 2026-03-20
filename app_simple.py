@@ -3680,24 +3680,87 @@ def graficos_produccion():
         flash('Por favor, selecciona una finca primero.', 'warning')
         return redirect(url_for('seleccion_finca'))
     
-    # Obtener datos de producción para los gráficos
-    producciones = Produccion.query.join(Animal).filter_by(finca_id=session['finca_id']).all()
+    # Obtener datos reales de producción
+    from sqlalchemy import func, extract
+    from datetime import datetime, date
     
-    # Procesar datos para los gráficos
-    # (Aquí puedes agregar la lógica para procesar los datos de producción)
+    finca_id = session['finca_id']
     
-    return render_template('graficos_produccion.html')
-    if request.method == 'POST':
-        produccion.animal_id = int(request.form['animal_id'])
-        produccion.tipo_produccion = request.form['tipo_produccion']
-        produccion.cantidad = float(request.form['cantidad'])
-        produccion.unidad = request.form['unidad']
-        produccion.fecha = datetime.strptime(request.form['fecha'], '%Y-%m-%d').date()
-        produccion.calidad = request.form['calidad']
-        db.session.commit()
-        flash('Producción actualizada exitosamente', 'success')
-        return redirect(url_for('produccion'))
-    return render_template('editar_produccion.html', produccion=produccion, animales=animales)
+    # 1. Datos de producción por tipo
+    produccion_por_tipo = db.session.query(
+        Produccion.tipo_produccion,
+        func.sum(Produccion.cantidad).label('total'),
+        func.count(Produccion.id).label('registros')
+    ).filter_by(finca_id=finca_id).group_by(Produccion.tipo_produccion).all()
+    
+    # 2. Datos de producción mensual (últimos 12 meses)
+    from datetime import date
+    current_year = date.today().year
+    start_date = date(current_year, 1, 1)
+    
+    produccion_mensual = db.session.query(
+        extract('year', Produccion.fecha).label('año'),
+        extract('month', Produccion.fecha).label('mes'),
+        Produccion.tipo_produccion,
+        func.sum(Produccion.cantidad).label('total')
+    ).filter_by(finca_id=finca_id) \
+    .filter(Produccion.fecha >= start_date) \
+    .group_by(extract('year', Produccion.fecha), extract('month', Produccion.fecha), Produccion.tipo_produccion) \
+    .order_by(extract('year', Produccion.fecha), extract('month', Produccion.fecha)) \
+    .all()
+    
+    # 3. Producción por animal (top 10)
+    produccion_por_animal = db.session.query(
+        Animal.nombre,
+        Animal.identificacion,
+        Produccion.tipo_produccion,
+        func.sum(Produccion.cantidad).label('total')
+    ).join(Produccion).filter(Produccion.finca_id == finca_id) \
+    .group_by(Animal.id, Produccion.tipo_produccion) \
+    .order_by(func.sum(Produccion.cantidad).desc()) \
+    .limit(10).all()
+    
+    # 4. Estadísticas generales
+    stats = {
+        'total_produccion': db.session.query(func.sum(Produccion.cantidad)) \
+        .filter_by(finca_id=finca_id).scalar() or 0,
+        'total_registros': db.session.query(func.count(Produccion.id)) \
+        .filter_by(finca_id=finca_id).scalar() or 0,
+        'animales_productivos': db.session.query(Produccion.animal_id) \
+        .filter_by(finca_id=finca_id).distinct().count() or 0
+    }
+    
+    # Preparar datos para los gráficos
+    tipo_labels = [item.tipo_produccion for item in produccion_por_tipo]
+    tipo_data = [float(item.total) for item in produccion_por_tipo]
+    
+    # Procesar datos mensuales
+    meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+    datasets = {}
+    
+    for año, mes, tipo, total in produccion_mensual:
+        key = f"{tipo}"
+        if key not in datasets:
+            datasets[key] = [0] * 12
+        datasets[key][int(mes) - 1] = float(total)
+    
+    mensual_datasets = []
+    colores = ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796']
+    for i, (tipo, data) in enumerate(datasets.items()):
+        mensual_datasets.append({
+            'label': tipo,
+            'data': data,
+            'backgroundColor': colores[i % len(colores)] + '20',
+            'borderColor': colores[i % len(colores)],
+            'borderWidth': 2
+        })
+    
+    return render_template('graficos_produccion.html',
+                         tipo_labels=tipo_labels,
+                         tipo_data=tipo_data,
+                         mensual_datasets=mensual_datasets,
+                         produccion_por_animal=produccion_por_animal,
+                         stats=stats)
 
 # Rutas para Eventos
 @app.route('/eventos')
@@ -4002,6 +4065,777 @@ def eliminar_evento(evento_id):
         print(f"Error al eliminar evento: {e}")
     
     return redirect(url_for('eventos'))
+
+@app.route('/evento/<int:evento_id>/ver')
+@login_required
+def ver_evento(evento_id):
+    """Ver detalles de un evento"""
+    if 'finca_id' not in session:
+        flash('Selecciona una finca para continuar', 'warning')
+        return redirect(url_for('eventos'))
+    
+    try:
+        # Obtener el evento
+        evento = Evento.query.get_or_404(evento_id)
+        
+        # Verificar que el evento pertenezca a un animal de la finca
+        animal = Animal.query.get(evento.animal_id)
+        if not animal or animal.finca_id != session['finca_id']:
+            flash('No tienes permiso para ver este evento', 'error')
+            return redirect(url_for('eventos'))
+        
+        return render_template('ver_evento.html', evento=evento, animal=animal, dt=datetime)
+        
+    except Exception as e:
+        db.session.rollback()
+        flash('Error al cargar el evento', 'error')
+        print(f"Error al ver evento: {e}")
+        return redirect(url_for('eventos'))
+
+@app.route('/evento/<int:evento_id>/editar', methods=['GET', 'POST'])
+@login_required
+def editar_evento(evento_id):
+    """Editar un evento existente"""
+    if 'finca_id' not in session:
+        flash('Selecciona una finca para continuar', 'warning')
+        return redirect(url_for('eventos'))
+    
+    try:
+        # Obtener el evento
+        evento = Evento.query.get_or_404(evento_id)
+        
+        # Verificar que el evento pertenezca a un animal de la finca
+        animal = Animal.query.get(evento.animal_id)
+        if not animal or animal.finca_id != session['finca_id']:
+            flash('No tienes permiso para editar este evento', 'error')
+            return redirect(url_for('eventos'))
+        
+        if request.method == 'POST':
+            # Actualizar datos del evento
+            evento.tipo_evento = request.form.get('tipo_evento')
+            evento.fecha_evento = datetime.strptime(request.form.get('fecha_evento'), '%Y-%m-%d').date()
+            evento.descripcion = request.form.get('descripcion')
+            evento.responsable = request.form.get('responsable')
+            
+            # Campos específicos según tipo de evento
+            if evento.tipo_evento == 'vendido':
+                evento.comprador = request.form.get('comprador')
+                evento.precio_venta = float(request.form.get('precio_venta')) if request.form.get('precio_venta') else None
+            elif evento.tipo_evento == 'fallecido':
+                evento.causa_muerte = request.form.get('causa_muerte')
+            elif evento.tipo_evento == 'transferido':
+                evento.descripcion = request.form.get('descripcion_transferencia')
+            
+            db.session.commit()
+            flash('Evento actualizado exitosamente', 'success')
+            return redirect(url_for('ver_evento', evento_id=evento.id))
+        
+        # Obtener lista de animales para el formulario
+        animales = Animal.query.filter_by(finca_id=session['finca_id']).all()
+        
+        return render_template('editar_evento.html', evento=evento, animal=animal, animales=animales)
+        
+    except Exception as e:
+        db.session.rollback()
+        flash('Error al actualizar el evento', 'error')
+        print(f"Error al editar evento: {e}")
+        return redirect(url_for('eventos'))
+
+@app.route('/ajustes')
+@login_required
+def ajustes():
+    """Página de ajustes del sistema"""
+    if 'finca_id' not in session:
+        flash('Selecciona una finca para continuar', 'warning')
+        return redirect(url_for('fincas'))
+    
+    try:
+        # Obtener información de la finca actual
+        finca = Finca.query.get(session['finca_id'])
+        if not finca:
+            flash('Finca no encontrada', 'error')
+            return redirect(url_for('fincas'))
+        
+        # Obtener estadísticas para mostrar
+        animales_count = Animal.query.filter_by(finca_id=finca.id).count()
+        
+        eventos_count = Evento.query.join(Animal).filter(Animal.finca_id == finca.id).count()
+        salud_count = EventoSalud.query.join(Animal).filter(Animal.finca_id == finca.id).count()
+        vacunas_count = Vacuna.query.join(Animal).filter(Animal.finca_id == finca.id).count()
+        
+        return render_template('ajustes.html', 
+                           finca=finca,
+                           animales_count=animales_count,
+                           eventos_count=eventos_count,
+                           salud_count=salud_count,
+                           vacunas_count=vacunas_count)
+        
+    except Exception as e:
+        flash('Error al cargar ajustes', 'error')
+        print(f"Error en ajustes: {e}")
+        return redirect(url_for('index'))
+
+@app.route('/descargar_respaldo_finca')
+@login_required
+def descargar_respaldo_finca():
+    """Genera y descarga un respaldo de la base de datos de la finca seleccionada"""
+    if 'finca_id' not in session:
+        flash('Selecciona una finca para continuar', 'warning')
+        return redirect(url_for('fincas'))
+    
+    try:
+        # Obtener información de la finca
+        finca = Finca.query.get(session['finca_id'])
+        if not finca:
+            flash('Finca no encontrada', 'error')
+            return redirect(url_for('ajustes'))
+        
+        # Crear un respaldo JSON de todos los datos relacionados con la finca
+        respaldo = {
+            'informacion_finca': {
+                'id': finca.id,
+                'nombre': finca.nombre,
+                'ubicacion': finca.ubicacion,
+                'telefono': finca.telefono,
+                'email': finca.email,
+                'fecha_creacion': finca.fecha_fundacion.strftime('%Y-%m-%d') if finca.fecha_fundacion else None,
+                'fecha_respaldo': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            },
+            'animales': [],
+            'eventos': [],
+            'eventos_salud': [],
+            'vacunas': [],
+            'produccion': [],
+            'potreros': [],
+            'alimentacion': [],
+            'inventario': []
+        }
+        
+        # Exportar animales
+        animales = Animal.query.filter_by(finca_id=finca.id).all()
+        for animal in animales:
+            respaldo['animales'].append({
+                'id': animal.id,
+                'identificacion': animal.identificacion,
+                'nombre': animal.nombre,
+                'tipo': animal.tipo,
+                'raza': animal.raza,
+                'sexo': animal.sexo,
+                'fecha_nacimiento': animal.fecha_nacimiento.strftime('%Y-%m-%d') if animal.fecha_nacimiento else None,
+                'peso': float(animal.peso) if animal.peso else None,
+                'estado': animal.estado,
+                'imagen': animal.imagen
+            })
+        
+        # Exportar eventos
+        eventos = Evento.query.join(Animal).filter(Animal.finca_id == finca.id).all()
+        for evento in eventos:
+            respaldo['eventos'].append({
+                'id': evento.id,
+                'animal_id': evento.animal_id,
+                'tipo_evento': evento.tipo_evento,
+                'fecha_evento': evento.fecha_evento.strftime('%Y-%m-%d') if evento.fecha_evento else None,
+                'descripcion': evento.descripcion,
+                'responsable': evento.responsable,
+                'comprador': getattr(evento, 'comprador', None),
+                'precio_venta': float(getattr(evento, 'precio_venta', 0)) if getattr(evento, 'precio_venta', None) else None,
+                'causa_muerte': getattr(evento, 'causa_muerte', None),
+                'fecha_registro': evento.fecha_registro.strftime('%Y-%m-%d %H:%M:%S') if evento.fecha_registro else None
+            })
+        
+        # Exportar eventos de salud
+        eventos_salud = EventoSalud.query.join(Animal).filter(Animal.finca_id == finca.id).all()
+        for evento in eventos_salud:
+            respaldo['eventos_salud'].append({
+                'id': evento.id,
+                'animal_id': evento.animal_id,
+                'tipo_evento': evento.tipo_evento,
+                'titulo': evento.titulo,
+                'fecha_evento': evento.fecha_evento.strftime('%Y-%m-%d') if evento.fecha_evento else None,
+                'descripcion': evento.descripcion,
+                'tratamiento': evento.tratamiento,
+                'estado': evento.estado,
+                'veterinario': evento.veterinario,
+                'fecha_registro': evento.fecha_registro.strftime('%Y-%m-%d %H:%M:%S') if evento.fecha_registro else None
+            })
+        
+        # Exportar vacunas
+        vacunas = Vacuna.query.join(Animal).filter(Animal.finca_id == finca.id).all()
+        for vacuna in vacunas:
+            respaldo['vacunas'].append({
+                'id': vacuna.id,
+                'animal_id': vacuna.animal_id,
+                'tipo_vacuna': vacuna.tipo_vacuna,
+                'fecha_aplicacion': vacuna.fecha_aplicacion.strftime('%Y-%m-%d') if vacuna.fecha_aplicacion else None,
+                'fecha_proxima': vacuna.fecha_proxima.strftime('%Y-%m-%d') if vacuna.fecha_proxima else None,
+                'aplicada_por': vacuna.aplicada_por,
+                'numero_lote': vacuna.numero_lote,
+                'observaciones': vacuna.observaciones
+            })
+        
+        # Exportar producción
+        produccion = Produccion.query.join(Animal).filter(Animal.finca_id == finca.id).all()
+        for prod in produccion:
+            respaldo['produccion'].append({
+                'id': prod.id,
+                'animal_id': prod.animal_id,
+                'tipo_produccion': prod.tipo_produccion,
+                'cantidad': float(prod.cantidad) if prod.cantidad else None,
+                'unidad': prod.unidad,
+                'calidad': prod.calidad,
+                'fecha': prod.fecha.strftime('%Y-%m-%d') if prod.fecha else None
+            })
+        
+        # Exportar potreros
+        potreros = Potrero.query.filter_by(finca_id=finca.id).all()
+        for potrero in potreros:
+            respaldo['potreros'].append({
+                'id': potrero.id,
+                'nombre': potrero.nombre,
+                'area': float(potrero.area) if potrero.area else None,
+                'capacidad': potrero.capacidad,
+                'tipo_pasto': potrero.tipo_pasto,
+                'estado': potrero.estado,
+                'funcion': potrero.funcion
+            })
+        
+        # Exportar alimentación
+        alimentacion = HistorialAlimentacion.query.join(Animal).filter(Animal.finca_id == finca.id).all()
+        for alim in alimentacion:
+            respaldo['alimentacion'].append({
+                'id': alim.id,
+                'animal_id': alim.animal_id,
+                'tipo_alimento': alim.tipo_alimento,
+                'cantidad': float(alim.cantidad) if alim.cantidad else None,
+                'unidad': getattr(alim, 'unidad', None),
+                'fecha_alimentacion': alim.fecha_inicio.strftime('%Y-%m-%d %H:%M:%S') if alim.fecha_inicio else None
+            })
+        
+        # Exportar inventario
+        inventario = Inventario.query.filter_by(finca_id=finca.id).all()
+        for item in inventario:
+            respaldo['inventario'].append({
+                'id': item.id,
+                'producto': item.producto,
+                'cantidad': float(item.cantidad) if item.cantidad else None,
+                'unidad': item.unidad,
+                'precio_unitario': float(item.precio_unitario) if item.precio_unitario else None,
+                'fecha_vencimiento': item.fecha_vencimiento.strftime('%Y-%m-%d') if item.fecha_vencimiento else None,
+                'categoria': item.categoria,
+                'tipo_animal': item.tipo_animal
+            })
+        
+        # Crear el archivo JSON
+        import json
+        json_data = json.dumps(respaldo, indent=2, ensure_ascii=False)
+        
+        # Crear respuesta para descarga
+        from flask import Response
+        response = Response(
+            json_data,
+            mimetype='application/json',
+            headers={
+                'Content-Disposition': f'attachment; filename=respaldo_finca_{finca.nombre}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+            }
+        )
+        
+        flash('Respaldo descargado exitosamente', 'success')
+        return response
+        
+    except Exception as e:
+        flash('Error al generar respaldo', 'error')
+        print(f"Error al descargar respaldo: {e}")
+        return redirect(url_for('ajustes'))
+
+@app.route('/importar_respaldo_finca', methods=['GET', 'POST'])
+@login_required
+def importar_respaldo_finca():
+    """Importa un respaldo de la base de datos de la finca"""
+    if 'finca_id' not in session:
+        flash('Selecciona una finca para continuar', 'warning')
+        return redirect(url_for('fincas'))
+    
+    if request.method == 'GET':
+        return render_template('importar_respaldo.html')
+    
+    try:
+        if 'archivo_respaldo' not in request.files:
+            flash('Por favor, selecciona un archivo JSON', 'error')
+            return redirect(url_for('ajustes'))
+        
+        file = request.files['archivo_respaldo']
+        if file.filename == '':
+            flash('No se seleccionó ningún archivo', 'error')
+            return redirect(url_for('ajustes'))
+        
+        if not file.filename.endswith('.json'):
+            flash('El archivo debe ser formato JSON', 'error')
+            return redirect(url_for('ajustes'))
+        
+        # Leer el archivo JSON
+        import json
+        respaldo_data = json.loads(file.read().decode('utf-8'))
+        
+        # Validar estructura básica del JSON
+        if 'informacion_finca' not in respaldo_data:
+            flash('El archivo no parece ser un respaldo válido', 'error')
+            return redirect(url_for('ajustes'))
+        
+        # Obtener finca actual
+        finca = Finca.query.get(session['finca_id'])
+        if not finca:
+            flash('Finca no encontrada', 'error')
+            return redirect(url_for('ajustes'))
+        
+        # Contador de registros importados
+        registros_importados = {
+            'animales': 0,
+            'eventos': 0,
+            'eventos_salud': 0,
+            'vacunas': 0,
+            'produccion': 0,
+            'potreros': 0,
+            'alimentacion': 0,
+            'inventario': 0,
+            'errores': []
+        }
+        
+        # Importar animales
+        if 'animales' in respaldo_data:
+            for animal_data in respaldo_data['animales']:
+                try:
+                    # Verificar si el animal ya existe
+                    animal_existente = Animal.query.filter_by(
+                        finca_id=finca.id, 
+                        identificacion=animal_data.get('identificacion')
+                    ).first()
+                    
+                    if not animal_existente:
+                        nuevo_animal = Animal(
+                            finca_id=finca.id,
+                            identificacion=animal_data.get('identificacion'),
+                            nombre=animal_data.get('nombre'),
+                            tipo=animal_data.get('tipo'),
+                            raza=animal_data.get('raza'),
+                            sexo=animal_data.get('sexo'),
+                            peso=animal_data.get('peso'),
+                            estado=animal_data.get('estado', 'activo'),
+                            imagen=animal_data.get('imagen')
+                        )
+                        
+                        if animal_data.get('fecha_nacimiento'):
+                            nuevo_animal.fecha_nacimiento = datetime.strptime(animal_data['fecha_nacimiento'], '%Y-%m-%d').date()
+                        
+                        db.session.add(nuevo_animal)
+                        registros_importados['animales'] += 1
+                    else:
+                        registros_importados['errores'].append(f"Animal {animal_data.get('identificacion')} ya existe")
+                        
+                except Exception as e:
+                    registros_importados['errores'].append(f"Error importando animal {animal_data.get('identificacion')}: {str(e)}")
+        
+        # Importar eventos
+        if 'eventos' in respaldo_data:
+            for evento_data in respaldo_data['eventos']:
+                try:
+                    # Verificar que el animal existe
+                    animal = Animal.query.filter_by(
+                        finca_id=finca.id,
+                        identificacion=evento_data.get('animal_id')
+                    ).first()
+                    
+                    if animal:
+                        nuevo_evento = Evento(
+                            animal_id=animal.id,
+                            tipo_evento=evento_data.get('tipo_evento'),
+                            descripcion=evento_data.get('descripcion'),
+                            responsable=evento_data.get('responsable')
+                        )
+                        
+                        if evento_data.get('fecha_evento'):
+                            nuevo_evento.fecha_evento = datetime.strptime(evento_data['fecha_evento'], '%Y-%m-%d').date()
+                        
+                        # Campos específicos según tipo
+                        if evento_data.get('tipo_evento') == 'vendido':
+                            nuevo_evento.comprador = evento_data.get('comprador')
+                            nuevo_evento.precio_venta = evento_data.get('precio_venta')
+                        elif evento_data.get('tipo_evento') == 'fallecido':
+                            nuevo_evento.causa_muerte = evento_data.get('causa_muerte')
+                        
+                        db.session.add(nuevo_evento)
+                        registros_importados['eventos'] += 1
+                    else:
+                        registros_importados['errores'].append(f"Animal no encontrado para evento ID {evento_data.get('animal_id')}")
+                        
+                except Exception as e:
+                    registros_importados['errores'].append(f"Error importando evento: {str(e)}")
+        
+        # Importar eventos de salud
+        if 'eventos_salud' in respaldo_data:
+            for evento_data in respaldo_data['eventos_salud']:
+                try:
+                    animal = Animal.query.filter_by(
+                        finca_id=finca.id,
+                        identificacion=evento_data.get('animal_id')
+                    ).first()
+                    
+                    if animal:
+                        nuevo_evento = EventoSalud(
+                            animal_id=animal.id,
+                            tipo_evento=evento_data.get('tipo_evento'),
+                            titulo=evento_data.get('titulo'),
+                            descripcion=evento_data.get('descripcion'),
+                            tratamiento=evento_data.get('tratamiento'),
+                            estado=evento_data.get('estado'),
+                            veterinario=evento_data.get('veterinario')
+                        )
+                        
+                        if evento_data.get('fecha_evento'):
+                            nuevo_evento.fecha_evento = datetime.strptime(evento_data['fecha_evento'], '%Y-%m-%d').date()
+                        
+                        db.session.add(nuevo_evento)
+                        registros_importados['eventos_salud'] += 1
+                    else:
+                        registros_importados['errores'].append(f"Animal no encontrado para evento de salud ID {evento_data.get('animal_id')}")
+                        
+                except Exception as e:
+                    registros_importados['errores'].append(f"Error importando evento de salud: {str(e)}")
+        
+        # Importar vacunas
+        if 'vacunas' in respaldo_data:
+            for vacuna_data in respaldo_data['vacunas']:
+                try:
+                    animal = Animal.query.filter_by(
+                        finca_id=finca.id,
+                        identificacion=vacuna_data.get('animal_id')
+                    ).first()
+                    
+                    if animal:
+                        nueva_vacuna = Vacuna(
+                            animal_id=animal.id,
+                            tipo_vacuna=vacuna_data.get('tipo_vacuna'),
+                            aplicada_por=vacuna_data.get('aplicada_por'),
+                            numero_lote=vacuna_data.get('numero_lote'),
+                            observaciones=vacuna_data.get('observaciones')
+                        )
+                        
+                        if vacuna_data.get('fecha_aplicacion'):
+                            nueva_vacuna.fecha_aplicacion = datetime.strptime(vacuna_data['fecha_aplicacion'], '%Y-%m-%d').date()
+                        if vacuna_data.get('fecha_proxima'):
+                            nueva_vacuna.fecha_proxima = datetime.strptime(vacuna_data['fecha_proxima'], '%Y-%m-%d').date()
+                        
+                        db.session.add(nueva_vacuna)
+                        registros_importados['vacunas'] += 1
+                    else:
+                        registros_importados['errores'].append(f"Animal no encontrado para vacuna ID {vacuna_data.get('animal_id')}")
+                        
+                except Exception as e:
+                    registros_importados['errores'].append(f"Error importando vacuna: {str(e)}")
+        
+        # Confirmar todos los cambios
+        db.session.commit()
+        
+        # Mensaje de éxito
+        mensaje_exito = f"""
+        Importación completada:
+        ✅ Animales: {registros_importados['animales']}
+        ✅ Eventos: {registros_importados['eventos']}
+        ✅ Eventos de salud: {registros_importados['eventos_salud']}
+        ✅ Vacunas: {registros_importados['vacunas']}
+        """
+        
+        if registros_importados['errores']:
+            mensaje_exito += f"\n⚠️ Errores: {len(registros_importados['errores'])}"
+            for error in registros_importados['errores'][:5]:  # Mostrar solo primeros 5 errores
+                mensaje_exito += f"\n• {error}"
+        
+        flash(mensaje_exito, 'success')
+        return redirect(url_for('ajustes'))
+        
+    except json.JSONDecodeError:
+        flash('El archivo JSON no es válido', 'error')
+        return redirect(url_for('ajustes'))
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al importar respaldo: {str(e)}', 'error')
+        print(f"Error al importar respaldo: {e}")
+        return redirect(url_for('ajustes'))
+
+@app.route('/reporte_finca_completo_pdf')
+@login_required
+def reporte_finca_completo_pdf():
+    """Genera un reporte PDF completo de toda la finca"""
+    if 'finca_id' not in session:
+        flash('Selecciona una finca para continuar')
+        return redirect(url_for('fincas'))
+    
+    try:
+        from reportlab.lib.pagesizes import letter, A4
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import inch
+        from reportlab.lib import colors
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+        import io
+        from datetime import datetime
+        
+        # Configuración del PDF
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4, 
+                               rightMargin=72, leftMargin=72,
+                               topMargin=72, bottomMargin=18)
+        
+        # Estilos
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=18,
+            spaceAfter=30,
+            alignment=TA_CENTER,
+            textColor=colors.darkblue
+        )
+        
+        heading_style = ParagraphStyle(
+            'CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=14,
+            spaceAfter=12,
+            textColor=colors.darkblue
+        )
+        
+        # Obtener datos de la finca
+        finca = Finca.query.get(session['finca_id'])
+        if not finca:
+            flash('Finca no encontrada', 'error')
+            return redirect(url_for('ajustes'))
+        
+        # Contenido del PDF
+        story = []
+        
+        # Título principal
+        story.append(Paragraph(f"REPORTE COMPLETO DE LA FINCA", title_style))
+        story.append(Paragraph(f"{finca.nombre}", styles['Heading2']))
+        story.append(Paragraph(f"Fecha: {datetime.now().strftime('%d/%m/%Y')}", styles['Normal']))
+        story.append(Spacer(1, 20))
+        
+        # 1. Información de la Finca
+        story.append(Paragraph("1. INFORMACIÓN GENERAL", heading_style))
+        
+        info_data = [
+            ['Nombre:', finca.nombre or 'N/A'],
+            ['Ubicación:', finca.ubicacion or 'N/A'],
+            ['Teléfono:', finca.telefono or 'N/A'],
+            ['Email:', finca.email or 'N/A'],
+            ['Fecha Fundación:', finca.fecha_fundacion.strftime('%d/%m/%Y') if finca.fecha_fundacion else 'N/A']
+        ]
+        
+        info_table = Table(info_data, colWidths=[2*inch, 4*inch])
+        info_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), colors.lightgrey),
+            ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ]))
+        
+        story.append(info_table)
+        story.append(Spacer(1, 20))
+        
+        # 2. Animales
+        story.append(PageBreak())
+        story.append(Paragraph("2. ANIMALES", heading_style))
+        
+        animales = Animal.query.filter_by(finca_id=finca.id).all()
+        if animales:
+            animales_data = [['ID', 'Identificación', 'Nombre', 'Raza', 'Tipo', 'Sexo', 'Estado']]
+            for animal in animales:
+                animales_data.append([
+                    str(animal.id),
+                    animal.identificacion or 'N/A',
+                    animal.nombre or 'N/A',
+                    animal.raza or 'N/A',
+                    animal.tipo or 'N/A',
+                    animal.sexo or 'N/A',
+                    animal.estado or 'N/A'
+                ])
+            
+            animales_table = Table(animales_data, colWidths=[0.5*inch, 1*inch, 1.2*inch, 1*inch, 1*inch, 0.8*inch, 1*inch])
+            animales_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 9),
+                ('FONTSIZE', (0, 1), (-1, -1), 8),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+            ]))
+            
+            story.append(animales_table)
+            story.append(Paragraph(f"Total animales: {len(animales)}", styles['Normal']))
+        else:
+            story.append(Paragraph("No hay animales registrados", styles['Normal']))
+        
+        story.append(Spacer(1, 20))
+        
+        # 3. Producción
+        story.append(Paragraph("3. PRODUCCIÓN", heading_style))
+        
+        producciones = Produccion.query.filter_by(finca_id=finca.id).all()
+        if producciones:
+            prod_data = [['Fecha', 'Animal', 'Tipo', 'Cantidad', 'Unidad']]
+            for prod in producciones:
+                prod_data.append([
+                    prod.fecha.strftime('%d/%m/%Y') if prod.fecha else 'N/A',
+                    prod.animal.nombre if prod.animal else 'N/A',
+                    prod.tipo_produccion or 'N/A',
+                    str(prod.cantidad) if prod.cantidad else '0',
+                    prod.unidad or 'N/A'
+                ])
+            
+            prod_table = Table(prod_data, colWidths=[1*inch, 1.5*inch, 1.2*inch, 0.8*inch, 0.8*inch])
+            prod_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.darkgreen),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 9),
+                ('FONTSIZE', (0, 1), (-1, -1), 8),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+            ]))
+            
+            story.append(prod_table)
+            story.append(Paragraph(f"Total registros: {len(producciones)}", styles['Normal']))
+        else:
+            story.append(Paragraph("No hay registros de producción", styles['Normal']))
+        
+        story.append(Spacer(1, 20))
+        
+        # 4. Salud y Vacunas
+        story.append(PageBreak())
+        story.append(Paragraph("4. SALUD Y VACUNAS", heading_style))
+        
+        # Eventos de salud
+        eventos_salud = EventoSalud.query.join(Animal).filter(Animal.finca_id == finca.id).all()
+        if eventos_salud:
+            salud_data = [['Fecha', 'Animal', 'Tipo', 'Descripción']]
+            for evento in eventos_salud:
+                salud_data.append([
+                    evento.fecha_evento.strftime('%d/%m/%Y') if evento.fecha_evento else 'N/A',
+                    evento.animal.nombre if evento.animal else 'N/A',
+                    evento.tipo_evento or 'N/A',
+                    (evento.descripcion or '')[:30] + '...' if len(evento.descripcion or '') > 30 else (evento.descripcion or 'N/A')
+                ])
+            
+            salud_table = Table(salud_data, colWidths=[1*inch, 1.5*inch, 1.2*inch, 2*inch])
+            salud_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.darkred),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 9),
+                ('FONTSIZE', (0, 1), (-1, -1), 8),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+            ]))
+            
+            story.append(salud_table)
+            story.append(Paragraph(f"Total eventos de salud: {len(eventos_salud)}", styles['Normal']))
+        else:
+            story.append(Paragraph("No hay eventos de salud registrados", styles['Normal']))
+        
+        story.append(Spacer(1, 20))
+        
+        # Vacunas
+        vacunas = Vacuna.query.join(Animal).filter(Animal.finca_id == finca.id).all()
+        if vacunas:
+            vac_data = [['Fecha', 'Animal', 'Vacuna', 'Próxima Dosis']]
+            for vac in vacunas:
+                vac_data.append([
+                    vac.fecha_aplicacion.strftime('%d/%m/%Y') if vac.fecha_aplicacion else 'N/A',
+                    vac.animal.nombre if vac.animal else 'N/A',
+                    vac.tipo_vacuna or 'N/A',
+                    vac.fecha_proxima.strftime('%d/%m/%Y') if vac.fecha_proxima else 'N/A'
+                ])
+            
+            vac_table = Table(vac_data, colWidths=[1*inch, 1.5*inch, 1.5*inch, 1*inch])
+            vac_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.darkorange),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 9),
+                ('FONTSIZE', (0, 1), (-1, -1), 8),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+            ]))
+            
+            story.append(vac_table)
+            story.append(Paragraph(f"Total vacunas aplicadas: {len(vacunas)}", styles['Normal']))
+        else:
+            story.append(Paragraph("No hay vacunas registradas", styles['Normal']))
+        
+        story.append(Spacer(1, 20))
+        
+        # 5. Inventario
+        story.append(Paragraph("5. INVENTARIO", heading_style))
+        
+        inventario = Inventario.query.filter_by(finca_id=finca.id).all()
+        if inventario:
+            inv_data = [['Producto', 'Cantidad', 'Unidad', 'Precio Unitario', 'Valor Total']]
+            total_valor = 0
+            for item in inventario:
+                valor_total = (item.cantidad or 0) * (item.precio_unitario or 0)
+                total_valor += valor_total
+                inv_data.append([
+                    item.producto or 'N/A',
+                    str(item.cantidad) if item.cantidad else '0',
+                    item.unidad or 'N/A',
+                    f"${item.precio_unitario:.2f}" if item.precio_unitario else '$0.00',
+                    f"${valor_total:.2f}"
+                ])
+            
+            inv_table = Table(inv_data, colWidths=[2*inch, 0.8*inch, 0.8*inch, 1*inch, 1*inch])
+            inv_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 9),
+                ('FONTSIZE', (0, 1), (-1, -1), 8),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+            ]))
+            
+            story.append(inv_table)
+            story.append(Paragraph(f"Valor total del inventario: ${total_valor:.2f}", styles['Normal']))
+        else:
+            story.append(Paragraph("No hay items en el inventario", styles['Normal']))
+        
+        # Generar PDF
+        doc.build(story)
+        buffer.seek(0)
+        
+        # Preparar respuesta
+        response = make_response(buffer.getvalue())
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'inline; filename=reporte_completo_{finca.nombre}_{datetime.now().strftime("%Y%m%d")}.pdf'
+        
+        buffer.close()
+        return response
+        
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print(f"Error generando reporte PDF completo: {error_details}")
+        flash(f'Error al generar el reporte PDF: {str(e)}', 'error')
+        return redirect(url_for('ajustes'))
 
 # Rutas para Inventario
 @app.route('/inventario')
@@ -6533,6 +7367,90 @@ def api_resumen_inventario():
         return jsonify({'error': 'Error interno al cargar resumen de inventario'}), 500
 
 # Rutas para Fincas
+@app.route('/fincas/nueva', methods=['GET', 'POST'])
+@login_required
+def nueva_finca():
+    """Página para crear una nueva finca"""
+    if request.method == 'POST':
+        nombre = request.form.get('nombre')
+        direccion = request.form.get('direccion')
+        extension = request.form.get('extension')
+        tipo_produccion = request.form.get('tipo_produccion')
+        propietario = request.form.get('propietario')
+        telefono = request.form.get('telefono')
+        email = request.form.get('email')
+        descripcion = request.form.get('descripcion')
+        ubicacion = request.form.get('ubicacion')
+        lat = request.form.get('lat')
+        lng = request.form.get('lng')
+        polygon_geojson = request.form.get('polygon_geojson')
+        
+        try:
+            # Crear una nueva finca
+            nueva_finca = Finca(
+                nombre=nombre,
+                direccion=direccion,
+                extension=extension,
+                tipo_produccion=tipo_produccion,
+                propietario=propietario,
+                telefono=telefono,
+                email=email,
+                descripcion=descripcion,
+                ubicacion=ubicacion,
+                latitud=lat,
+                longitud=lng,
+                poligono_geojson=polygon_geojson,
+                usuario_id=session['user_id']
+            )
+            
+            db.session.add(nueva_finca)
+            db.session.commit()
+            
+            flash('Finca creada exitosamente', 'success')
+            return redirect(url_for('fincas'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al crear la finca: {str(e)}', 'error')
+    
+    return render_template('nueva_finca.html')
+
+@app.route('/fincas/editar/<int:finca_id>', methods=['GET', 'POST'])
+@login_required
+def editar_finca(finca_id):
+    """Página para editar una finca existente"""
+    finca = Finca.query.get_or_404(finca_id)
+    
+    # Verificar que la finca pertenezca al usuario
+    if finca.usuario_id != session['user_id']:
+        flash('Acción no autorizada', 'danger')
+        return redirect(url_for('fincas'))
+    
+    if request.method == 'POST':
+        finca.nombre = request.form.get('nombre')
+        finca.direccion = request.form.get('direccion')
+        finca.extension = request.form.get('extension')
+        finca.tipo_produccion = request.form.get('tipo_produccion')
+        finca.propietario = request.form.get('propietario')
+        finca.telefono = request.form.get('telefono')
+        finca.email = request.form.get('email')
+        finca.descripcion = request.form.get('descripcion')
+        finca.ubicacion = request.form.get('ubicacion')
+        finca.latitud = request.form.get('lat')
+        finca.longitud = request.form.get('lng')
+        finca.poligono_geojson = request.form.get('polygon_geojson')
+        
+        try:
+            db.session.commit()
+            flash('Finca actualizada exitosamente', 'success')
+            return redirect(url_for('fincas'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al actualizar la finca: {str(e)}', 'error')
+    
+    return render_template('editar_finca.html', finca=finca)
+
 @app.route('/fincas', methods=['GET', 'POST'])
 @login_required
 def fincas():
@@ -6674,76 +7592,6 @@ def eliminar_finca(finca_id):
             return redirect(url_for('fincas'))
     
     return render_template('eliminar_finca.html', finca=finca)
-
-@app.route('/finca/editar/<int:finca_id>', methods=['GET', 'POST'])
-@login_required
-def editar_finca(finca_id):
-    # Obtener la finca a editar
-    finca = Finca.query.get_or_404(finca_id)
-    
-    # Verificar que la finca pertenezca al usuario actual
-    if finca.usuario_id != session['user_id']:
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'success': False, 'message': 'No tienes permiso para editar esta finca'})
-        flash('No tienes permiso para editar esta finca', 'danger')
-        return redirect(url_for('fincas'))
-    
-    if request.method == 'POST':
-        try:
-            # Log para depurar qué datos se reciben
-            print(f"[DEBUG] Form data received for finca {finca_id}:")
-            for key, value in request.form.items():
-                print(f"  {key}: {value}")
-            
-            # Actualizar campos básicos
-            finca.nombre = request.form.get('nombre')
-            finca.direccion = request.form.get('direccion')
-            finca.extension = float(request.form.get('extension')) if request.form.get('extension') else None
-            finca.tipo_produccion = request.form.get('tipo_produccion')
-            finca.propietario = request.form.get('propietario')
-            finca.telefono = request.form.get('telefono')
-            finca.email = request.form.get('email')
-            finca.descripcion = request.form.get('descripcion')
-            finca.ubicacion = request.form.get('ubicacion')
-            
-            # Actualizar coordenadas si se proporcionan
-            if 'lat' in request.form and 'lng' in request.form:
-                lat_val = request.form.get('lat')
-                lng_val = request.form.get('lng')
-                print(f"[DEBUG] Coordinates received - lat: {lat_val}, lng: {lng_val}")
-                
-                finca.latitud = float(lat_val) if lat_val and lat_val != '' else None
-                finca.longitud = float(lng_val) if lng_val and lng_val != '' else None
-                finca.poligono_geojson = request.form.get('polygon_geojson')
-                
-                print(f"[DEBUG] Finca updated with - latitud: {finca.latitud}, longitud: {finca.longitud}")
-            else:
-                print(f"[DEBUG] No coordinates received in form")
-            
-            # Actualizar fecha de fundación si se proporciona
-            if request.form.get('fecha_fundacion'):
-                finca.fecha_fundacion = datetime.strptime(request.form['fecha_fundacion'], '%Y-%m-%d').date()
-            
-            print(f"[DEBUG] About to commit changes to database")
-            db.session.commit()
-            print(f"[DEBUG] Database commit successful")
-            
-            # Verificar si es una petición AJAX
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return jsonify({'success': True, 'message': 'Finca actualizada exitosamente'})
-            
-            flash('Finca actualizada exitosamente', 'success')
-            return redirect(url_for('fincas'))
-                
-        except Exception as e:
-            db.session.rollback()
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return jsonify({'success': False, 'message': f'Error al actualizar la finca: {str(e)}'})
-            flash(f'Error al actualizar la finca: {str(e)}', 'danger')
-            return redirect(url_for('fincas'))
-    
-    # Si es GET o hay un error, mostrar el formulario de edición
-    return render_template('editar_finca.html', finca=finca)
 
 @app.route('/finca/seleccionar/<int:finca_id>')
 @login_required
