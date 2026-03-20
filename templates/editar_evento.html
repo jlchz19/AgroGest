@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Evento - AgroGest{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="fas fa-edit me-2"></i>Editar Evento</h2>
+                <div class="btn-group">
+                    <a href="{{ url_for('ver_evento', evento_id=evento.id) }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-calendar-alt me-2"></i>Editar Evento #{{ evento.id }}</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="animal_id" class="form-label">Animal</label>
+                                    <select class="form-select" id="animal_id" name="animal_id" required>
+                                        {% for a in animales %}
+                                        <option value="{{ a.id }}" {% if a.id == animal.id %}selected{% endif %}>
+                                            {{ a.identificacion }} - {{ a.nombre or 'Sin nombre' }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="tipo_evento" class="form-label">Tipo de Evento</label>
+                                    <select class="form-select" id="tipo_evento" name="tipo_evento" required onchange="mostrarCamposEspecificos()">
+                                        <option value="vendido" {% if evento.tipo_evento == 'vendido' %}selected{% endif %}>Vendido</option>
+                                        <option value="fallecido" {% if evento.tipo_evento == 'fallecido' %}selected{% endif %}>Fallecido</option>
+                                        <option value="transferido" {% if evento.tipo_evento == 'transferido' %}selected{% endif %}>Transferido</option>
+                                        <option value="otro" {% if evento.tipo_evento == 'otro' %}selected{% endif %}>Otro</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="fecha_evento" class="form-label">Fecha del Evento</label>
+                                    <input type="date" class="form-control" id="fecha_evento" name="fecha_evento" 
+                                           value="{{ evento.fecha_evento.strftime('%Y-%m-%d') }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="responsable" class="form-label">Responsable</label>
+                                    <input type="text" class="form-control" id="responsable" name="responsable" 
+                                           value="{{ evento.responsable or '' }}">
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    <label for="descripcion" class="form-label">Descripción</label>
+                                    <textarea class="form-control" id="descripcion" name="descripcion" rows="3">{{ evento.descripcion or '' }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campos específicos según tipo de evento -->
+                        <div id="campos_vendido" class="campos-especificos" {% if evento.tipo_evento != 'vendido' %}style="display: none;"{% endif %}>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="comprador" class="form-label">Comprador</label>
+                                        <input type="text" class="form-control" id="comprador" name="comprador" 
+                                               value="{{ evento.comprador or '' }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="precio_venta" class="form-label">Precio de Venta</label>
+                                        <input type="number" step="0.01" class="form-control" id="precio_venta" name="precio_venta" 
+                                               value="{{ evento.precio_venta or '' }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="campos_fallecido" class="campos-especificos" {% if evento.tipo_evento != 'fallecido' %}style="display: none;"{% endif %}>
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="mb-3">
+                                        <label for="causa_muerte" class="form-label">Causa de Muerte</label>
+                                        <textarea class="form-control" id="causa_muerte" name="causa_muerte" rows="3">{{ evento.causa_muerte or '' }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="campos_transferido" class="campos-especificos" {% if evento.tipo_evento != 'transferido' %}style="display: none;"{% endif %}>
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="mb-3">
+                                        <label for="descripcion_transferencia" class="form-label">Detalles de Transferencia</label>
+                                        <textarea class="form-control" id="descripcion_transferencia" name="descripcion_transferencia" rows="3">{{ evento.descripcion or '' }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-end">
+                            <a href="{{ url_for('ver_evento', evento_id=evento.id) }}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Información del Animal -->
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="fas fa-paw me-2"></i>Información del Animal</h6>
+                </div>
+                <div class="card-body">
+                    <p><strong>ID:</strong> {{ animal.identificacion }}</p>
+                    <p><strong>Nombre:</strong> {{ animal.nombre or 'Sin nombre' }}</p>
+                    <p><strong>Tipo:</strong> {{ animal.tipo|title }}</p>
+                    <p><strong>Raza:</strong> {{ animal.raza }}</p>
+                    <p><strong>Estado Actual:</strong><br>
+                        <span class="badge bg-{{ 
+                            'success' if animal.estado == 'activo' else
+                            'warning' if animal.estado == 'en_tratamiento' else
+                            'danger' if animal.estado == 'enfermo' else
+                            'secondary'
+                        }}">
+                            {{ animal.estado.title() }}
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function mostrarCamposEspecificos() {
+    var tipoEvento = document.getElementById('tipo_evento').value;
+    var campos = document.querySelectorAll('.campos-especificos');
+    
+    // Ocultar todos los campos específicos
+    campos.forEach(function(campo) {
+        campo.style.display = 'none';
+    });
+    
+    // Mostrar los campos correspondientes al tipo seleccionado
+    if (tipoEvento === 'vendido') {
+        document.getElementById('campos_vendido').style.display = 'block';
+    } else if (tipoEvento === 'fallecido') {
+        document.getElementById('campos_fallecido').style.display = 'block';
+    } else if (tipoEvento === 'transferido') {
+        document.getElementById('campos_transferido').style.display = 'block';
+    }
+}
+
+// Ejecutar la función al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    mostrarCamposEspecificos();
+});
+</script>
+{% endblock %}

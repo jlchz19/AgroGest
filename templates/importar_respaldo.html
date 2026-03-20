@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+
+{% block title %}Importar Respaldo - AgroGest{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2><i class="fas fa-upload me-2"></i>Importar Respaldo de Datos</h2>
+                <div class="btn-group">
+                    <a href="{{ url_for('ajustes') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Advertencia de Importación</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning" role="alert">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>¡Atención!</strong> La importación de datos es una operación <strong>irreversible</strong>. 
+                        Se recomienda hacer un respaldo antes de continuar.
+                    </div>
+
+                    <form method="POST" enctype="multipart/form-data" id="importForm">
+                        <div class="mb-4">
+                            <label for="archivo_respaldo" class="form-label">
+                                <i class="fas fa-file-upload me-2"></i>Seleccionar Archivo de Respaldo
+                            </label>
+                            <input type="file" class="form-control" id="archivo_respaldo" name="archivo_respaldo" 
+                                   accept=".json" required>
+                            <div class="form-text">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Solo se aceptan archivos JSON (.json) generados por AgroGest
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <h6><i class="fas fa-list me-2"></i>Opciones de Importación</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="importar_animales" checked>
+                                        <label class="form-check-label" for="importar_animales">
+                                            <i class="fas fa-cow me-2"></i>Animales
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="importar_eventos" checked>
+                                        <label class="form-check-label" for="importar_eventos">
+                                            <i class="fas fa-calendar-alt me-2"></i>Eventos
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="importar_salud" checked>
+                                        <label class="form-check-label" for="importar_salud">
+                                            <i class="fas fa-heartbeat me-2"></i>Eventos de Salud
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="importar_vacunas" checked>
+                                        <label class="form-check-label" for="importar_vacunas">
+                                            <i class="fas fa-syringe me-2"></i>Vacunas
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="importar_produccion" checked>
+                                        <label class="form-check-label" for="importar_produccion">
+                                            <i class="fas fa-egg me-2"></i>Producción
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="sobreescribir_datos">
+                                        <label class="form-check-label" for="sobreescribir_datos">
+                                            <i class="fas fa-edit me-2"></i>Sobreescribir datos existentes
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-end">
+                            <button type="button" class="btn btn-secondary me-2" onclick="window.location.href='{{ url_for('ajustes') }}'">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-upload me-2"></i>Importar Datos
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Información de Importación -->
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información de Importación</h6>
+                </div>
+                <div class="card-body">
+                    <h6><i class="fas fa-question-circle me-2"></i>¿Qué se importará?</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-cow text-primary me-2"></i>
+                            <strong>Animales:</strong> Datos básicos, estado, imágenes
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-calendar-alt text-success me-2"></i>
+                            <strong>Eventos:</strong> Ventas, fallecimientos, transferencias
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-heartbeat text-danger me-2"></i>
+                            <strong>Salud:</strong> Enfermedades, tratamientos, vacunaciones
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-syringe text-warning me-2"></i>
+                            <strong>Vacunas:</strong> Fechas, lotes, responsables
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Recomendaciones -->
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Recomendaciones</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Antes de importar:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Verifica que el archivo JSON sea válido</li>
+                            <li>Haz un respaldo de seguridad de los datos actuales</li>
+                            <li>Trabaja en un entorno de prueba si es posible</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-warning mb-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Consideraciones:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Los datos duplicados no se importarán</li>
+                            <li>Los errores se mostrarán al finalizar</li>
+                            <li>La importación puede tardar varios minutos</li>
+                        </ul>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="validarArchivo()">
+                            <i class="fas fa-check-circle me-1"></i>Validar Archivo
+                        </button>
+                        <a href="{{ url_for('descargar_respaldo_finca') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-download me-1"></i>Descargar Respaldo Actual
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function validarArchivo() {
+    const archivoInput = document.getElementById('archivo_respaldo');
+    const archivo = archivoInput.files[0];
+    
+    if (!archivo) {
+        showToast('Por favor, selecciona un archivo', 'error');
+        return;
+    }
+    
+    if (!archivo.name.endsWith('.json')) {
+        showToast('El archivo debe ser formato JSON', 'error');
+        return;
+    }
+    
+    // Leer y validar el archivo JSON
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            
+            // Validar estructura básica
+            if (!data.informacion_finca) {
+                showToast('El archivo no parece ser un respaldo válido de AgroGest', 'error');
+                return;
+            }
+            
+            // Mostrar resumen del archivo
+            let resumen = `Resumen del archivo:\n`;
+            resumen += `• Finca: ${data.informacion_finca.nombre || 'N/A'}\n`;
+            
+            if (data.animales && data.animales.length > 0) {
+                resumen += `• Animales: ${data.animales.length}\n`;
+            }
+            if (data.eventos && data.eventos.length > 0) {
+                resumen += `• Eventos: ${data.eventos.length}\n`;
+            }
+            if (data.eventos_salud && data.eventos_salud.length > 0) {
+                resumen += `• Eventos de salud: ${data.eventos_salud.length}\n`;
+            }
+            if (data.vacunas && data.vacunas.length > 0) {
+                resumen += `• Vacunas: ${data.vacunas.length}\n`;
+            }
+            
+            showToast(resumen, 'success');
+            
+        } catch (error) {
+            showToast('El archivo JSON no es válido: ' + error.message, 'error');
+        }
+    };
+    reader.readAsText(archivo);
+}
+
+// Previsualización del archivo seleccionado
+document.getElementById('archivo_respaldo').addEventListener('change', function(e) {
+    const archivo = e.target.files[0];
+    if (archivo) {
+        const fileSize = (archivo.size / 1024).toFixed(2);
+        document.querySelector('.form-text small').innerHTML += `
+            <br><i class="fas fa-file me-1"></i>
+            Archivo: ${archivo.name} (${fileSize} KB)
+        `;
+    }
+});
+
+// Confirmación antes de enviar
+document.getElementById('importForm').addEventListener('submit', function(e) {
+    const archivo = document.getElementById('archivo_respaldo').files[0];
+    if (!archivo) {
+        e.preventDefault();
+        showToast('Por favor, selecciona un archivo', 'error');
+        return;
+    }
+    
+    const confirmacion = confirm(`¿Estás seguro de importar los datos del archivo "${archivo.name}"?\n\n` +
+        `Esta acción puede modificar datos existentes en tu base de datos.\n\n` +
+        `Se recomienda haber hecho un respaldo de seguridad antes de continuar.`);
+    
+    if (!confirmacion) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}

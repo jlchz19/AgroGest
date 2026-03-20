@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Ajustes - AgroGest{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="fas fa-cog me-2"></i>Ajustes del Sistema</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información de la Finca -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-tractor me-2"></i>Información de la Finca</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Nombre:</strong><br>
+                                <span class="text-muted">{{ finca.nombre }}</span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Ubicación:</strong><br>
+                                <span class="text-muted">{{ finca.ubicacion or 'No especificada' }}</span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Teléfono:</strong><br>
+                                <span class="text-muted">{{ finca.telefono or 'No especificado' }}</span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Email:</strong><br>
+                                <span class="text-muted">{{ finca.email or 'No especificado' }}</span>
+                            </p>
+                        </div>
+                        <div class="col-12">
+                            <p><strong>Fecha de Fundación:</strong><br>
+                                <span class="text-muted">{{ finca.fecha_fundacion.strftime('%d/%m/%Y') if finca.fecha_fundacion else 'No disponible' }}</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Herramientas de Sistema -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-tools me-2"></i>Herramientas del Sistema</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        <a href="{{ url_for('descargar_respaldo_finca') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-download me-2 text-primary"></i>
+                                <strong>Descargar Respaldo de Datos</strong>
+                                <br>
+                                <small class="text-muted">Exporta toda la información de la finca actual</small>
+                            </div>
+                            <span class="badge bg-primary rounded-pill">JSON</span>
+                        </a>
+                        
+                        <a href="{{ url_for('importar_respaldo_finca') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-upload me-2 text-success"></i>
+                                <strong>Importar Datos</strong>
+                                <br>
+                                <small class="text-muted">Restaurar datos desde un respaldo</small>
+                            </div>
+                            <span class="badge bg-success rounded-pill">JSON</span>
+                        </a>
+                        
+                        <a href="{{ url_for('reporte_finca_completo_pdf') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-file-pdf me-2 text-danger"></i>
+                                <strong>Generar Reporte PDF</strong>
+                                <br>
+                                <small class="text-muted">Reporte completo de la finca</small>
+                            </div>
+                            <span class="badge bg-danger rounded-pill">PDF</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas de Respaldo -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-database me-2"></i>Información del Respaldo</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i class="fas fa-cow fa-2x text-primary mb-2"></i>
+                                <h4 class="text-primary" id="totalAnimales">-</h4>
+                                <p class="mb-0 text-muted">Animales</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i class="fas fa-calendar-alt fa-2x text-success mb-2"></i>
+                                <h4 class="text-success" id="totalEventos">-</h4>
+                                <p class="mb-0 text-muted">Eventos</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i class="fas fa-heartbeat fa-2x text-danger mb-2"></i>
+                                <h4 class="text-danger" id="totalSalud">-</h4>
+                                <p class="mb-0 text-muted">Eventos de Salud</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center p-3 bg-light rounded">
+                                <i class="fas fa-syringe fa-2x text-warning mb-2"></i>
+                                <h4 class="text-warning" id="totalVacunas">-</h4>
+                                <p class="mb-0 text-muted">Vacunas</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mt-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Nota:</strong> El respaldo incluye toda la información de la finca seleccionada: animales, eventos, registros de salud, vacunas, producción, potreros, alimentación e inventario. El archivo se descargará en formato JSON.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Cargar estadísticas para mostrar información del respaldo
+document.addEventListener('DOMContentLoaded', function() {
+    // Aquí podrías hacer llamadas AJAX para obtener las estadísticas reales
+    // Por ahora, mostramos valores estáticos o los podrías pasar desde el backend
+    
+    // Simulación de carga de datos (en una implementación real, harías llamadas AJAX)
+    setTimeout(function() {
+        // Estos valores deberían venir del backend
+        document.getElementById('totalAnimales').textContent = '{{ animales_count if animales_count else "0" }}';
+        document.getElementById('totalEventos').textContent = '{{ eventos_count if eventos_count else "0" }}';
+        document.getElementById('totalSalud').textContent = '{{ salud_count if salud_count else "0" }}';
+        document.getElementById('totalVacunas').textContent = '{{ vacunas_count if vacunas_count else "0" }}';
+    }, 500);
+});
+</script>
+{% endblock %}
