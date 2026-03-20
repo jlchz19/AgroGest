@@ -5,18 +5,120 @@
 {% block content %}
 <div class="container-fluid">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Gráficos de Producción</h1>
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-chart-line text-primary me-2"></i>
+            Gráficos de Producción
+        </h1>
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-primary" onclick="refreshCharts()">
+                <i class="fas fa-sync-alt me-2"></i>Actualizar
+            </button>
+            <a href="{{ url_for('reporte_produccion_pdf') }}" class="btn btn-success">
+                <i class="fas fa-file-pdf me-2"></i>Exportar PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- KPIs de Producción -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Producción</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ "%.2f"|format(stats.total_produccion) }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-bar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Registros Totales</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ stats.total_registros }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Animales Productivos</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ stats.animales_productivos }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-cow fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Promedio por Registro</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {{ "%.2f"|format(stats.total_produccion / stats.total_registros if stats.total_registros > 0 else 0) }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calculator fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="row">
         <!-- Gráfico de producción por tipo -->
-        <div class="col-xl-8 col-lg-7">
+        <div class="col-xl-6 col-lg-6">
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Producción por Tipo</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-pie me-2"></i>
+                        Producción por Tipo
+                    </h6>
+                    <div class="dropdown no-arrow">
+                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in">
+                            <a class="dropdown-item" href="#" onclick="exportChart('produccionTipoChart', 'png')">Exportar PNG</a>
+                            <a class="dropdown-item" href="#" onclick="exportChart('produccionTipoChart', 'jpg')">Exportar JPG</a>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <div class="chart-area">
+                    <div class="chart-area" style="height: 300px;">
                         <canvas id="produccionTipoChart"></canvas>
                     </div>
                 </div>
@@ -24,14 +126,106 @@
         </div>
 
         <!-- Producción mensual -->
-        <div class="col-xl-8 col-lg-7">
+        <div class="col-xl-6 col-lg-6">
             <div class="card shadow mb-4">
                 <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Producción Mensual</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-line me-2"></i>
+                        Producción Mensual
+                    </h6>
+                    <div class="dropdown no-arrow">
+                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink2" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in">
+                            <a class="dropdown-item" href="#" onclick="exportChart('produccionMensualChart', 'png')">Exportar PNG</a>
+                            <a class="dropdown-item" href="#" onclick="exportChart('produccionMensualChart', 'jpg')">Exportar JPG</a>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <div class="chart-area">
+                    <div class="chart-area" style="height: 300px;">
                         <canvas id="produccionMensualChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top 10 Animales Productivos -->
+    <div class="row">
+        <div class="col-xl-12 col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-trophy me-2"></i>
+                        Top 10 Animales Productivos
+                    </h6>
+                    <div class="dropdown no-arrow">
+                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink3" data-bs-toggle="dropdown">
+                            <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in">
+                            <a class="dropdown-item" href="#" onclick="exportChart('produccionAnimalChart', 'png')">Exportar PNG</a>
+                            <a class="dropdown-item" href="#" onclick="exportChart('produccionAnimalChart', 'jpg')">Exportar JPG</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area" style="height: 400px;">
+                        <canvas id="produccionAnimalChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabla de Producción por Animal -->
+    <div class="row">
+        <div class="col-xl-12 col-lg-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-table me-2"></i>
+                        Detalle de Producción por Animal
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="produccionTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Animal</th>
+                                    <th>Identificación</th>
+                                    <th>Tipo de Producción</th>
+                                    <th>Total Producción</th>
+                                    <th>Rendimiento</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for animal in produccion_por_animal %}
+                                <tr>
+                                    <td>{{ animal.nombre }}</td>
+                                    <td>{{ animal.identificacion }}</td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ animal.tipo_produccion|title }}</span>
+                                    </td>
+                                    <td>{{ "%.2f"|format(animal.total) }}</td>
+                                    <td>
+                                        <div class="progress">
+                                            {% set rendimiento = (animal.total / stats.total_produccion * 100) if stats.total_produccion > 0 else 0 %}
+                                            <div class="progress-bar" role="progressbar" 
+                                                 style="width: {{ rendimiento }}%"
+                                                 aria-valuenow="{{ rendimiento }}" 
+                                                 aria-valuemin="0" aria-valuemax="100">
+                                                {{ "%.1f"|format(rendimiento) }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -43,120 +237,224 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-// Datos de ejemplo - reemplazar con datos reales de tu base de datos
+// Datos reales del backend
 const produccionPorTipoData = {
-    labels: ['Leche', 'Carne', 'Huevos', 'Otros'],
+    labels: {{ tipo_labels|tojson|safe }},
     datasets: [{
-        data: [65, 25, 15, 10],
-        backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e'],
-        hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf', '#dda20a'],
-        hoverBorderColor: "rgba(234, 236, 244, 1)",
+        data: {{ tipo_data|tojson|safe }},
+        backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b', '#858796'],
+        hoverBackgroundColor: ['#2e59d9', '#17a673', '#2c9faf', '#dda20a', '#c0392b', '#5a5c69'],
+        borderWidth: 2,
+        borderColor: '#fff'
     }]
 };
 
 const produccionMensualData = {
     labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+    datasets: {{ mensual_datasets|tojson|safe }}
+};
+
+const produccionAnimalData = {
+    labels: {{ produccion_por_animal|map(attribute='nombre')|list|tojson|safe }},
     datasets: [{
-        label: 'Leche (L)',
-        data: [1200, 1250, 1300, 1280, 1350, 1400, 1450, 1500, 1480, 1520, 1500, 1550],
-        backgroundColor: 'rgba(78, 115, 223, 0.05)',
+        label: 'Producción Total',
+        data: {{ produccion_por_animal|map(attribute='total')|list|tojson|safe }},
+        backgroundColor: 'rgba(78, 115, 223, 0.8)',
         borderColor: 'rgba(78, 115, 223, 1)',
-        pointRadius: 3,
-        pointBackgroundColor: 'rgba(78, 115, 223, 1)',
-        pointBorderColor: 'rgba(78, 115, 223, 1)',
-        pointHoverRadius: 3,
-        pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
-        pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
-        pointHitRadius: 10,
-        pointBorderWidth: 2,
-        fill: true
+        borderWidth: 1,
+        borderRadius: 5
     }]
 };
 
+// Configuración global de Chart.js
+Chart.defaults.font.family = 'Nunito, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+
 // Inicializar gráficos cuando el documento esté listo
 document.addEventListener('DOMContentLoaded', function() {
-    // Gráfico de producción por tipo
-    const tipoCtx = document.getElementById('produccionTipoChart');
-    new Chart(tipoCtx, {
+    // Gráfico de producción por tipo (Doughnut)
+    const tipoCtx = document.getElementById('produccionTipoChart').getContext('2d');
+    window.produccionTipoChart = new Chart(tipoCtx, {
         type: 'doughnut',
         data: produccionPorTipoData,
         options: {
+            responsive: true,
             maintainAspectRatio: false,
-            tooltips: {
-                backgroundColor: "rgb(255,255,255)",
-                bodyFontColor: "#858796",
-                borderColor: '#dddfeb',
-                borderWidth: 1,
-                xPadding: 15,
-                yPadding: 15,
-                displayColors: false,
-                caretPadding: 10,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    titleColor: '#5a5c69',
+                    bodyColor: '#5a5c69',
+                    borderColor: '#dddfeb',
+                    borderWidth: 1,
+                    padding: 15,
+                    displayColors: true,
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${label}: ${value.toFixed(2)} (${percentage}%)`;
+                        }
+                    }
+                }
             },
-            legend: {
-                display: true,
-                position: 'right'
-            },
-            cutoutPercentage: 60,
-        },
+            cutout: '60%'
+        }
     });
 
-    // Gráfico de producción mensual
-    const mensualCtx = document.getElementById('produccionMensualChart');
-    new Chart(mensualCtx, {
+    // Gráfico de producción mensual (Línea)
+    const mensualCtx = document.getElementById('produccionMensualChart').getContext('2d');
+    window.produccionMensualChart = new Chart(mensualCtx, {
         type: 'line',
         data: produccionMensualData,
         options: {
+            responsive: true,
             maintainAspectRatio: false,
-            layout: {
-                padding: {
-                    left: 10,
-                    right: 25,
-                    top: 25,
-                    bottom: 0
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    titleColor: '#5a5c69',
+                    bodyColor: '#5a5c69',
+                    borderColor: '#dddfeb',
+                    borderWidth: 1,
+                    padding: 15,
+                    displayColors: true
                 }
             },
             scales: {
-                xAxes: [{
-                    gridLines: {
-                        display: false,
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 11
+                        }
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)',
                         drawBorder: false
                     },
                     ticks: {
-                        maxTicksLimit: 12
+                        font: {
+                            size: 11
+                        }
                     }
-                }],
-                yAxes: [{
-                    ticks: {
-                        maxTicksLimit: 5,
-                        padding: 10,
-                    },
-                    gridLines: {
-                        color: "rgb(234, 236, 244)",
-                        zeroLineColor: "rgb(234, 236, 244)",
-                        drawBorder: false,
-                        borderDash: [2],
-                        zeroLineBorderDash: [2]
-                    }
-                }],
-            },
-            legend: {
-                display: false
-            },
-            tooltips: {
-                backgroundColor: "rgb(255,255,255)",
-                bodyFontColor: "#858796",
-                titleMarginBottom: 10,
-                titleFontColor: '#6e707e',
-                titleFontSize: 14,
-                borderColor: '#dddfeb',
-                borderWidth: 1,
-                xPadding: 15,
-                yPadding: 15,
-                displayColors: false,
-                intersect: false,
-                caretPadding: 10,
+                }
             }
         }
+    });
+
+    // Gráfico de producción por animal (Barra)
+    const animalCtx = document.getElementById('produccionAnimalChart').getContext('2d');
+    window.produccionAnimalChart = new Chart(animalCtx, {
+        type: 'bar',
+        data: produccionAnimalData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    titleColor: '#5a5c69',
+                    bodyColor: '#5a5c69',
+                    borderColor: '#dddfeb',
+                    borderWidth: 1,
+                    padding: 15,
+                    callbacks: {
+                        label: function(context) {
+                            return `Producción: ${context.parsed.y.toFixed(2)}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 10
+                        },
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 11
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+
+// Funciones de utilidad
+function refreshCharts() {
+    location.reload();
+}
+
+function exportChart(chartId, format) {
+    const chart = window[chartId];
+    if (chart) {
+        const url = chart.toBase64Image();
+        const link = document.createElement('a');
+        link.download = `${chartId}_${new Date().toISOString().slice(0, 10)}.${format}`;
+        link.href = url;
+        link.click();
+    }
+}
+</script>
+
+<!-- DataTables para la tabla -->
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('#produccionTable').DataTable({
+        language: {
+            url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es.json'
+        },
+        order: [[3, 'desc']],
+        pageLength: 10,
+        responsive: true
     });
 });
 </script>
