@@ -70,3 +70,7 @@ static/imagenes_eventos_salud/
 netlify.toml
 Procfile
 DejaVuSans.ttf
+
+# Archivos que no deben subirse
+crear_tablas_maq*
+database_schema.sql
