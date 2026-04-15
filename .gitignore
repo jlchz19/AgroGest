@@ -1,0 +1,72 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+instance/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Node modules (si usas npm)
+node_modules/
+
+# Archivos temporales y de configuración local
+.env
+client_secret_*.json
+*.bat
+*.py
+check_db.py
+fix_db.py
+add_column.sql
+add_google_column.py
+fix_google_column.py
+iniciar_*.py
+abrir_puerto.bat
+configurar_acceso.bat
+
+# Imágenes temporales
+imagen/*.png
+imagen/*.jpg
+static/imagenes_eventos_salud/
+
+# Archivos de configuración específicos
+netlify.toml
+Procfile
+DejaVuSans.ttf

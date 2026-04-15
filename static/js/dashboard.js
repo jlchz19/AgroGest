@@ -219,7 +219,7 @@ async function showPotrerosResumen() {
                 <div class="col-6">
                     <div class="card border-0 shadow-sm">
                         <div class="card-body text-center">
-                            <h2 class="mb-1 text-primary">${data.total_potreros || 0}</h2>
+                            <h2 class="mb-1 text-primary">${data.total || 0}</h2>
                             <p class="text-muted mb-0">Total Potreros</p>
                         </div>
                     </div>
@@ -227,7 +227,7 @@ async function showPotrerosResumen() {
                 <div class="col-6">
                     <div class="card border-0 shadow-sm">
                         <div class="card-body text-center">
-                            <h2 class="mb-1 text-success">${data.total_animales || 0}</h2>
+                            <h2 class="mb-1 text-success">${data.potreros ? data.potreros.reduce((sum, p) => sum + p.animales, 0) : 0}</h2>
                             <p class="text-muted mb-0">Animales en Potreros</p>
                         </div>
                     </div>
@@ -250,20 +250,20 @@ async function showPotrerosResumen() {
                                 <tr>
                                     <td>
                                         <strong>${potrero.nombre || 'Sin nombre'}</strong>
-                                        <div class="small text-muted">${potrero.tipo_pasto || 'Sin tipo'}</div>
+                                        <div class="small text-muted">Área: ${potrero.area || 0} ha</div>
                                     </td>
                                     <td class="text-center">${potrero.capacidad || 0}</td>
                                     <td class="text-center">
                                         <div class="progress" style="height: 6px;">
-                                            <div class="progress-bar ${potrero.porcentaje_uso > 80 ? 'bg-danger' : potrero.porcentaje_uso > 50 ? 'bg-warning' : 'bg-success'}" 
+                                            <div class="progress-bar ${potrero.ocupacion > 80 ? 'bg-danger' : potrero.ocupacion > 50 ? 'bg-warning' : 'bg-success'}" 
                                                  role="progressbar" 
-                                                 style="width: ${Math.min(potrero.porcentaje_uso || 0, 100)}%" 
-                                                 aria-valuenow="${potrero.porcentaje_uso || 0}" 
+                                                 style="width: ${Math.min(potrero.ocupacion || 0, 100)}%" 
+                                                 aria-valuenow="${potrero.ocupacion || 0}" 
                                                  aria-valuemin="0" 
                                                  aria-valuemax="100">
                                             </div>
                                         </div>
-                                        <small class="text-muted">${potrero.animales_actuales || 0} / ${potrero.capacidad || 0}</small>
+                                        <small class="text-muted">${potrero.animales || 0} / ${potrero.capacidad || 0}</small>
                                     </td>
                                     <td class="text-center">
                                         <span class="badge ${potrero.estado === 'disponible' ? 'bg-success' : 'bg-secondary'}">
@@ -326,7 +326,7 @@ async function showEmpleadosResumen() {
                 <div class="col-12">
                     <div class="card border-0 shadow-sm mb-4">
                         <div class="card-body text-center">
-                            <h2 class="mb-1 text-primary">${data.total_empleados || 0}</h2>
+                            <h2 class="mb-1 text-primary">${data.total || 0}</h2>
                             <p class="text-muted mb-0">Total Empleados Activos</p>
                         </div>
                     </div>
@@ -346,19 +346,28 @@ async function showEmpleadosResumen() {
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <h6 class="mb-3">Últimos Empleados</h6>
+                    <h6 class="mb-3">Estado Actual</h6>
                     <div class="list-group">
-                        ${(data.empleados_recientes && data.empleados_recientes.length > 0) ? 
-                            data.empleados_recientes.map(emp => `
-                                <div class="list-group-item">
-                                    <div class="d-flex w-100 justify-content-between">
-                                        <h6 class="mb-1">${emp.nombre || 'Sin nombre'}</h6>
-                                        <small>${emp.fecha_ingreso || ''}</small>
-                                    </div>
-                                    <p class="mb-1 text-muted small">${emp.cargo || 'Sin cargo'}</p>
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Empleados Activos</span>
+                                <span class="badge bg-success rounded-pill">${data.activos || 0}</span>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Total Empleados</span>
+                                <span class="badge bg-primary rounded-pill">${data.total || 0}</span>
+                            </div>
+                        </div>
+                        ${(data.total && data.total > 0) ? 
+                            `<div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span>Disponibilidad</span>
+                                    <span class="badge bg-info rounded-pill">OK</span>
                                 </div>
-                            `).join('')
-                            : '<div class="alert alert-info mb-0">No hay empleados recientes</div>'
+                            </div>`
+                            : ''
                         }
                     </div>
                 </div>
@@ -435,7 +444,7 @@ async function showInventarioResumen() {
                                 <div class="list-group-item">
                                     <div class="d-flex w-100 justify-content-between">
                                         <h6 class="mb-1">${cat.categoria || 'Sin categoría'}</h6>
-                                        <span class="badge bg-primary rounded-pill">${cat.total_items || 0}</span>
+                                        <span class="badge bg-primary rounded-pill">${cat.items || 0}</span>
                                     </div>
                                     <p class="mb-0 text-muted small">Valor: $${cat.valor_total ? cat.valor_total.toLocaleString() : '0'}</p>
                                 </div>
@@ -445,20 +454,26 @@ async function showInventarioResumen() {
                     </div>
                 </div>
                 <div class="col-md-6">
-                    <h6 class="mb-3">Productos con Stock Bajo</h6>
+                    <h6 class="mb-3">Estado del Inventario</h6>
                     <div class="list-group">
-                        ${(data.productos_bajos && data.productos_bajos.length > 0) ? 
-                            data.productos_bajos.map(prod => `
-                                <div class="list-group-item list-group-item-warning">
-                                    <div class="d-flex w-100 justify-content-between">
-                                        <h6 class="mb-1">${prod.producto || 'Sin nombre'}</h6>
-                                        <span class="text-danger">${prod.cantidad || 0} ${prod.unidad || 'un'}</span>
-                                    </div>
-                                    <p class="mb-0 small">Mínimo recomendado: ${prod.minimo_recomendado || 'N/A'}</p>
-                                </div>
-                            `).join('')
-                            : '<div class="alert alert-success mb-0">No hay productos con stock bajo</div>'
-                        }
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Productos con Stock Bajo</span>
+                                <span class="badge bg-warning rounded-pill">${data.bajo_stock || 0}</span>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Total Productos</span>
+                                <span class="badge bg-primary rounded-pill">${data.total_items || 0}</span>
+                            </div>
+                        </div>
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Valor del Inventario</span>
+                                <span class="badge bg-success rounded-pill">$${data.valor_total ? data.valor_total.toLocaleString() : '0'}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>`;

@@ -199,6 +199,29 @@ body.dark-theme .table-hover tbody tr:hover {
     </div>
 </div>
 
+<!-- Modal para confirmar eliminación -->
+<div class="modal fade" id="eliminarModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro que deseas eliminar permanentemente esta alerta?</p>
+                <div id="eliminarModalContent"></div>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Esta acción no se puede deshacer.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmarEliminarBtn">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal para ver detalles -->
 <div class="modal fade" id="detallesModal" tabindex="-1" aria-labelledby="detallesModalLabel" aria-hidden="true" data-bs-backdrop="false">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 500px;">
@@ -457,40 +480,72 @@ function completarAlerta(alertaId) {
     }
 }
 
+let alertaIdAEliminar = null;
+
 function eliminarAlerta(alertaId) {
-    if (confirm('¿Estás seguro de que deseas ELIMINAR PERMANENTEMENTE esta alerta?\n\nEsta acción no se puede deshacer.')) {
-        fetch(`/eliminar_alerta/${alertaId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
+    alertaIdAEliminar = alertaId;
+    // Obtener información de la alerta para mostrar
+    const fila = document.getElementById(`alerta-${alertaId}`);
+    const tipo = fila.querySelector('td:nth-child(3)').textContent.trim();
+    const titulo = fila.querySelector('td:nth-child(4)').textContent.trim();
+    
+    document.getElementById('eliminarModalContent').innerHTML = `
+        <p><strong>Tipo:</strong> ${tipo}</p>
+        <p><strong>Título:</strong> ${titulo}</p>
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('eliminarModal'));
+    modal.show();
+}
+
+// Configurar botón de confirmar eliminación
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmarBtn = document.getElementById('confirmarEliminarBtn');
+    if (confirmarBtn) {
+        confirmarBtn.addEventListener('click', function() {
+            if (alertaIdAEliminar) {
+                ejecutarEliminarAlerta(alertaIdAEliminar);
             }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Remover la fila de la tabla inmediatamente
-                const fila = document.getElementById(`alerta-${alertaId}`);
-                if (fila) {
-                    fila.style.transition = 'opacity 0.3s';
-                    fila.style.opacity = '0';
-                    setTimeout(() => {
-                        fila.remove();
-                        // Verificar si quedan alertas
-                        const tbody = document.querySelector('#alertasTable tbody');
-                        if (tbody && tbody.children.length === 0) {
-                            location.reload(); // Recargar para mostrar mensaje "sin alertas"
-                        }
-                    }, 300);
-                }
-            } else {
-                alert('Error al eliminar la alerta: ' + (data.error || 'Error desconocido'));
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error al eliminar la alerta');
         });
     }
+});
+
+function ejecutarEliminarAlerta(alertaId) {
+    // Cerrar modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('eliminarModal'));
+    if (modal) modal.hide();
+    
+    fetch(`/eliminar_alerta/${alertaId}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Remover la fila de la tabla inmediatamente
+            const fila = document.getElementById(`alerta-${alertaId}`);
+            if (fila) {
+                fila.style.transition = 'opacity 0.3s';
+                fila.style.opacity = '0';
+                setTimeout(() => {
+                    fila.remove();
+                    // Verificar si quedan alertas
+                    const tbody = document.querySelector('#alertasTable tbody');
+                    if (tbody && tbody.children.length === 0) {
+                        location.reload(); // Recargar para mostrar mensaje "sin alertas"
+                    }
+                }, 300);
+            }
+        } else {
+            alert('Error al eliminar la alerta: ' + (data.error || 'Error desconocido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al eliminar la alerta');
+    });
 }
 </script>
 {% endblock %}

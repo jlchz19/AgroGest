@@ -155,7 +155,6 @@
                                     <th>Fecha</th>
                                     <th>Tipo</th>
                                     <th>Título</th>
-                                    <th>Estado</th>
                                     <th>Veterinario</th>
                                     <th>Origen</th>
                                     <th>Acciones</th>
@@ -208,16 +207,6 @@
                                         </span>
                                     </td>
                                     <td>{{ evento_data.titulo }}</td>
-                                    <td>
-                                        <span class="badge bg-{{ 
-                                            'warning' if evento_data.estado == 'pendiente' else
-                                            'info' if evento_data.estado == 'en_progreso' else
-                                            'success' if evento_data.estado == 'completado' else
-                                            'danger'
-                                        }}">
-                                            {{ evento_data.estado.title() }}
-                                        </span>
-                                    </td>
                                     <td>{{ evento_data.veterinario or 'N/A' }}</td>
                                     <td>
                                         <span class="badge bg-{{ 
@@ -239,12 +228,37 @@
                                             <a href="{{ url_for('eventos_salud_imagenes', evento_id=evento_data.evento.id) }}" class="btn btn-success" title="Imágenes">
                                                 <i class="fas fa-images"></i>
                                             </a>
-                                            <form method="POST" action="{{ url_for('eventos_salud_eliminar', evento_id=evento_data.evento.id) }}" class="d-inline" 
-                                                  onsubmit="return confirm('¿Está seguro de eliminar este evento de salud?');">
-                                                <button type="submit" class="btn btn-danger" title="Eliminar">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </form>
+                                            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#eliminarModal{{ evento_data.evento.id }}" title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                            
+                                            <!-- Modal de confirmación de eliminación -->
+                                            <div class="modal fade" id="eliminarModal{{ evento_data.evento.id }}" tabindex="-1">
+                                                <div class="modal-dialog modal-dialog-centered">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header bg-danger text-white">
+                                                            <h5 class="modal-title">Confirmar Eliminación</h5>
+                                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <p>¿Estás seguro que deseas eliminar este evento de salud?</p>
+                                                            <p><strong>Animal:</strong> {{ evento_data.animal.identificacion }}</p>
+                                                            <p><strong>Tipo Evento:</strong> {{ evento_data.tipo_evento.title() }}</p>
+                                                            <p><strong>Título:</strong> {{ evento_data.titulo }}</p>
+                                                            <p><strong>Fecha:</strong> {{ evento_data.fecha.strftime('%d/%m/%Y') }}</p>
+                                                            <div class="alert alert-warning">
+                                                                <i class="fas fa-exclamation-triangle me-2"></i>Esta acción no se puede deshacer.
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                            <form action="{{ url_for('eventos_salud_eliminar', evento_id=evento_data.evento.id) }}" method="POST" style="display: inline;">
+                                                                <button type="submit" class="btn btn-danger">Eliminar</button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                             {% else %}
                                             <span class="text-muted">Datos históricos</span>
                                             {% endif %}

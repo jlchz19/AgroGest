@@ -137,11 +137,36 @@
                             <a href="{{ url_for('editar_inventario', id=item.id) }}" class="btn btn-sm btn-outline-primary" title="Editar">
                                 <i class="fas fa-edit"></i>
                             </a>
-                            <form action="{{ url_for('eliminar_inventario', id=item.id) }}" method="post" style="display:inline;" onsubmit="return confirm('¿Seguro que deseas eliminar este producto?');">
-                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#eliminarModal{{ item.id }}" title="Eliminar">
                                 <i class="fas fa-trash"></i>
-                                </button>
-                            </form>
+                            </button>
+                            
+                            <!-- Modal de confirmación de eliminación -->
+                            <div class="modal fade" id="eliminarModal{{ item.id }}" tabindex="-1">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-danger text-white">
+                                            <h5 class="modal-title">Confirmar Eliminación</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>¿Estás seguro que deseas eliminar este producto?</p>
+                                            <p><strong>Producto:</strong> {{ item.nombre }}</p>
+                                            <p><strong>Categoría:</strong> {{ item.categoria }}</p>
+                                            <p><strong>Cantidad:</strong> {{ item.cantidad }} {{ item.unidad }}</p>
+                                            <div class="alert alert-warning">
+                                                <i class="fas fa-exclamation-triangle me-2"></i>Esta acción no se puede deshacer.
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                            <form action="{{ url_for('eliminar_inventario', id=item.id) }}" method="POST" style="display: inline;">
+                                                <button type="submit" class="btn btn-danger">Eliminar</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}

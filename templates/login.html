@@ -284,6 +284,59 @@
             color: #2563eb;
         }
         
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 20px 0;
+            color: #94a3b8;
+            font-size: 14px;
+        }
+        
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .divider::before {
+            margin-right: 10px;
+        }
+        
+        .divider::after {
+            margin-left: 10px;
+        }
+        
+        .btn-google {
+            width: 100%;
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            color: #334155;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+        
+        .btn-google:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-google img {
+            width: 20px;
+            height: 20px;
+        }
+        
         .alert {
             border: none;
             border-radius: 12px;
@@ -419,6 +472,13 @@
                         <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
                     </button>
                 </form>
+                
+                <div class="divider">o</div>
+                
+                <a href="{{ url_for('login_google') }}" class="btn-google">
+                    <img src="https://www.google.com/favicon.ico" alt="Google">
+                    Continuar con Google
+                </a>
                 
                 <div class="register-link">
                     <p>

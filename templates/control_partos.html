@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}Control de Partos{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-baby me-2"></i>Control de Partos</h2>
+        <button class="btn btn-outline-secondary" onclick="window.history.back()">
+            <i class="fas fa-arrow-left me-1"></i>Volver
+        </button>
+    </div>
+
+    <!-- Estadísticas Principales -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 bg-success bg-gradient text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title mb-1">Animales Preñadas</h6>
+                            <h3 class="mb-0">{{ animales_preniadas|length }}</h3>
+                        </div>
+                        <div class="ms-3">
+                            <i class="fas fa-baby-carriage fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card border-0 bg-info bg-gradient text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title mb-1">Partos Recientes (30 días)</h6>
+                            <h3 class="mb-0">{{ partos_recientes|length }}</h3>
+                        </div>
+                        <div class="ms-3">
+                            <i class="fas fa-calendar-check fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card border-0 bg-primary bg-gradient text-white">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title mb-1">Total Partos Año</h6>
+                            <h3 class="mb-0">{{ partos_ano|length }}</h3>
+                        </div>
+                        <div class="ms-3">
+                            <i class="fas fa-chart-line fa-2x opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Animales Preñadas -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-warning bg-gradient text-white">
+            <h5 class="mb-0"><i class="fas fa-baby-carriage me-2"></i>Animales Preñadas</h5>
+        </div>
+        <div class="card-body">
+            {% if animales_preniadas %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Identificación</th>
+                                <th>Nombre</th>
+                                <th>Tipo</th>
+                                <th>Estado</th>
+                                <th>Edad</th>
+                                <th>Potrero</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for animal in animales_preniadas %}
+                            <tr>
+                                <td><strong>{{ animal.identificacion }}</strong></td>
+                                <td>{{ animal.nombre or '-' }}</td>
+                                <td>{{ animal.tipo|title }}</td>
+                                <td><span class="badge bg-warning text-dark">{{ animal.estado|title }}</span></td>
+                                <td>{{ animal.edad or '-' }}</td>
+                                <td>
+                                    {% if animal.estado == 'vendido' %}
+                                        <span class="badge bg-secondary">Animal Vendido</span>
+                                    {% elif animal.estado in ['muerto', 'fallecido'] %}
+                                        <span class="badge bg-dark">Animal Fallecido</span>
+                                    {% else %}
+                                        {{ animal.potrero.nombre if animal.potrero else 'Sin asignar' }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="verDetallesAnimal('{{ animal.id }}')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-success" onclick="registrarParto('{{ animal.id }}')">
+                                        <i class="fas fa-plus"></i> Parto
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-baby-carriage fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No hay animales preñadas actualmente.</p>
+                    <a href="{{ url_for('nuevo_reproductivo') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>Registrar Evento Reproductivo
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Partos Recientes -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-info bg-gradient text-white">
+            <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Partos Recientes (Últimos 30 días)</h5>
+        </div>
+        <div class="card-body">
+            {% if partos_recientes %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Animal</th>
+                                <th>Tipo</th>
+                                <th>Crías Vivas</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for animal in partos_recientes %}
+                            <tr>
+                                <td>{{ animal.fecha_real_parto.strftime('%d/%m/%Y') if animal.fecha_real_parto else '-' }}</td>
+                                <td>
+                                    <strong>{{ animal.identificacion }}</strong>
+                                    {% if animal.nombre %}<br><small class="text-muted">{{ animal.nombre }}</small>{% endif %}
+                                </td>
+                                <td>{{ animal.tipo|title }}</td>
+                                <td>
+                                    {% if animal.crias_nacidas_vivas %}
+                                        <span class="badge bg-success">{{ animal.crias_nacidas_vivas }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">-</span>
+                                    {% endif %}
+                                </td>
+                                <td><span class="badge bg-info">{{ animal.estado|title }}</span></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-info" onclick="verDetallesAnimal('{{ animal.id }}')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No hay partos registrados en los últimos 30 días.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Estadísticas Anuales -->
+    {% if partos_ano %}
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary bg-gradient text-white">
+            <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Estadísticas de Partos - {{ "now"|strftime("%Y") }}</h5>
+        </div>
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded">
+                        <h4 class="text-primary mb-1">{{ partos_ano|length }}</h4>
+                        <p class="mb-0 text-muted">Total Partos</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded">
+                        <h4 class="text-success mb-1">{{ partos_ano|selectattr('crias_nacidas_vivas')|list|length }}</h4>
+                        <p class="mb-0 text-muted">Con Crías Vivas</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded">
+                        <h4 class="text-info mb-1">{{ partos_ano|map(attribute='crias_nacidas_vivas')|sum }}</h4>
+                        <p class="mb-0 text-muted">Total Crías Vivas</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 bg-light rounded">
+                        {% set total_crias = partos_ano|map(attribute='crias_nacidas_vivas')|sum %}
+                        {% set promedio = (total_crias / partos_ano|length) if partos_ano|length > 0 else 0 %}
+                        <h4 class="text-warning mb-1">{{ "%.1f"|format(promedio) }}</h4>
+                        <p class="mb-0 text-muted">Promedio Crías/Parto</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function verDetallesAnimal(animalId) {
+    window.open('/animales/' + animalId, '_blank');
+}
+
+function registrarParto(animalId) {
+    window.open('/nuevo_reproductivo?animal_id=' + animalId + '&tipo=parto', '_blank');
+}
+</script>
+
+<style>
+.bg-gradient {
+    background: linear-gradient(135deg, var(--bs-primary), var(--bs-secondary)) !important;
+}
+
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.badge {
+    font-size: 0.8em;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+</style>
+{% endblock %}

@@ -161,6 +161,14 @@
 {% endblock %}
 
 {% block content %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Historial del Animal - AgroGest</title>
+</head>
 <!-- Header mejorado -->
 <div class="row mb-4">
     <div class="col-12">
@@ -279,7 +287,11 @@
                     <h6 class="fw-bold text-dark mb-3"><i class="fas fa-map-marker-alt me-2"></i>Ubicación</h6>
                     <div class="p-3 rounded bg-light">
                         <div class="fw-bold text-dark">
-                            {% if animal.potrero %}
+                            {% if animal.estado == 'vendido' %}
+                                <span class="badge bg-secondary">Animal Vendido</span>
+                            {% elif animal.estado in ['muerto', 'fallecido'] %}
+                                <span class="badge bg-dark">Animal Fallecido</span>
+                            {% elif animal.potrero %}
                                 {{ animal.potrero.nombre }}
                             {% elif animal.ubicacion_asignada %}
                                 {{ animal.ubicacion_asignada.nombre }}
@@ -368,7 +380,6 @@
                                         <th class="text-dark fw-bold">Descripción</th>
                                         <th class="text-dark fw-bold">Tratamiento</th>
                                         <th class="text-dark fw-bold">Resultado</th>
-                                        <th class="text-dark fw-bold">Estado</th>
                                         <th class="text-dark fw-bold">Observaciones</th>
                                     </tr>
                                 </thead>
@@ -385,12 +396,9 @@
                                         <td>{{ salud.descripcion }}</td>
                                         <td>{{ salud.tratamiento or '-' }}</td>
                                         <td>
-                                            <span class="badge bg-{{ 'success' if salud.resultado == 'Total' else 'warning' if salud.resultado == 'Parcial' else 'danger' }}">
+                                            <span class="badge bg-{{ 'success' if salud.resultado|lower in ['total', 'excelente'] else 'warning' if salud.resultado == 'Parcial' else 'danger' }}">
                                                 {{ salud.resultado or '-' }}
                                             </span>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-secondary">{{ salud.estado|title }}</span>
                                         </td>
                                         <td>{{ salud.observaciones or '-' }}</td>
                                     </tr>
@@ -413,15 +421,10 @@
                                         <td>{{ evento.tratamiento or '-' }}</td>
                                         <td>
                                             {% if evento.resultado %}
-                                            <span class="badge bg-{{ 'success' if evento.resultado == 'recuperado' else 'warning' if evento.resultado == 'en_tratamiento' else 'danger' }}">
+                                            <span class="badge bg-{{ 'success' if evento.resultado|lower in ['recuperado', 'excelente'] else 'warning' if evento.resultado == 'en_tratamiento' else 'danger' }}">
                                                 {{ evento.resultado|title }}
                                             </span>
                                             {% else %}-{% endif %}
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-{{ 'success' if evento.estado == 'finalizado' else 'warning' if evento.estado == 'en_tratamiento' else 'info' }}">
-                                                {{ evento.estado|replace('_', ' ')|title }}
-                                            </span>
                                         </td>
                                         <td>
                                             {{ evento.observaciones or '-' }}
@@ -574,7 +577,7 @@
                                         <td>{{ prod.cantidad }}</td>
                                         <td>{{ prod.unidad }}</td>
                                         <td>
-                                            <span class="badge bg-{{ 'success' if prod.calidad == 'buena' else 'warning' if prod.calidad == 'regular' else 'danger' }}">
+                                            <span class="badge bg-{{ 'success' if prod.calidad == 'excelente' else 'success' if prod.calidad == 'buena' else 'info' if prod.calidad == 'regular' else 'danger' }}">
                                                 {{ prod.calidad|title }}
                                             </span>
                                         </td>
@@ -723,6 +726,13 @@
         </div>
     </div>
 </div>
+
+{% if pdf %}
+<div style="text-align: center; margin-top: 30px; font-size: 10px; color: #666;">
+    <p>Reporte generado por AgroGest &#129414;</p>
+</div>
+{% endif %}
+
 <script>
 // Funciones de interactividad
 function editAnimal() {

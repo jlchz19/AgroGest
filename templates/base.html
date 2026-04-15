@@ -2017,14 +2017,16 @@
                 <li class="{% if request.endpoint == 'index' %}active{% endif %}">
                     <a href="{{ url_for('index') }}"><span style="font-size: 1.2rem;">📊</span> <span data-translate="Dashboard">Dashboard</span></a>
                 </li>
-                <li>
+                <li class="{% if 'animales' in request.endpoint %}active{% endif %}">
                     <a href="#animalesSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle"><span style="font-size: 1.2rem;">🐄</span> <span data-translate="Animals">Animales</span></a>
                     <ul class="collapse list-unstyled ps-4" id="animalesSubmenu">
                         <li><a href="{{ url_for('animales') }}"><span data-translate="View Animals">Ver Animales</span></a></li>
                         <li><a href="{{ url_for('nuevo_animal') }}"><span data-translate="New Animal">Nuevo Animal</span></a></li>
+                        <li><a href="{{ url_for('seguimiento_peso') }}"><span data-translate="Weight Tracking">Seguimiento de Peso</span></a></li>
+                        <li><a href="{{ url_for('control_partos') }}"><i class="fas fa-baby me-2"></i>Control de Partos</span></a></li>
                     </ul>
                 </li>
-                 <li>
+                <li>
                     <a href="#ubicacionesSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle"><span style="font-size: 1.2rem;">🏡</span> <span data-translate="Locations">Ubicaciones</span></a>
                     <ul class="collapse list-unstyled ps-4" id="ubicacionesSubmenu">
                         <li><a href="{{ url_for('potreros') }}"><span style="font-size: 1rem; margin-right: 8px;">🌿</span><span data-translate="Paddocks">Potreros (Bovinos)</span></a></li>
@@ -2191,9 +2193,69 @@
                 </div>
             </nav>
 
-            {% set flash_msgs = get_flashed_messages() %}
+            {% set flash_msgs = get_flashed_messages(with_categories=true) %}
             {% if flash_msgs %}
                 <script>
+                    // Función simple para mostrar mensajes flash
+                    function showToast(message, type) {
+                        // Crear banner de mensaje
+                        const banner = document.createElement('div');
+                        banner.className = `alert alert-dismissible fade show d-flex align-items-center`;
+                        banner.style.position = 'fixed';
+                        banner.style.top = '20px';
+                        banner.style.right = '20px';
+                        banner.style.zIndex = '9999';
+                        banner.style.minWidth = '350px';
+                        banner.style.maxWidth = '450px';
+                        banner.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                        banner.style.borderRadius = '15px'; // Esquinas más redondeadas
+                        banner.style.border = 'none';
+                        banner.style.color = '#fff'; // Texto blanco
+                        banner.style.fontSize = '1rem'; // Tamaño de fuente estándar
+                        banner.style.fontWeight = '500'; // Texto más grueso
+
+                        // Determinar icono y colores específicos
+                        let icon = 'info-circle';
+                        let bgColor = 'linear-gradient(135deg, #007bff, #0056b3)'; // Degradado para info
+                        if (type === 'success') {
+                            icon = 'check-circle';
+                            bgColor = 'linear-gradient(135deg, #28a745, #218838)'; // Degradado verde vibrante
+                        } else if (type === 'danger' || type === 'error') {
+                            icon = 'exclamation-triangle';
+                            bgColor = 'linear-gradient(135deg, #dc3545, #c82333)'; // Degradado rojo
+                        } else if (type === 'warning') {
+                            icon = 'exclamation-triangle';
+                            bgColor = 'linear-gradient(135deg, #ffc107, #e0a800)'; // Degradado amarillo
+                        }
+                        banner.style.background = bgColor;
+                        
+                        banner.innerHTML = `
+                            <i class="fas fa-${icon} text-white me-2" style="font-size: 1.2rem;"></i>
+                            <span class="flex-grow-1">${message}</span>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+                        `;
+                        
+                        document.body.appendChild(banner);
+                        
+                        // Animación de entrada
+                        banner.style.opacity = '0';
+                        banner.style.transform = 'translateY(-20px)';
+                        setTimeout(() => {
+                            banner.style.transition = 'all 0.3s ease';
+                            banner.style.opacity = '1';
+                            banner.style.transform = 'translateY(0)';
+                        }, 100);
+                        
+                        // Auto-eliminar después de 5 segundos
+                        setTimeout(() => {
+                            if (banner.parentNode) {
+                                banner.style.opacity = '0';
+                                banner.style.transform = 'translateY(-20px)';
+                                setTimeout(() => banner.remove(), 300);
+                            }
+                        }, 5000);
+                    }
+                    
                     // Flash messages data from server
                     window.flashMessagesData = {{ flash_msgs|tojson|safe }};
                     
@@ -2201,40 +2263,18 @@
                         // Get flash messages from global variable
                         const flashMessages = window.flashMessagesData || [];
                         
-                        flashMessages.forEach(function(msg) {
+                        flashMessages.forEach(function(flashData) {
+                            // flashData is [category, message] when with_categories=true
+                            const category = flashData[0];
+                            const msg = flashData[1];
+                            
                             // Skip if message is empty
                             if (!msg || typeof msg !== 'string') return;
                             
-                            let type = 'info';
-                            let icon = 'ℹ️';
-                            const msgLower = String(msg).toLowerCase();
+                            let type = category || 'info';
                             
-                            if (msgLower.includes('error')) {
-                                type = 'danger';
-                                icon = '❌';
-                            } else if (msg.toLowerCase().includes('success')) {
-                                type = 'success';
-                                icon = '✅';
-                            } else if (msg.toLowerCase().includes('warning')) {
-                                type = 'warning';
-                                icon = '⚠️';
-                            }
-                            
-                            // Use the showToast function if it exists, otherwise fallback to alert
-                            if (typeof window.showToast === 'function') {
-                                window.showToast(msg, type);
-                            } else if (typeof window.showNotification === 'function') {
-                                window.showNotification(
-                                    type.charAt(0).toUpperCase() + type.slice(1),
-                                    msg,
-                                    type,
-                                    icon,
-                                    5000
-                                );
-                            } else {
-                                console.log('Flash message:', {type: type, message: msg, icon: icon});
-                                alert(msg);
-                            }
+                            // Mostrar mensaje
+                            showToast(msg, type);
                         });
                     });
                 </script>
@@ -2264,6 +2304,8 @@
                     <ul class="collapse list-unstyled ps-4" id="animalesMobileSubmenu">
                         <li><a href="{{ url_for('animales') }}" class="mobile-nav-item"><span data-translate="View Animals">Ver Animales</span></a></li>
                         <li><a href="{{ url_for('nuevo_animal') }}" class="mobile-nav-item"><span data-translate="New Animal">Nuevo Animal</span></a></li>
+                        <li><a href="{{ url_for('seguimiento_peso') }}" class="mobile-nav-item"><span data-translate="Weight Tracking">Seguimiento de Peso</span></a></li>
+                        <li><a href="{{ url_for('control_partos') }}" class="mobile-nav-item"><i class="fas fa-baby me-2"></i>Control de Partos</a></li>
                     </ul>
                 </li>
                 <li>
@@ -3789,8 +3831,9 @@
             const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
             const icon = type === 'success' ? 'fas fa-check' : 'fas fa-exclamation-triangle';
             
+            const customStyle = type === 'success' ? 'background-color: #28a745 !important; background: linear-gradient(135deg, #28a745, #20c997) !important;' : '';
             const toast = `
-                <div class="toast align-items-center text-white ${bgClass} border-0 position-fixed top-0 end-0 m-3" role="alert" aria-live="assertive" aria-atomic="true" style="z-index: 10001;">
+                <div class="toast align-items-center text-white ${bgClass} border-0 position-fixed top-0 end-0 m-3" role="alert" aria-live="assertive" aria-atomic="true" style="z-index: 10001; ${customStyle}">
                     <div class="d-flex">
                         <div class="toast-body">
                             <i class="${icon} me-2"></i>${message}

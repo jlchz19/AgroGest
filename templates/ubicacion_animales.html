@@ -1,0 +1,398 @@
+{% extends "base.html" %}
+
+{% block title %}Ubicación de Animales{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header con búsqueda -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-map-marker-alt me-2"></i>Ubicación de Animales</h2>
+        <button class="btn btn-outline-secondary" onclick="window.history.back()">
+            <i class="fas fa-arrow-left me-1"></i>Volver
+        </button>
+    </div>
+
+    <!-- Buscador de Animales -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary bg-gradient text-white">
+            <h5 class="mb-0"><i class="fas fa-search me-2"></i>Buscar Animal</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" 
+                               id="busquedaAnimal" 
+                               class="form-control" 
+                               placeholder="Ingrese nombre o código del animal..."
+                               autocomplete="off">
+                        <button class="btn btn-primary" onclick="buscarAnimal()">
+                            <i class="fas fa-search"></i> Buscar
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn btn-success w-100" onclick="limpiarBusqueda()">
+                        <i class="fas fa-eraser me-1"></i>Limpiar Búsqueda
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Resultado de la búsqueda -->
+            <div id="resultadoBusqueda" class="mt-3" style="display: none;">
+                <div class="alert alert-info">
+                    <h6><i class="fas fa-info-circle me-2"></i>Resultado de la Búsqueda</h6>
+                    <div id="contenidoResultado"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas por Potrero -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 bg-primary bg-gradient text-white">
+                <div class="card-body text-center">
+                    <h4 class="mb-1">{{ animales|length }}</h4>
+                    <p class="mb-0">Total Animales</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-success bg-gradient text-white">
+                <div class="card-body text-center">
+                    <h4 class="mb-1">{{ animales|selectattr('potrero')|list|length }}</h4>
+                    <p class="mb-0">Animales Ubicados</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-warning bg-gradient text-white">
+                <div class="card-body text-center">
+                    <h4 class="mb-1">{{ animales|rejectattr('potrero')|list|length }}</h4>
+                    <p class="mb-0">Sin Potrero</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 bg-info bg-gradient text-white">
+                <div class="card-body text-center">
+                    <h4 class="mb-1">{{ animales|map(attribute='potrero')|unique|list|length }}</h4>
+                    <p class="mb-0">Potreros Usados</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Animales por Ubicación -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-info bg-gradient text-white">
+            <h5 class="mb-0"><i class="fas fa-list me-2"></i>Animales por Ubicación</h5>
+        </div>
+        <div class="card-body">
+            {% if animales %}
+                <!-- Agrupar por potrero -->
+                {% set animales_por_potrero = {} %}
+                {% for animal in animales %}
+                    {% if animal.estado == 'vendido' %}
+                                {% set potrero_nombre = 'Animal Vendido' %}
+                            {% elif animal.estado in ['muerto', 'fallecido'] %}
+                                {% set potrero_nombre = 'Animal Fallecido' %}
+                            {% else %}
+                                {% set potrero_nombre = animal.potrero.nombre if animal.potrero else 'Sin Asignar' %}
+                            {% endif %}
+                    {% if potrero_nombre not in animales_por_potrero %}
+                        {% set _ = animales_por_potrero.update({potrero_nombre: []}) %}
+                    {% endif %}
+                    {% set _ = animales_por_potrero[potrero_nombre].append(animal) %}
+                {% endfor %}
+
+                <!-- Mostrar animales agrupados por potrero -->
+                {% for potrero, animales_grupo in animales_por_potrero.items() %}
+                <div class="mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">
+                            <i class="fas fa-map-pin me-2"></i>{{ potrero }}
+                            <span class="badge bg-primary float-end">{{ animales_grupo|length }} animales</span>
+                        </h6>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Nombre</th>
+                                    <th>Tipo</th>
+                                    <th>Sexo</th>
+                                    <th>Edad</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for animal in animales_grupo %}
+                                <tr>
+                                    <td><strong>{{ animal.identificacion }}</strong></td>
+                                    <td>{{ animal.nombre or '-' }}</td>
+                                    <td>{{ animal.tipo|title }}</td>
+                                    <td>
+                                        {% if animal.sexo == 'hembra' %}
+                                            <i class="fas fa-venus text-pink"></i> Hembra
+                                        {% else %}
+                                            <i class="fas fa-mars text-blue"></i> Macho
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ animal.edad or '-' }}</td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if animal.estado == 'activo' %}bg-success
+                                            {% elif animal.estado == 'preñada' %}bg-warning
+                                            {% elif animal.estado == 'enfermo' %}bg-danger
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ animal.estado|title }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary" onclick="verDetallesAnimal('{{ animal.id }}')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-success" onclick="moverAnimal('{{ animal.id }}')">
+                                            <i class="fas fa-arrows-alt"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-cow fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No hay animales registrados en esta finca.</p>
+                    <a href="{{ url_for('nuevo_animal') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>Registrar Animal
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal para mover animal -->
+<div class="modal fade" id="moverAnimalModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-arrows-alt me-2"></i>Mover Animal</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Animal Seleccionado:</label>
+                    <input type="text" id="animalSeleccionado" class="form-control" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Nuevo Potrero:</label>
+                    <select id="nuevoPotrero" class="form-select">
+                        <option value="">Seleccionar potrero...</option>
+                        <!-- Las opciones se cargarán dinámicamente -->
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarMovimiento()">
+                    <i class="fas fa-save me-1"></i>Guardar Cambio
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let animalActual = null;
+
+function buscarAnimal() {
+    const termino = document.getElementById('busquedaAnimal').value.trim();
+    
+    if (!termino) {
+        document.getElementById('resultadoBusqueda').style.display = 'none';
+        return;
+    }
+    
+    fetch(`/api/buscar_animal?termino=${encodeURIComponent(termino)}`)
+        .then(response => response.json())
+        .then(data => {
+            const resultadoDiv = document.getElementById('resultadoBusqueda');
+            const contenidoDiv = document.getElementById('contenidoResultado');
+            
+            if (data.encontrado) {
+                const animal = data.animal;
+                contenidoDiv.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Código:</strong> ${animal.identificacion}<br>
+                            <strong>Nombre:</strong> ${animal.nombre || 'Sin nombre'}<br>
+                            <strong>Tipo:</strong> ${animal.tipo}<br>
+                            <strong>Sexo:</strong> ${animal.sexo}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Ubicación:</strong> ${animal.estado == 'vendido' ? 'Animal Vendido' : (animal.estado == 'muerto' || animal.estado == 'fallecido' ? 'Animal Fallecido' : animal.potrero)}<br>
+                            <strong>Estado:</strong> ${animal.estado}<br>
+                            <strong>Edad:</strong> ${animal.edad || 'No especificada'}<br>
+                            <strong>Fecha Ingreso:</strong> ${animal.fecha_ingreso}
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <span class="badge bg-success fs-6">
+                            <i class="fas fa-check-circle me-1"></i>Animal Encontrado
+                        </span>
+                    </div>
+                `;
+                contenidoDiv.className = 'alert-success';
+            } else {
+                contenidoDiv.innerHTML = `
+                    <p class="mb-0">${data.mensaje}</p>
+                    <div class="mt-2">
+                        <span class="badge bg-danger fs-6">
+                            <i class="fas fa-times-circle me-1"></i>Animal no encontrado
+                        </span>
+                    </div>
+                `;
+                contenidoDiv.className = 'alert-danger';
+            }
+            
+            resultadoDiv.style.display = 'block';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('contenidoResultado').innerHTML = 
+                '<p class="mb-0 text-danger">Error al buscar el animal. Intente nuevamente.</p>';
+            document.getElementById('resultadoBusqueda').style.display = 'block';
+        });
+}
+
+function limpiarBusqueda() {
+    document.getElementById('busquedaAnimal').value = '';
+    document.getElementById('resultadoBusqueda').style.display = 'none';
+}
+
+function verDetallesAnimal(animalId) {
+    window.open('/animales/' + animalId, '_blank');
+}
+
+function moverAnimal(animalId) {
+    animalActual = animalId;
+    
+    // Obtener información del animal
+    fetch(`/api/buscar_animal?termino=${animalId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.encontrado) {
+                document.getElementById('animalSeleccionado').value = 
+                    `${data.animal.identificacion} - ${data.animal.nombre || 'Sin nombre'}`;
+                
+                // Cargar potreros disponibles
+                // Aquí podrías hacer otra llamada API para obtener los potreros
+                
+                const modal = new bootstrap.Modal(document.getElementById('moverAnimalModal'));
+                modal.show();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al obtener información del animal');
+        });
+}
+
+function guardarMovimiento() {
+    const nuevoPotrero = document.getElementById('nuevoPotrero').value;
+    
+    if (!nuevoPotrero) {
+        alert('Por favor selecciona un potrero');
+        return;
+    }
+    
+    // Aquí harías la llamada API para actualizar el potrero del animal
+    // Por ahora solo mostramos un mensaje
+    alert(`Animal movido al potrero: ${nuevoPotrero}`);
+    
+    // Cerrar modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('moverAnimalModal'));
+    modal.hide();
+    
+    // Recargar página para ver los cambios
+    location.reload();
+}
+
+// Permitir búsqueda con Enter
+document.getElementById('busquedaAnimal').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        buscarAnimal();
+    }
+});
+</script>
+
+<style>
+.bg-gradient {
+    background: linear-gradient(135deg, var(--bs-primary), var(--bs-secondary)) !important;
+}
+
+.card {
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+}
+
+.badge {
+    font-size: 0.8em;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.text-pink {
+    color: #e91e63 !important;
+}
+
+.text-blue {
+    color: #2196f3 !important;
+}
+
+.alert {
+    border: none;
+    border-radius: 8px;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+}
+
+.alert-danger {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+.fs-6 {
+    font-size: 1rem !important;
+}
+</style>
+{% endblock %}

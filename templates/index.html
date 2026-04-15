@@ -167,6 +167,32 @@
                         </div>
                     </div>
                 </div>
+                <div class="col-sm-6 col-xl-6">
+                    <div class="card shadow-sm border-0 card-hover" id="cardParto" style="background: linear-gradient(135deg, #fb923c 0%, #f97316 100%); cursor: pointer;">
+                        <div class="card-body d-flex align-items-center text-white">
+                            <div class="rounded-circle p-3 me-4" style="background: rgba(255,255,255,0.2);">
+                                <i class="fas fa-horse" style="font-size: 2rem;"></i>
+                            </div>
+                            <div>
+                                <p class="mb-1 opacity-75">Parto</p>
+                                <h3 class="mb-0 fw-bold">{{ total_partos }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-6">
+                    <div class="card shadow-sm border-0 card-hover" id="cardUbicacion" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%); cursor: pointer;">
+                        <div class="card-body d-flex align-items-center text-white">
+                            <div class="rounded-circle p-3 me-4" style="background: rgba(255,255,255,0.2);">
+                                <i class="fas fa-map-marker-alt" style="font-size: 2rem;"></i>
+                            </div>
+                            <div>
+                                <p class="mb-1 opacity-75">Ubicación</p>
+                                <h3 class="mb-0 fw-bold">{{ total_ubicaciones }}</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
                          <!-- KPIs -->
@@ -445,6 +471,70 @@
     </div>
 </div>
 
+<!-- Modal Parto -->
+<div class="modal fade" id="partoModal" tabindex="-1" style="z-index: 1055;">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);">
+                <h5 class="modal-title text-white"><i class="fas fa-horse me-2"></i>Control de Partos</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body" id="partoContent">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card shadow-sm border-0">
+                            <div class="card-body">
+                                <h5 class="card-title text-success mb-4"><i class="fas fa-baby-carriage me-2"></i>Animales que han Parido</h5>
+                                <div id="vacasParidas">
+                                    <div class="text-center py-3">
+                                        <div class="spinner-border text-success" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <a href="{{ url_for('eventos_salud') }}" class="btn btn-warning">Ver Todos</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Ubicación -->
+<div class="modal fade" id="ubicacionModal" tabindex="-1" style="z-index: 1055;">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);">
+                <h5 class="modal-title text-white"><i class="fas fa-map-marker-alt me-2"></i>Ubicación de Animales</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-4">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" class="form-control" id="searchAnimal" placeholder="Escriba el nombre del animal...">
+                        <button class="btn btn-success" type="button" id="btnSearchAnimal">Buscar</button>
+                    </div>
+                </div>
+                <div id="ubicacionResult">
+                    <div class="text-center py-4">
+                        <i class="fas fa-map-marker-alt fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Ingrese el nombre del animal para ver su ubicación</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
 /* Estilos generales */
 .card-hover {
@@ -497,17 +587,140 @@
 <!-- Scripts JavaScript -->
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 
-<!-- Initialize chart data if available -->
-{% if no_finca and finca_labels and finca_data %}
+<!-- Combined JavaScript Functionality -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const fincaChart = document.getElementById('finca-chart');
-    if (fincaChart) {
-        fincaChart.dataset.labels = '{{ finca_labels|tojson|safe }}';
-        fincaChart.dataset.values = '{{ finca_data|tojson|safe }}';
+    // Initialize chart data if available
+    (function() {
+        const fincaChart = document.getElementById('finca-chart');
+        if (fincaChart) {
+            // Chart data will be loaded via separate API call
+            console.log('Chart initialized');
+        }
+    })();
+    
+    // Click handlers for cards
+    const cardParto = document.getElementById('cardParto');
+    const cardUbicacion = document.getElementById('cardUbicacion');
+    
+    if (cardParto) {
+        cardParto.addEventListener('click', function() {
+            loadPartoData();
+            new bootstrap.Modal(document.getElementById('partoModal')).show();
+        });
+    }
+    
+    if (cardUbicacion) {
+        cardUbicacion.addEventListener('click', function() {
+            new bootstrap.Modal(document.getElementById('ubicacionModal')).show();
+        });
+    }
+    
+    // Search functionality
+    const searchInput = document.getElementById('searchAnimal');
+    const searchBtn = document.getElementById('btnSearchAnimal');
+    
+    function searchAnimal() {
+        const searchTerm = searchInput.value.trim();
+        const resultDiv = document.getElementById('ubicacionResult');
+        
+        if (!searchTerm) {
+            resultDiv.innerHTML = '<div class="text-center py-4"><i class="fas fa-map-marker-alt fa-3x text-muted mb-3"></i><p class="text-muted">Ingrese el nombre del animal para ver su ubicación</p></div>';
+            return;
+        }
+        
+        // Show loading
+        resultDiv.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-success" role="status"><span class="visually-hidden">Buscando...</span></div><p class="text-muted mt-2">Buscando animal...</p></div>';
+        
+        // Real API call to search animal
+        fetch('/api/buscar_animal?termino=' + encodeURIComponent(searchTerm))
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    resultDiv.innerHTML = '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>' + data.error + '</div>';
+                } else if (data.encontrado) {
+                    resultDiv.innerHTML = '<div class="alert alert-success"><h5><i class="fas fa-check-circle me-2"></i>Animal Encontrado</h5><div class="row mt-3"><div class="col-md-6"><strong>Identificación:</strong> ' + data.animal.identificacion + '<br><strong>Nombre:</strong> ' + (data.animal.nombre || 'Sin nombre') + '<br><strong>Tipo:</strong> ' + data.animal.tipo + '<br><strong>Estado:</strong> <span class="badge bg-success">' + data.animal.estado + '</span></div><div class="col-md-6"><strong>Ubicación:</strong> ' + data.animal.potrero + '<br><strong>Sexo:</strong> ' + (data.animal.sexo || 'N/A') + '<br><strong>Fecha Ingreso:</strong> ' + data.animal.fecha_ingreso + '<br><strong>Edad:</strong> ' + (data.animal.edad || 'N/A') + '</div></div></div>';
+                } else {
+                    resultDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-search me-2"></i>Animal no encontrado en esta finca</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error buscando animal:', error);
+                resultDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error al buscar el animal</div>';
+            });
+    }
+    
+    if (searchBtn) {
+        searchBtn.addEventListener('click', searchAnimal);
+    }
+    
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchAnimal();
+            }
+        });
+    }
+    
+    // Load parto data
+    function loadPartoData() {
+        const vacasParidas = document.getElementById('vacasParidas');
+        
+        // Show loading
+        vacasParidas.innerHTML = '<div class="text-center py-3"><div class="spinner-border text-success" role="status"><span class="visually-hidden">Cargando...</span></div></div>';
+        
+        // Load real data from API
+        fetch('/api/partos_data')
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                // Render partos con detalles mejorados
+                if (data.partidos && data.partidos.length > 0) {
+                    let partidosHtml = '<div class="table-responsive"><table class="table table-hover"><thead class="table-light"><tr><th>Animal</th><th>Fecha Parto</th><th>Días</th><th>Crías Vivas</th><th>Estado</th></tr></thead><tbody>';
+                    data.partidos.forEach(animal => {
+                        const nombre = animal.nombre || animal.identificacion;
+                        let badgeClass = 'bg-secondary';
+                        let estadoTexto = 'Hace ' + animal.dias_desde_parto + ' días';
+                        
+                        if (animal.dias_desde_parto <= 7) {
+                            badgeClass = 'bg-success';
+                            estadoTexto = 'Reciente';
+                        } else if (animal.dias_desde_parto <= 30) {
+                            badgeClass = 'bg-primary';
+                            estadoTexto = 'Normal';
+                        } else {
+                            badgeClass = 'bg-secondary';
+                            estadoTexto = 'Anterior';
+                        }
+                        
+                        partidosHtml += '<tr>';
+                        partidosHtml += '<td><strong>' + animal.identificacion + '</strong>';
+                        if (animal.nombre) {
+                            partidosHtml += '<br><small class="text-muted">' + animal.nombre + '</small>';
+                        }
+                        partidosHtml += '</td>';
+                        partidosHtml += '<td>' + animal.fecha_parto + '</td>';
+                        partidosHtml += '<td>' + animal.dias_desde_parto + '</td>';
+                        partidosHtml += '<td><span class="badge bg-success">' + (animal.crias_vivas || 0) + '</span></td>';
+                        partidosHtml += '<td><span class="badge ' + badgeClass + '">' + estadoTexto + '</span></td>';
+                        partidosHtml += '</tr>';
+                    });
+                    partidosHtml += '</tbody></table></div>';
+                    vacasParidas.innerHTML = partidosHtml;
+                } else {
+                    vacasParidas.innerHTML = '<div class="text-center py-4"><i class="fas fa-calendar-times fa-3x text-muted mb-3"></i><p class="text-muted">No hay partos registrados recientemente.</p></div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error cargando datos de partos:', error);
+                vacasParidas.innerHTML = '<div class="text-center py-4"><i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i><p class="text-danger">Error al cargar los datos.</p></div>';
+            });
     }
 });
 </script>
-{% endif %}
+
 
 {% endblock %}

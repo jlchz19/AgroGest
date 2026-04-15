@@ -25,6 +25,9 @@
     <p><strong>Finca:</strong> {{ animal.finca.nombre if animal.finca else '-' }}</p>
     <p class="muted">Verificación: {{ verification_url }}</p>
   </div>
+  <div style="text-align: center; margin-top: 30px; font-size: 10px; color: #666;">
+    <p>Reporte generado por AgroGest &#129414;</p>
+  </div>
   <script>
     QRCode.toCanvas(document.getElementById('qr'), '{{ verification_url }}', { width: 120 })
   </script>

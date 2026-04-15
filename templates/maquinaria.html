@@ -526,7 +526,7 @@ body.dark-theme .alert-info {
                             <i class="fas fa-edit"></i>
                         </a>
                         <form action="{{ url_for('eliminar_maquinaria', id=maquina.id) }}" method="POST" style="display: inline;">
-                            <button type="submit" class="btn btn-action btn-outline-secondary" title="Eliminar" onclick="return confirm('¿Estás seguro de eliminar esta maquinaria?')">
+                            <button type="button" class="btn btn-action btn-outline-danger" title="Eliminar" onclick="showConfirmModal('¿Estás seguro de eliminar esta maquinaria?', function() { document.getElementById('deleteForm_' + {{ maquina.id }}).submit(); }, 'Eliminar Maquinaria')">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </form>

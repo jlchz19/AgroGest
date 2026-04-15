@@ -196,7 +196,7 @@ class AnimalesModule:
                    a.peso_actual, a.estado, p.nombre as potrero_nombre
             FROM animales a
             LEFT JOIN potreros p ON a.potrero_id = p.id
-            WHERE a.finca_id = ?
+            WHERE a.finca_id = ? AND a.estado NOT IN ('vendido', 'muerto', 'fallecido')
             ORDER BY a.identificacion
         '''
         
@@ -227,7 +227,7 @@ class AnimalesModule:
                    a.peso_actual, a.estado, p.nombre as potrero_nombre
             FROM animales a
             LEFT JOIN potreros p ON a.potrero_id = p.id
-            WHERE a.finca_id = ?
+            WHERE a.finca_id = ? AND a.estado NOT IN ('vendido', 'muerto', 'fallecido')
         '''
         
         params = [self.current_finca_id]

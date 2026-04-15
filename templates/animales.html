@@ -261,7 +261,15 @@ body.dark-theme .animal-profile-placeholder i {
                         
                         <div class="animal-location mb-4">
                             <small class="text-muted d-block">Ubicación</small>
-                            {% if animal.potrero %}
+                            {% if animal.estado == 'vendido' %}
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-times-circle me-1"></i>Animal Vendido
+                                </span>
+                            {% elif animal.estado in ['muerto', 'fallecido'] %}
+                                <span class="badge bg-dark">
+                                    <i class="fas fa-cross me-1"></i>Animal Fallecido
+                                </span>
+                            {% elif animal.potrero %}
                                 <span class="location-badge">
                                     <i class="fas fa-map-marker-alt me-1"></i>{{ animal.potrero.nombre }}
                                 </span>
@@ -288,11 +296,36 @@ body.dark-theme .animal-profile-placeholder i {
                                 <a href="{{ url_for('editar_animal', id=animal.id) }}" class="btn btn-outline-warning btn-sm" title="Editar">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <form action="{{ url_for('eliminar_animal', animal_id=animal.id) }}" method="post" style="display:inline;" onsubmit="return confirm('¿Seguro que deseas eliminar este animal? Esta acción no se puede deshacer.');">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm" title="Eliminar">
-                                        <i class="fas fa-trash-alt"></i>
-                                    </button>
-                                </form>
+                                <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#eliminarModal{{ animal.id }}" title="Eliminar">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                                
+                                <!-- Modal de confirmación de eliminación -->
+                                <div class="modal fade" id="eliminarModal{{ animal.id }}" tabindex="-1">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header bg-danger text-white">
+                                                <h5 class="modal-title">Confirmar Eliminación</h5>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>¿Estás seguro que deseas eliminar este animal?</p>
+                                                <p><strong>Identificación:</strong> {{ animal.identificacion }}</p>
+                                                <p><strong>Nombre:</strong> {{ animal.nombre or 'Sin nombre' }}</p>
+                                                <p><strong>Tipo:</strong> {{ animal.tipo|title }}</p>
+                                                <div class="alert alert-warning">
+                                                    <i class="fas fa-exclamation-triangle me-2"></i>Esta acción no se puede deshacer.
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                <form action="{{ url_for('eliminar_animal', animal_id=animal.id) }}" method="POST" style="display: inline;">
+                                                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -393,7 +426,11 @@ body.dark-theme .animal-profile-placeholder i {
                                                             <div class="info-card">
                                                                 <small class="text-muted d-block">Ubicación</small>
                                                                 <strong>
-                                                                    {% if animal.potrero %}
+                                                                    {% if animal.estado == 'vendido' %}
+                                                                        <span class="badge bg-secondary">Animal Vendido</span>
+                                                                    {% elif animal.estado in ['muerto', 'fallecido'] %}
+                                                                        <span class="badge bg-dark">Animal Fallecido</span>
+                                                                    {% elif animal.potrero %}
                                                                         {{ animal.potrero.nombre }}
                                                                     {% elif animal.ubicacion_asignada %}
                                                                         {{ animal.ubicacion_asignada.nombre }}

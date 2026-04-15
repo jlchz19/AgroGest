@@ -125,19 +125,18 @@
 {% block scripts %}
 <script>
 // Datos de animales para mostrar información
-const datosAnimales = {
-    {% for animal in animales %}
-    {{ animal.id }}: {
-        identificacion: "{{ animal.identificacion }}",
-        nombre: "{{ animal.nombre or 'Sin nombre' }}",
-        tipo: "{{ animal.tipo }}",
-        raza: "{{ animal.raza }}",
-        peso: "{{ animal.peso or 'N/A' }}",
-        estado: "{{ animal.estado }}",
-        fecha_nacimiento: "{{ animal.fecha_nacimiento.strftime('%d/%m/%Y') if animal.fecha_nacimiento else 'N/A' }}"
-    },
-    {% endfor %}
+const datosAnimales = {};
+{% for animal in animales %}
+datosAnimales[{{ animal.id }}] = {
+    identificacion: {{ animal.identificacion|tojson|safe }},
+    nombre: {{ (animal.nombre or 'Sin nombre')|tojson|safe }},
+    tipo: {{ animal.tipo|tojson|safe }},
+    raza: {{ animal.raza|tojson|safe }},
+    peso: {{ (animal.peso|string or 'N/A')|tojson|safe }},
+    estado: {{ animal.estado|tojson|safe }},
+    fecha_nacimiento: {{ (animal.fecha_nacimiento.strftime('%d/%m/%Y') if animal.fecha_nacimiento else 'N/A')|tojson|safe }}
 };
+{% endfor %}
 
 function mostrarCamposEspecificos() {
     const tipoEvento = document.getElementById('tipo_evento').value;
@@ -222,35 +221,82 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event listeners
     document.getElementById('animal_id').addEventListener('change', mostrarInfoAnimal);
     
+    // Función para mostrar modal de confirmación
+    function showConfirmModal(message, onConfirm, title = 'Confirmar Acción', actionType = 'eliminar') {
+        // Determinar colores según tipo de acción
+        const isDeleteAction = actionType === 'eliminar';
+        const headerClass = isDeleteAction ? 'bg-danger text-white' : 'bg-primary text-white';
+        const buttonClass = isDeleteAction ? 'btn-danger' : 'btn-primary';
+        const buttonText = isDeleteAction ? 'Eliminar' : 'Confirmar';
+        
+        // Crear modal dinámicamente
+        const modalHtml = `
+            <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header ${headerClass}">
+                            <h5 class="modal-title" id="confirmModalLabel">${title}</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>${message}</p>
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Esta acción no se puede deshacer.
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn ${buttonClass}" id="confirmBtn">${buttonText}</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Agregar modal al DOM
+        let modalContainer = document.getElementById('modalContainer');
+        if (!modalContainer) {
+            modalContainer = document.createElement('div');
+            modalContainer.id = 'modalContainer';
+            modalContainer.innerHTML = modalHtml;
+            document.body.appendChild(modalContainer);
+        }
+        
+        // Reemplazar el modal existente
+        modalContainer.innerHTML = modalHtml;
+        
+        // Configurar botón de confirmación
+        const confirmBtn = document.getElementById('confirmBtn');
+        if (confirmBtn) {
+            confirmBtn.onclick = function() {
+                // Cerrar modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
+                modal.hide();
+                
+                // Ejecutar acción de confirmación
+                if (typeof onConfirm === 'function') {
+                    onConfirm();
+                }
+            };
+        }
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+        modal.show();
+    }
+
     // Validación del formulario
     document.getElementById('formEvento').addEventListener('submit', function(e) {
         const tipoEvento = document.getElementById('tipo_evento').value;
         const animalId = document.getElementById('animal_id').value;
         
-        if (!animalId) {
+        if (!tipoEvento || !animalId) {
             e.preventDefault();
-            alert('Por favor, selecciona un animal.');
+            alert('Por favor selecciona un animal y tipo de evento');
             return;
         }
         
-        if (!tipoEvento) {
-            e.preventDefault();
-            alert('Por favor, selecciona un tipo de evento.');
-            return;
-        }
-        
-        // Confirmación para eventos importantes
-        if (tipoEvento === 'fallecido' || tipoEvento === 'vendido') {
-            const animal = datosAnimales[animalId];
-            const mensaje = tipoEvento === 'fallecido' 
-                ? `¿Estás seguro de registrar el fallecimiento de ${animal.nombre}? Esta acción cambiará el estado del animal a "fallecido".`
-                : `¿Estás seguro de registrar la venta de ${animal.nombre}? Esta acción cambiará el estado del animal a "vendido".`;
-            
-            if (!confirm(mensaje)) {
-                e.preventDefault();
-                return;
-            }
-        }
+        // Los eventos importantes se registran directamente sin confirmación
     });
 });
 </script>

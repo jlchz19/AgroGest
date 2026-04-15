@@ -92,7 +92,7 @@
                         </div>
 
                         <div class="text-end">
-                            <button type="button" class="btn btn-secondary me-2" onclick="window.location.href='{{ url_for('ajustes') }}'">
+                            <button type="button" class="btn btn-secondary me-2" id="btnCancelar">
                                 <i class="fas fa-times me-2"></i>Cancelar
                             </button>
                             <button type="submit" class="btn btn-warning">
@@ -174,6 +174,13 @@
 </div>
 
 <script>
+// Event listener para el botón cancelar
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('btnCancelar').addEventListener('click', function() {
+        window.location.href = '{{ url_for("ajustes") }}';
+    });
+});
+
 function validarArchivo() {
     const archivoInput = document.getElementById('archivo_respaldo');
     const archivo = archivoInput.files[0];
@@ -200,9 +207,64 @@ function validarArchivo() {
                 return;
             }
             
+            // Validar fecha del respaldo
+            if (!data.informacion_finca.fecha_respaldo) {
+                showToast('El archivo no contiene información de fecha de respaldo', 'error');
+                return;
+            }
+            
+            try {
+                const fechaRespaldo = new Date(data.informacion_finca.fecha_respaldo);
+                const fechaActual = new Date();
+                const limiteMes = new Date();
+                limiteMes.setDate(fechaActual.getDate() - 30);
+                const limiteAnio = new Date();
+                limiteAnio.setFullYear(fechaActual.getFullYear() - 1);
+                
+                // Validación 1: La fecha no puede ser futura
+                if (fechaRespaldo > fechaActual) {
+                    showToast('No se puede importar este respaldo. La fecha del respaldo no puede ser futura.', 'error');
+                    return;
+                }
+                
+                // Validación 2: Verificar si es del día actual
+                const esFechaActual = (
+                    fechaRespaldo.getFullYear() === fechaActual.getFullYear() &&
+                    fechaRespaldo.getMonth() === fechaActual.getMonth() &&
+                    fechaRespaldo.getDate() === fechaActual.getDate()
+                );
+                
+                // Validación 3: Verificar si es dentro del último mes
+                const esDentroMes = fechaRespaldo >= limiteMes;
+                
+                // Validación 4: Verificar que no sea demasiado antiguo
+                if (fechaRespaldo < limiteAnio) {
+                    showToast('No se puede importar este respaldo. La fecha es demasiado antigua (más de 1 año).', 'error');
+                    return;
+                }
+                
+                // Validación 5: Si es exactamente 1 año o más, también bloquear
+                const diasDiferencia = Math.floor((fechaActual - fechaRespaldo) / (1000 * 60 * 60 * 24));
+                if (diasDiferencia >= 365) {
+                    showToast(`No se puede importar este respaldo. La diferencia es de ${diasDiferencia} días (más de 1 año).`, 'error');
+                    return;
+                }
+                
+                // Validación final: Solo permitir si es fecha actual o dentro del último mes
+                if (!esFechaActual && !esDentroMes) {
+                    const fechaFormateada = fechaRespaldo.toLocaleDateString('es-ES');
+                    showToast(`No se puede importar este respaldo. La fecha del respaldo (${fechaFormateada}) no es del día actual ni de los últimos 30 días.`, 'error');
+                    return;
+                }
+            } catch (e) {
+                showToast('Error al procesar la fecha del respaldo', 'error');
+                return;
+            }
+            
             // Mostrar resumen del archivo
             let resumen = `Resumen del archivo:\n`;
             resumen += `• Finca: ${data.informacion_finca.nombre || 'N/A'}\n`;
+            resumen += `• Fecha respaldo: ${new Date(data.informacion_finca.fecha_respaldo).toLocaleDateString('es-ES')}\n`;
             
             if (data.animales && data.animales.length > 0) {
                 resumen += `• Animales: ${data.animales.length}\n`;

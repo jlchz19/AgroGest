@@ -273,27 +273,98 @@
 
 {% block scripts %}
 <script>
-function eliminarEvento(eventoId, nombreAnimal) {
-    if (confirm(`¿Estás seguro de eliminar el evento de ${nombreAnimal}?\n\nEsta acción no se puede deshacer.`)) {
-        // Crear formulario y enviarlo
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/evento/${eventoId}/eliminar`;
-        form.style.display = 'none';
-        
-        // Agregar token CSRF si existe
-        const csrfToken = document.querySelector('meta[name="csrf-token"]');
-        if (csrfToken) {
-            const csrfInput = document.createElement('input');
-            csrfInput.type = 'hidden';
-            csrfInput.name = 'csrf_token';
-            csrfInput.value = csrfToken.getAttribute('content');
-            form.appendChild(csrfInput);
-        }
-        
-        document.body.appendChild(form);
-        form.submit();
+// Función para mostrar modal de confirmación Bootstrap en lugar de confirm() nativo
+function showConfirmModal(message, onConfirm, title = 'Confirmar Eliminación') {
+    // Crear modal dinámicamente
+    const modalHtml = `
+        <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title" id="confirmModalLabel">${title}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>${message}</p>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Esta acción no se puede deshacer.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-danger" id="confirmBtn">Eliminar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Agregar modal al DOM
+    let modalContainer = document.getElementById('modalContainer');
+    if (!modalContainer) {
+        modalContainer = document.createElement('div');
+        modalContainer.id = 'modalContainer';
+        modalContainer.innerHTML = modalHtml;
+        document.body.appendChild(modalContainer);
     }
+    
+    // Reemplazar el modal existente
+    modalContainer.innerHTML = modalHtml;
+    
+    // Configurar botón de confirmación
+    const confirmBtn = document.getElementById('confirmBtn');
+    if (confirmBtn) {
+        confirmBtn.onclick = function() {
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
+            modal.hide();
+            
+            // Ejecutar acción de confirmación
+            if (typeof onConfirm === 'function') {
+                onConfirm();
+            }
+        };
+    }
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    modal.show();
+}
+
+// Reemplazar la función confirm nativa
+function confirm(message) {
+    showConfirmModal(message, null, 'Confirmación');
+}
+
+function eliminarEvento(eventoId, nombreAnimal) {
+    showConfirmModal(
+        `¿Estás seguro que deseas eliminar este evento?<br><br><strong>Animal:</strong> ${nombreAnimal}`,
+        function() {
+            // Enviar solicitud AJAX para eliminar
+            fetch(`/evento/${eventoId}/eliminar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Eliminación exitosa, recargar página directamente
+                    location.reload();
+                } else {
+                    // Mostrar mensaje de error
+                    alert(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al eliminar el evento');
+            });
+        },
+        'Eliminar Evento',
+        'eliminar'
+    );
 }
 
 function verDetallesEvento(eventoId) {

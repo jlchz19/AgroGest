@@ -5,7 +5,7 @@ import uuid
 from werkzeug.utils import secure_filename
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, make_response, send_from_directory, send_file
 from werkzeug.utils import secure_filename
-from sqlalchemy import text
+from sqlalchemy import text, or_
 from sqlalchemy.exc import OperationalError as SAOperationalError
 import os
 from flask_sqlalchemy import SQLAlchemy
@@ -28,6 +28,10 @@ import threading
 import time
 import secrets
 import string
+
+# Importaciones para Google OAuth
+from authlib.integrations.flask_client import OAuth
+from authlib.integrations.base_client.errors import OAuthError
 
 # Importaciones para códigos QR
 try:
@@ -405,6 +409,11 @@ def ensure_maquinaria_columns():
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
+# Configuración de Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
 # Ruta estática para servir imágenes desde la carpeta 'imagen' en la raíz del proyecto
 @app.route('/imagen/<path:filename>')
 def imagen_static(filename):
@@ -416,10 +425,13 @@ def imagen_static(filename):
 # Inicializar base de datos si no existe
 def update_database():
     with app.app_context():
-        # This will add the new column if it doesn't exist
+        # Check if column exists before adding it
         with db.engine.connect() as conn:
-            conn.execute(text('ALTER TABLE ubicacion ADD COLUMN IF NOT EXISTS imagen VARCHAR(255)'))
-            conn.commit()
+            result = conn.execute(text("PRAGMA table_info(ubicacion)"))
+            columns = [row[1] for row in result]
+            if 'imagen' not in columns:
+                conn.execute(text('ALTER TABLE ubicacion ADD COLUMN imagen VARCHAR(255)'))
+                conn.commit()
         db.session.commit()
         print("Database updated successfully!")
 
@@ -428,8 +440,11 @@ with app.app_context():
         db.create_all()
         # Add the imagen column to ubicacion table if it doesn't exist
         with db.engine.connect() as conn:
-            conn.execute(text('ALTER TABLE ubicacion ADD COLUMN IF NOT EXISTS imagen VARCHAR(255)'))
-            conn.commit()
+            result = conn.execute(text("PRAGMA table_info(ubicacion)"))
+            columns = [row[1] for row in result]
+            if 'imagen' not in columns:
+                conn.execute(text('ALTER TABLE ubicacion ADD COLUMN imagen VARCHAR(255)'))
+                conn.commit()
         db.session.commit()
         print("[INFO] Base de datos inicializada correctamente.")
     except Exception as e:
@@ -463,24 +478,49 @@ with app.app_context():
     except Exception as e:
         print(f"[WARNING] No fue posible comprobar/actualizar columnas de empleado: {e}")
 
-# Configuración de Flask-Login
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = 'login'
+    # Ensure google_id column exists in usuario table
+    try:
+        with db.engine.begin() as conn:
+            res = conn.execute(text("PRAGMA table_info('usuario')")).fetchall()
+            existing_cols = [r[1] for r in res]
+            if 'google_id' not in existing_cols:
+                try:
+                    conn.execute(text("ALTER TABLE usuario ADD COLUMN google_id VARCHAR(100) UNIQUE"))
+                    print("[INFO] Se añadió columna 'google_id' a la tabla usuario.")
+                except Exception as e:
+                    print(f"[WARNING] No se pudo añadir columna google_id: {e}")
+    except Exception as e:
+        print(f"[WARNING] No fue posible comprobar/actualizar columnas de usuario: {e}")
 
-# Modelos de la base de datos
+# Configuración de OAuth para Google
+oauth = OAuth(app)
+google = oauth.register(
+    name='google',
+    client_id=os.getenv('GOOGLE_CLIENT_ID', ''),  # Configurar en .env
+    client_secret=os.getenv('GOOGLE_CLIENT_SECRET', ''),  # Configurar en .env
+    access_token_url='https://oauth2.googleapis.com/token',
+    authorize_url='https://accounts.google.com/o/oauth2/auth',
+    api_base_url='https://www.googleapis.com/oauth2/v2/',
+    jwks_uri='https://www.googleapis.com/oauth2/v3/certs',
+    client_kwargs={
+        'scope': 'openid email profile'
+    }
+)
+
+    # Modelos de la base de datos
 class Usuario(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(120), nullable=False)
+    password_hash = db.Column(db.String(120), nullable=True)  # Nullable para usuarios de Google
     nombre = db.Column(db.String(100), nullable=False)
     apellido = db.Column(db.String(100), nullable=False)
-    telefono = db.Column(db.String(20), nullable=False)
+    telefono = db.Column(db.String(20), nullable=True)  # Nullable para usuarios de Google
     direccion = db.Column(db.String(200))
     fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
     estado = db.Column(db.String(20), default='activo')  # activo, inactivo
     rol = db.Column(db.String(20), default='usuario')  # admin, usuario
+    google_id = db.Column(db.String(100), unique=True, nullable=True)  # ID de Google OAuth
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -1083,8 +1123,25 @@ def index():
         total_empleados = db.session.execute(text("SELECT count(*) FROM empleado WHERE finca_id = :fid"), {"fid": finca_id}).scalar() or 0
     total_vacunas = Vacuna.query.filter_by(finca_id=finca_id).count()
     
+    # --- Datos de Partos ---
+    # Contar vacas que ya parieron
+    vacas_parieron = db.session.query(db.func.count(db.func.distinct(Parto.animal_id)))\
+        .join(Animal, Parto.animal_id == Animal.id)\
+        .filter(Animal.finca_id == finca_id)\
+        .scalar() or 0
+    
+    # Contar vacas preñadas (por parir)
+    vacas_preñadas = db.session.query(db.func.count(db.func.distinct(DiagnosticoPrenez.animal_id)))\
+        .join(Animal, DiagnosticoPrenez.animal_id == Animal.id)\
+        .filter(
+            Animal.finca_id == finca_id,
+            DiagnosticoPrenez.resultado == 'preñada',
+            Animal.tipo == 'vaca'
+        )\
+        .scalar() or 0
+    
     # --- Datos de Rendimiento y Finanzas ---
-
+    
     # 1. Valor total del inventario
     valor_total_inventario = db.session.query(
         db.func.sum(Inventario.cantidad * Inventario.precio_unitario)
@@ -1206,7 +1263,7 @@ def login():
                 login_user(user)  # Usar Flask-Login
                 session['user_id'] = user.id  # Mantener para compatibilidad
                 session['username'] = user.username
-                flash(f'Bienvenido {user.nombre}', 'success')
+                flash(f'Bienvenido administrador', 'success')
                 return redirect(url_for('index'))
             else:
                 flash('Tu cuenta está inactiva. Contacta al administrador.', 'error')
@@ -1220,6 +1277,81 @@ def logout():
     logout_user()  # Usar Flask-Login
     session.clear()
     return redirect(url_for('login'))
+
+# Rutas para autenticación con Google
+@app.route('/login/google')
+def login_google():
+    """Inicia el flujo de OAuth con Google"""
+    if not google.client_id:
+        flash('La autenticación con Google no está configurada.', 'error')
+        return redirect(url_for('login'))
+    
+    redirect_uri = url_for('google_callback', _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+@app.route('/login/google/callback')
+def google_callback():
+    """Recibe la respuesta de Google OAuth"""
+    try:
+        token = google.authorize_access_token()
+        resp = google.get('userinfo')
+        user_info = resp.json()
+        
+        google_id = user_info.get('id')
+        email = user_info.get('email')
+        nombre = user_info.get('given_name', '')
+        apellido = user_info.get('family_name', '')
+        
+        # Buscar usuario por google_id
+        user = Usuario.query.filter_by(google_id=google_id).first()
+        
+        if not user:
+            # Buscar por email
+            user = Usuario.query.filter_by(email=email).first()
+            
+            if user:
+                # Actualizar usuario existente con google_id
+                user.google_id = google_id
+                db.session.commit()
+            else:
+                # Crear nuevo usuario
+                username = email.split('@')[0]
+                base_username = username
+                counter = 1
+                
+                # Asegurar username único
+                while Usuario.query.filter_by(username=username).first():
+                    username = f"{base_username}{counter}"
+                    counter += 1
+                
+                user = Usuario(
+                    username=username,
+                    email=email,
+                    nombre=nombre or username,
+                    apellido=apellido or '',
+                    google_id=google_id,
+                    telefono='',
+                    estado='activo',
+                    rol='usuario'
+                )
+                db.session.add(user)
+                db.session.commit()
+                
+                flash('Cuenta creada exitosamente con Google.', 'success')
+        
+        # Iniciar sesión
+        login_user(user)
+        session['user_id'] = user.id
+        session['username'] = user.username
+        flash(f'Bienvenido {user.nombre}', 'success')
+        return redirect(url_for('index'))
+        
+    except OAuthError as e:
+        flash(f'Error al autenticar con Google: {str(e)}', 'error')
+        return redirect(url_for('login'))
+    except Exception as e:
+        flash(f'Error inesperado: {str(e)}', 'error')
+        return redirect(url_for('login'))
 
 # Ruta para olvidé mi contraseña
 @app.route('/forgot-password', methods=['GET', 'POST'])
@@ -1503,128 +1635,6 @@ def resumen_animales():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/resumen/potreros')
-@login_required
-def resumen_potreros():
-    try:
-        finca = Finca.query.filter_by(usuario_id=current_user.id).first()
-        if not finca:
-            return jsonify({'error': 'No se encontró la finca del usuario'}), 404
-
-        potreros = Potrero.query.filter_by(finca_id=finca.id).all()
-        total_animales = Animal.query.filter_by(finca_id=finca.id, estado='activo').count()
-        
-        potreros_data = []
-        for potrero in potreros:
-            animales_en_potrero = Animal.query.filter_by(potrero_id=potrero.id, estado='activo').count()
-            porcentaje_uso = (animales_en_potrero / potrero.capacidad * 100) if potrero.capacidad > 0 else 0
-            
-            potreros_data.append({
-                'nombre': potrero.nombre,
-                'capacidad': potrero.capacidad,
-                'animales_actuales': animales_en_potrero,
-                'porcentaje_uso': round(porcentaje_uso, 1),
-                'estado': potrero.estado,
-                'tipo_pasto': potrero.tipo_pasto or 'No especificado'
-            })
-
-        return jsonify({
-            'total_potreros': len(potreros),
-            'total_animales': total_animales,
-            'potreros': potreros_data
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/resumen/empleados')
-@login_required
-def resumen_empleados():
-    try:
-        finca = Finca.query.filter_by(usuario_id=current_user.id).first()
-        if not finca:
-            return jsonify({'error': 'No se encontró la finca del usuario'}), 404
-
-        empleados = Empleado.query.filter_by(finca_id=finca.id, estado='activo').all()
-        
-        # Agrupar por cargo
-        cargos = {}
-        for emp in empleados:
-            if emp.cargo not in cargos:
-                cargos[emp.cargo] = 0
-            cargos[emp.cargo] += 1
-        
-        return jsonify({
-            'total_empleados': len(empleados),
-            'por_cargo': [{'cargo': k, 'cantidad': v} for k, v in cargos.items()],
-            'empleados_recientes': [
-                {
-                    'nombre': f"{e.nombre} {e.apellido}",
-                    'cargo': e.cargo,
-                    'fecha_ingreso': e.fecha_contratacion.strftime('%d/%m/%Y') if e.fecha_contratacion else 'N/A'
-                } 
-                for e in empleados[:5]  # Últimos 5 empleados
-            ]
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/resumen/inventario')
-@login_required
-def resumen_inventario():
-    try:
-        finca = Finca.query.filter_by(usuario_id=current_user.id).first()
-        if not finca:
-            return jsonify({'error': 'No se encontró la finca del usuario'}), 404
-
-        inventarios = Inventario.query.filter_by(finca_id=finca.id).all()
-        
-        # Agrupar por categoría
-        categorias = {}
-        for inv in inventarios:
-            if inv.categoria not in categorias:
-                categorias[inv.categoria] = {
-                    'total_items': 0,
-                    'valor_total': 0,
-                    'items': []
-                }
-            valor_total = inv.cantidad * inv.precio_unitario
-            categorias[inv.categoria]['total_items'] += 1
-            categorias[inv.categoria]['valor_total'] += valor_total
-            categorias[inv.categoria]['items'].append({
-                'producto': inv.producto,
-                'cantidad': inv.cantidad,
-                'unidad': inv.unidad,
-                'valor_total': valor_total
-            })
-        
-        # Calcular totales
-        total_items = sum(cat['total_items'] for cat in categorias.values())
-        valor_total = sum(cat['valor_total'] for cat in categorias.values())
-        
-        return jsonify({
-            'total_items': total_items,
-            'valor_total': round(valor_total, 2),
-            'por_categoria': [
-                {
-                    'categoria': k,
-                    'total_items': v['total_items'],
-                    'valor_total': round(v['valor_total'], 2)
-                } 
-                for k, v in categorias.items()
-            ],
-            'productos_bajos': [
-                {
-                    'producto': inv.producto,
-                    'cantidad': inv.cantidad,
-                    'unidad': inv.unidad,
-                    'minimo_recomendado': 10  # Valor de ejemplo, ajustar según necesidad
-                }
-                for inv in inventarios if inv.cantidad < 10  # Ajustar el umbral según necesidad
-            ][:5]  # Solo los primeros 5 productos bajos
-        })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
 
 @app.route('/usuarios/editar/<int:usuario_id>', methods=['GET', 'POST'])
 @login_required
@@ -1697,17 +1707,6 @@ def eliminar_usuario(usuario_id):
     flash('Usuario eliminado exitosamente', 'success')
     return redirect(url_for('usuarios'))
 
-# Rutas para Animales
-@app.route('/animales')
-@login_required
-def animales():
-    if 'finca_id' not in session:
-        flash('Selecciona una finca para continuar')
-        return redirect(url_for('fincas'))
-    animales = Animal.query.filter_by(finca_id=session['finca_id']).all()
-    potreros = Potrero.query.filter_by(finca_id=session['finca_id']).all()
-    return render_template('animales.html', animales=animales, potreros=potreros, today=date.today())
-
 @app.route('/animal/nuevo', methods=['GET', 'POST'])
 @login_required
 def nuevo_animal():
@@ -1717,7 +1716,7 @@ def nuevo_animal():
 
     potreros = Potrero.query.filter_by(finca_id=session['finca_id']).all()
     ubicaciones = Ubicacion.query.filter_by(finca_id=session['finca_id']).all()
-    animales = Animal.query.filter_by(finca_id=session['finca_id']).all()
+    animales = Animal.query.filter_by(finca_id=session['finca_id']).filter(Animal.estado.in_(['activo'])).all()
 
     if request.method == 'POST':
         identificacion = request.form['identificacion']
@@ -1898,14 +1897,13 @@ def potreros():
 def cochiqueras():
     if 'finca_id' not in session:
         flash('Selecciona una finca para continuar')
-        return redirect(url_for('fincas'))
     cochiqueras = Ubicacion.query.filter_by(
         finca_id=session['finca_id'], 
         tipo_ubicacion='cochiquera'
     ).all()
     animales_porcinos = Animal.query.filter_by(finca_id=session['finca_id']).filter(
         Animal.tipo.in_(['Porcino', 'porcino', 'cerdo', 'cochino'])
-    ).all()
+    ).filter(Animal.estado.in_(['activo'])).all()
     
     # Calcular ocupación de cada cochiquera
     animales_por_cochiquera = {}
@@ -1914,7 +1912,7 @@ def cochiqueras():
         animales_en_cochiquera = Animal.query.filter_by(
             finca_id=session['finca_id'], 
             ubicacion_id=cochiquera.id
-        ).all()
+        ).filter(Animal.estado.in_(['activo'])).all()
         animales_por_cochiquera[cochiquera.id] = len(animales_en_cochiquera)
     
     return render_template('cochiqueras.html', 
@@ -1922,7 +1920,6 @@ def cochiqueras():
                          animales=animales_porcinos, 
                          animales_por_cochiquera=animales_por_cochiquera)
 
-# Rutas para Gallineros (solo para aves)
 @app.route('/gallineros')
 @login_required
 def gallineros():
@@ -1935,7 +1932,7 @@ def gallineros():
     ).all()
     animales_aviar = Animal.query.filter_by(finca_id=session['finca_id']).filter(
         Animal.tipo.in_(['Aviar', 'aviar', 'gallina', 'pollo', 'gallo'])
-    ).all()
+    ).filter(Animal.estado.in_(['activo'])).all()
     
     # Calcular ocupación de cada gallinero
     animales_por_gallinero = {}
@@ -2357,7 +2354,7 @@ def editar_vacuna(vacuna_id):
         flash('Vacuna actualizada exitosamente', 'success')
         return redirect(url_for('vacunas'))
     
-    animales = Animal.query.filter_by(finca_id=session['finca_id']).all()
+    animales = Animal.query.filter_by(finca_id=session['finca_id']).filter(Animal.estado.in_(['activo'])).all()
     veterinarios = Empleado.query.filter(Empleado.finca_id == session['finca_id'], Empleado.cargo.like('%veterinario%')).all()
     return render_template('editar_vacuna.html', vacuna=vacuna, animales=animales, veterinarios=veterinarios)
 
@@ -2437,7 +2434,7 @@ def nueva_vacuna():
         db.session.commit()
         flash('Vacuna registrada exitosamente')
         return redirect(url_for('vacunas'))
-    animales = Animal.query.filter_by(finca_id=session['finca_id']).all()
+    animales = Animal.query.filter_by(finca_id=session['finca_id']).filter(Animal.estado.in_(['activo'])).all()
     veterinarios = Empleado.query.filter(Empleado.finca_id == session['finca_id'], Empleado.cargo.like('%veterinario%')).all()
     return render_template('nueva_vacuna.html', animales=animales, veterinarios=veterinarios)
 
@@ -3400,7 +3397,7 @@ def nueva_produccion():
         flash('Producción registrada exitosamente')
         return redirect(url_for('produccion'))
     
-    animales = Animal.query.filter_by(finca_id=session['finca_id']).all()
+    animales = Animal.query.filter_by(finca_id=session['finca_id']).filter(Animal.estado.in_(['activo'])).all()
     return render_template('nueva_produccion.html', animales=animales)
 
 @app.route('/produccion/reporte/pdf')
@@ -3671,7 +3668,7 @@ def editar_produccion(produccion_id):
     if produccion.finca_id != session.get('finca_id'):
         flash('Acción no autorizada.', 'danger')
         return redirect(url_for('produccion'))
-    animales = Animal.query.filter_by(finca_id=session['finca_id']).all()
+    animales = Animal.query.filter_by(finca_id=session['finca_id']).filter(Animal.estado.in_(['activo'])).all()
 
 @app.route('/graficos_produccion')
 @login_required
@@ -4027,7 +4024,7 @@ def nuevo_evento():
             print(f"Error: {e}")
     
     # Obtener animales de la finca para el formulario
-    animales = Animal.query.filter_by(finca_id=finca_id).order_by(Animal.identificacion).all()
+    animales = Animal.query.filter_by(finca_id=finca_id).filter(Animal.estado.in_(['activo'])).order_by(Animal.identificacion).all()
     
     return render_template('nuevo_evento.html', animales=animales, today=datetime.now().strftime('%Y-%m-%d'))
 
@@ -4057,15 +4054,23 @@ def eliminar_evento(evento_id):
         db.session.delete(evento)
         db.session.commit()
         
-        flash('Evento eliminado exitosamente', 'success')
+        return jsonify({
+            'success': True,
+            'message': 'Evento eliminado exitosamente',
+            'title': 'Evento Eliminado',
+            'type': 'success'
+        })
         
     except Exception as e:
         db.session.rollback()
-        flash('Error al eliminar el evento', 'error')
         print(f"Error al eliminar evento: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'Error al eliminar el evento',
+            'title': 'Error',
+            'type': 'error'
+        })
     
-    return redirect(url_for('eventos'))
-
 @app.route('/evento/<int:evento_id>/ver')
 @login_required
 def ver_evento(evento_id):
@@ -4131,7 +4136,7 @@ def editar_evento(evento_id):
             return redirect(url_for('ver_evento', evento_id=evento.id))
         
         # Obtener lista de animales para el formulario
-        animales = Animal.query.filter_by(finca_id=session['finca_id']).all()
+        animales = Animal.query.filter_by(finca_id=session['finca_id']).filter(Animal.estado.in_(['activo'])).all()
         
         return render_template('editar_evento.html', evento=evento, animal=animal, animales=animales)
         
@@ -4212,7 +4217,7 @@ def descargar_respaldo_finca():
         }
         
         # Exportar animales
-        animales = Animal.query.filter_by(finca_id=finca.id).all()
+        animales = Animal.query.filter_by(finca_id=finca.id).filter(Animal.estado.in_(['activo'])).all()
         for animal in animales:
             respaldo['animales'].append({
                 'id': animal.id,
@@ -4650,7 +4655,7 @@ def reporte_finca_completo_pdf():
         story.append(PageBreak())
         story.append(Paragraph("2. ANIMALES", heading_style))
         
-        animales = Animal.query.filter_by(finca_id=finca.id).all()
+        animales = Animal.query.filter_by(finca_id=finca.id).filter(Animal.estado.in_(['activo'])).all()
         if animales:
             animales_data = [['ID', 'Identificación', 'Nombre', 'Raza', 'Tipo', 'Sexo', 'Estado']]
             for animal in animales:
@@ -5005,13 +5010,13 @@ def reporte_inventario_pdf():
                     color_estado = colors.HexColor('#e53e3e')
                 elif dias <= 30:
                     estado = 'POR VENCER'
-                    color_estado = colors.HexColor('#dd6b20')
+                    color_estado = colors.HexColor('#28a745')
                 else:
                     estado = 'VIGENTE'
-                    color_estado = colors.HexColor('#38a169')
+                    color_estado = colors.HexColor('#28a745')
             else:
                 estado = 'VIGENTE'
-                color_estado = colors.HexColor('#38a169')
+                color_estado = colors.HexColor('#28a745')
             
             vencimiento = item.fecha_vencimiento.strftime('%d/%m/%Y') if item.fecha_vencimiento else 'N/A'
             
@@ -5171,7 +5176,7 @@ def nuevo_inventario():
         return redirect(url_for('inventario'))
     tipos_animales = db.session.query(Animal.tipo).filter_by(finca_id=session['finca_id']).distinct().all()
     tipos_animales = [t[0] for t in tipos_animales]
-    animales = Animal.query.filter_by(finca_id=session['finca_id']).all()
+    animales = Animal.query.filter_by(finca_id=session['finca_id']).filter(Animal.estado.in_(['activo'])).all()
     return render_template('nuevo_inventario.html', tipos_animales=tipos_animales, animales=animales, inventario=None, editar=False)
 
 @app.route('/inventario/editar/<int:id>', methods=['GET', 'POST'])
@@ -5444,7 +5449,7 @@ def nuevo_servicio_reproductivo(animal_id):
         db.session.commit()
         flash('Servicio reproductivo registrado', 'success')
         return redirect(url_for('historial_animal', animal_id=animal_id))
-    sementales = Animal.query.filter_by(finca_id=session['finca_id']).all()
+    sementales = Animal.query.filter_by(finca_id=session['finca_id']).filter(Animal.estado.in_(['activo'])).all()
     return render_template('nuevo_servicio.html', animal=animal, sementales=sementales)
 
 @app.route('/animal/<int:animal_id>/prenez/nueva', methods=['GET', 'POST'])
@@ -5721,7 +5726,7 @@ def eventos_salud_nuevo():
         return redirect(url_for('fincas'))
     
     finca_id = session['finca_id']
-    animales = Animal.query.filter_by(finca_id=finca_id).all()
+    animales = Animal.query.filter_by(finca_id=finca_id).filter(Animal.estado.in_(['activo'])).all()
     veterinarios = Empleado.query.filter(Empleado.finca_id == finca_id, Empleado.cargo.like('%veterinario%')).all()
     
     if request.method == 'POST':
@@ -5785,7 +5790,7 @@ def eventos_salud_editar(evento_id):
         return redirect(url_for('eventos_salud'))
     
     finca_id = session['finca_id']
-    animales = Animal.query.filter_by(finca_id=finca_id).all()
+    animales = Animal.query.filter_by(finca_id=finca_id).filter(Animal.estado.in_(['activo'])).all()
     veterinarios = Empleado.query.filter(Empleado.finca_id == finca_id, Empleado.cargo.like('%veterinario%')).all()
     
     if request.method == 'POST':
@@ -6196,7 +6201,7 @@ def exportar_animales():
     if 'finca_id' not in session:
         flash('Selecciona una finca para continuar')
         return redirect(url_for('fincas'))
-    animales = Animal.query.filter_by(finca_id=session['finca_id']).all()
+    animales = Animal.query.filter_by(finca_id=session['finca_id']).filter(Animal.estado.in_(['activo'])).all()
     df = pd.DataFrame([{k: getattr(a, k) for k in ['id','identificacion','tipo','raza','fecha_nacimiento','peso','estado','potrero_id','fecha_ingreso','imagen']} for a in animales])
     return df.to_excel('animales.xlsx', index=False), 200, {'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'Content-Disposition': 'attachment; filename=animales.xlsx'}
 
@@ -6217,7 +6222,7 @@ def generate_vaccination_report(finca_id):
     ).order_by(Animal.identificacion).all()
     
     # Obtener todos los animales para verificar vacunación
-    todos_animales = Animal.query.filter_by(finca_id=finca_id).all()
+    todos_animales = Animal.query.filter_by(finca_id=finca_id).filter(Animal.estado.in_(['activo'])).all()
     
     # Agrupar vacunas por tipo para el reporte
     vacunas_por_tipo = {}
@@ -7144,7 +7149,7 @@ def gastos():
         return redirect(url_for('gastos'))
     centros = CentroCosto.query.filter_by(finca_id=session['finca_id']).all()
     potreros = Potrero.query.filter_by(finca_id=session['finca_id']).all()
-    animales = Animal.query.filter_by(finca_id=session['finca_id']).all()
+    animales = Animal.query.filter_by(finca_id=session['finca_id']).filter(Animal.estado.in_(['activo'])).all()
     lista = Gasto.query.filter_by(finca_id=session['finca_id']).order_by(Gasto.fecha.desc()).all()
     return render_template('gastos.html', centros=centros, potreros=potreros, animales=animales, gastos=lista)
 
@@ -7180,6 +7185,17 @@ def ingresos():
         return redirect(url_for('ingresos'))
     lista = Ingreso.query.filter_by(finca_id=session['finca_id']).order_by(Ingreso.fecha.desc()).all()
     return render_template('ingresos.html', ingresos=lista)
+
+# Rutas para Animales
+@app.route('/animales')
+@login_required
+def animales():
+    if 'finca_id' not in session:
+        flash('Selecciona una finca para continuar')
+        return redirect(url_for('fincas'))
+    animales = Animal.query.filter_by(finca_id=session['finca_id']).all()
+    potreros = Potrero.query.filter_by(finca_id=session['finca_id']).all()
+    return render_template('animales.html', animales=animales, potreros=potreros, today=date.today())
 
 # Rutas para Eventos
 
@@ -7340,7 +7356,7 @@ def api_resumen_inventario():
         # Items con bajo stock (limitado para eficiencia)
         bajo_stock = Inventario.query.filter(
             Inventario.finca_id == finca_id,
-            Inventario.cantidad <= (Inventario.stock_minimo or 10)  # Usa stock_minimo si existe, sino 10
+            Inventario.cantidad <= 10  # Umbral fijo de 10 unidades
         ).count()
         
         # Por categoría (limitado)
@@ -7598,7 +7614,7 @@ def eliminar_finca(finca_id):
 def seleccionar_finca(finca_id):
     finca = Finca.query.get_or_404(finca_id)
     session['finca_id'] = finca.id
-    flash(f'Seleccionaste la finca: {finca.nombre}')
+    flash(f'Seleccionaste la finca: {finca.nombre}', 'success')
     return redirect(url_for('index'))
 
 def allowed_file(filename):
@@ -7699,7 +7715,7 @@ def calendario_reproductivo():
         return redirect(url_for('index'))
     
     # Obtener animales hembras
-    hembras = Animal.query.filter_by(finca_id=finca_id, sexo='hembra').all()
+    hembras = Animal.query.filter_by(finca_id=finca_id, sexo='hembra').filter(Animal.estado.in_(['activo'])).all()
     
     # Servicios recientes (últimos 30 días)
     fecha_limite = date.today() - timedelta(days=30)
@@ -7768,8 +7784,8 @@ def nuevo_servicio():
         flash('Servicio reproductivo registrado exitosamente.', 'success')
         return redirect(url_for('calendario_reproductivo'))
     
-    hembras = Animal.query.filter_by(finca_id=finca_id, sexo='hembra').all()
-    machos = Animal.query.filter_by(finca_id=finca_id, sexo='macho').all()
+    hembras = Animal.query.filter_by(finca_id=finca_id, sexo='hembra').filter(Animal.estado.in_(['activo'])).all()
+    machos = Animal.query.filter_by(finca_id=finca_id, sexo='macho').filter(Animal.estado.in_(['activo'])).all()
     return render_template('nuevo_servicio.html', hembras=hembras, machos=machos)
 
 @app.route('/reproductivo/diagnostico', methods=['GET', 'POST'])
@@ -7794,7 +7810,7 @@ def nuevo_diagnostico():
         flash('Diagnóstico de preñez registrado exitosamente.', 'success')
         return redirect(url_for('calendario_reproductivo'))
     
-    hembras = Animal.query.filter_by(finca_id=finca_id, sexo='hembra').all()
+    hembras = Animal.query.filter_by(finca_id=finca_id, sexo='hembra').filter(Animal.estado.in_(['activo'])).all()
     return render_template('nuevo_diagnostico.html', hembras=hembras)
 
 @app.route('/reproductivo/parto', methods=['GET', 'POST'])
@@ -7820,7 +7836,7 @@ def registrar_parto():
         flash('Parto registrado exitosamente.', 'success')
         return redirect(url_for('calendario_reproductivo'))
     
-    hembras = Animal.query.filter_by(finca_id=finca_id, sexo='hembra').all()
+    hembras = Animal.query.filter_by(finca_id=finca_id, sexo='hembra').filter(Animal.estado.in_(['activo'])).all()
     return render_template('nuevo_parto.html', hembras=hembras)
 
 # === SISTEMA DE SALUD ===
@@ -7833,7 +7849,7 @@ def gestion_salud():
         return redirect(url_for('index'))
     
     # Obtener todos los animales
-    animales = Animal.query.filter_by(finca_id=finca_id).all()
+    animales = Animal.query.filter_by(finca_id=finca_id).filter(Animal.estado.in_(['activo'])).all()
     
     # Eventos de salud recientes (últimos 30 días)
     fecha_limite = date.today() - timedelta(days=30)
@@ -7900,7 +7916,7 @@ def registrar_evento_salud():
         flash('Evento de salud registrado exitosamente.', 'success')
         return redirect(url_for('gestion_salud'))
     
-    animales = Animal.query.filter_by(finca_id=finca_id).all()
+    animales = Animal.query.filter_by(finca_id=finca_id).filter(Animal.estado.in_(['activo'])).all()
     return render_template('nuevo_evento_salud.html', animales=animales)
 
 @app.route('/salud/vacunacion', methods=['GET', 'POST'])
@@ -7927,7 +7943,7 @@ def nueva_vacunacion():
         flash('Vacunación registrada exitosamente.', 'success')
         return redirect(url_for('gestion_salud'))
     
-    animales = Animal.query.filter_by(finca_id=finca_id).all()
+    animales = Animal.query.filter_by(finca_id=finca_id).filter(Animal.estado.in_(['activo'])).all()
     return render_template('nueva_vacunacion.html', animales=animales)
 
 # ============================================================================
@@ -8162,7 +8178,7 @@ def nueva_alerta():
         
         return redirect(url_for('alertas'))
     
-    animales = Animal.query.filter_by(finca_id=finca_id).all()
+    animales = Animal.query.filter_by(finca_id=finca_id).filter(Animal.estado.in_(['activo'])).all()
     return render_template('nueva_alerta.html', animales=animales)
 @app.route('/editar_alerta/<int:alerta_id>', methods=['GET', 'POST'])
 @login_required
@@ -8197,7 +8213,7 @@ def editar_alerta(alerta_id):
         flash('Alerta actualizada exitosamente.', 'success')
         return redirect(url_for('alertas'))
     
-    animales = Animal.query.filter_by(finca_id=finca_id).all()
+    animales = Animal.query.filter_by(finca_id=finca_id).filter(Animal.estado.in_(['activo'])).all()
     return render_template('editar_alerta.html', alerta=alerta, animales=animales)
 
 @app.route('/test_email_alert')
@@ -8826,7 +8842,7 @@ def nuevo_registro_peso():
     
     # Obtener animales de la finca
     # Corregido: ordenar por un campo existente (identificacion) en lugar de un campo inexistente (numero)
-    animales = Animal.query.filter_by(finca_id=finca_id).order_by(Animal.identificacion).all()
+    animales = Animal.query.filter_by(finca_id=finca_id).filter(Animal.estado.in_(['activo'])).order_by(Animal.identificacion).all()
     
     return render_template('nuevo_registro_peso.html', animales=animales)
 
@@ -8870,7 +8886,7 @@ def editar_registro_peso(registro_id):
             db.session.rollback()
     
     # Obtener animales de la finca
-    animales = Animal.query.filter_by(finca_id=finca_id).order_by(Animal.identificacion).all()
+    animales = Animal.query.filter_by(finca_id=finca_id).filter(Animal.estado.in_(['activo'])).order_by(Animal.identificacion).all()
     
     return render_template('editar_registro_peso.html', registro=registro_peso, animal=animal, animales=animales)
 
@@ -9011,17 +9027,235 @@ def actualizar_finca():
     finca.telefono = request.form['telefono']
     finca.email = request.form['email']
     finca.descripcion = request.form.get('descripcion')
-    
     db.session.commit()
     flash('Configuración de finca actualizada exitosamente.', 'success')
     return redirect(url_for('configuracion_finca'))
 
+# Ruta para Control de Partos
+@app.route('/control_partos')
+@login_required
+def control_partos():
+    if 'finca_id' not in session:
+        flash('Por favor selecciona una finca primero', 'warning')
+        return redirect(url_for('index'))
+    
+    try:
+        finca_id = session['finca_id']
+        
+        # Obtener animales preñadas (estado = 'preñada')
+        animales_preniadas = db.session.query(Animal).filter(
+            Animal.finca_id == finca_id,
+            Animal.estado == 'preñada'
+        ).all()
+        
+        # Obtener animales que han parido recientemente (últimos 30 días)
+        hace_30_dias = datetime.now().date() - timedelta(days=30)
+        partos_recientes = db.session.query(Animal).filter(
+            Animal.finca_id == finca_id,
+            Animal.fecha_real_parto.isnot(None),
+            Animal.fecha_real_parto >= hace_30_dias
+        ).order_by(Animal.fecha_real_parto.desc()).all()
+        
+        # Obtener todos los partos del año
+        ano_actual = datetime.now().year
+        partos_ano = db.session.query(Animal).filter(
+            Animal.finca_id == finca_id,
+            Animal.fecha_real_parto.isnot(None),
+            extract('year', Animal.fecha_real_parto) == ano_actual
+        ).order_by(Animal.fecha_real_parto.desc()).all()
+        
+        return render_template('control_partos.html', 
+                           animales_preniadas=animales_preniadas,
+                           partos_recientes=partos_recientes,
+                           partos_ano=partos_ano)
+        
+    except Exception as e:
+        print(f"[ERROR] Error en control_partos: {str(e)}")
+        flash('Error al cargar el control de partos', 'danger')
+        return redirect(url_for('index'))
+
+# API para buscar ubicación de un animal específico
+@app.route('/api/buscar_animal')
+@login_required
+def buscar_animal():
+    if 'finca_id' not in session:
+        return jsonify({'error': 'No hay finca seleccionada'}), 400
+    
+    try:
+        termino = request.args.get('termino', '').strip()
+        if not termino:
+            return jsonify({'error': 'Proporciona un término de búsqueda'}), 400
+        
+        finca_id = session['finca_id']
+        print(f"[DEBUG] Buscando animal: '{termino}' en finca_id: {finca_id}")
+        
+        # Buscar por identificación o nombre
+        animal = db.session.query(Animal).filter(
+            Animal.finca_id == finca_id,
+            or_(
+                Animal.identificacion.ilike(f'%{termino}%'),
+                Animal.nombre.ilike(f'%{termino}%')
+            )
+        ).first()
+        
+        print(f"[DEBUG] Animal encontrado: {animal}")
+        
+        if animal:
+            # Calcular edad
+            edad = None
+            if animal.fecha_nacimiento:
+                from datetime import date
+                hoy = date.today()
+                edad_dias = (hoy - animal.fecha_nacimiento).days
+                edad_anios = edad_dias // 365
+                if edad_anios == 0:
+                    edad = f"{edad_dias // 30} meses"
+                else:
+                    edad = f"{edad_anios} años"
+            
+            # Determinar qué mostrar como ubicación
+            ubicacion_mostrar = ''
+            if animal.estado in ['vendido', 'fallecido', 'muerto']:
+                ubicacion_mostrar = animal.estado.upper()
+            else:
+                ubicacion_mostrar = animal.potrero.nombre if animal.potrero and hasattr(animal.potrero, 'nombre') else 'Sin asignar'
+            
+            return jsonify({
+                'encontrado': True,
+                'animal': {
+                    'id': animal.id,
+                    'identificacion': animal.identificacion,
+                    'nombre': animal.nombre or 'Sin nombre',
+                    'potrero': ubicacion_mostrar,
+                    'estado': animal.estado or 'Desconocido',
+                    'tipo': animal.tipo or 'No especificado',
+                    'sexo': animal.sexo or 'N/A',
+                    'fecha_ingreso': animal.fecha_ingreso.strftime('%d/%m/%Y') if animal.fecha_ingreso else '',
+                    'edad': edad or 'N/A'
+                }
+            })
+        else:
+            return jsonify({'encontrado': False, 'mensaje': 'Animal no encontrado'})
+            
+    except Exception as e:
+        print(f"[ERROR] Error en buscar_animal: {str(e)}")
+        return jsonify({'error': 'Error en la búsqueda'}), 500
+
+# API para obtener datos de partos
+@app.route('/api/partos_data')
+@login_required
+def partos_data():
+    if 'finca_id' not in session:
+        return jsonify({'error': 'No hay finca seleccionada'}), 400
+    
+    try:
+        finca_id = session['finca_id']
+        
+        # Obtener animales preñadas
+        animales_preniadas = db.session.query(Animal).filter(
+            Animal.finca_id == finca_id,
+            Animal.estado == 'preñada'
+        ).all()
+        
+        # Obtener animales que han parido recientemente (últimos 30 días)
+        hace_30_dias = datetime.now().date() - timedelta(days=30)
+        partos_recientes = db.session.query(Animal).filter(
+            Animal.finca_id == finca_id,
+            Animal.fecha_real_parto.isnot(None),
+            Animal.fecha_real_parto >= hace_30_dias
+        ).order_by(Animal.fecha_real_parto.desc()).all()
+        
+        # También buscar partos registrados en eventos de salud
+        try:
+            print(f"[DEBUG] Buscando partos en eventos de salud para finca_id: {finca_id}")
+            partos_eventos = db.session.query(EventoSalud).join(Animal).filter(
+                Animal.finca_id == finca_id,
+                EventoSalud.tipo_evento == 'parto'
+            ).order_by(EventoSalud.fecha_evento.desc()).limit(50).all()
+            print(f"[DEBUG] Partos encontrados en eventos: {len(partos_eventos)}")
+        except Exception as e:
+            print(f"[ERROR] Error buscando partos en eventos: {str(e)}")
+            partos_eventos = []
+        
+        # Agregar partos de eventos a la lista si no están ya incluidos
+        ids_animales_partos = {animal.id for animal in partos_recientes}
+        for evento in partos_eventos:
+            if evento.animal_id and evento.animal_id not in ids_animales_partos:
+                dias_desde_parto = (datetime.now().date() - evento.fecha_evento).days if evento.fecha_evento else 0
+                partos_recientes.append({
+                    'id': evento.animal_id,
+                    'identificacion': evento.animal.identificacion if hasattr(evento, 'animal') and evento.animal else 'Desconocido',
+                    'nombre': evento.animal.nombre if hasattr(evento, 'animal') and evento.animal else 'Desconocido',
+                    'dias_desde_parto': dias_desde_parto,
+                    'fecha_parto': evento.fecha_evento.strftime('%d/%m/%Y') if evento.fecha_evento else 'Sin fecha',
+                    'crias_vivas': evento.crias_vivas if hasattr(evento, 'crias_vivas') else 0
+                })
+        
+        # Convertir a formato JSON
+        preniadas_data = []
+        for animal in animales_preniadas:
+            dias_para_parto = None
+            if animal.fecha_estimada_parto:
+                dias_para_parto = (animal.fecha_estimada_parto - datetime.now().date()).days
+            
+            preniadas_data.append({
+                'id': animal.id,
+                'identificacion': animal.identificacion,
+                'nombre': animal.nombre,
+                'dias_para_parto': dias_para_parto,
+                'fecha_estimada': animal.fecha_estimada_parto.strftime('%d/%m/%Y') if animal.fecha_estimada_parto else None
+            })
+        
+        partidos_data = []
+        # Procesar partos de animales (objetos Animal)
+        for animal in partos_recientes:
+            if hasattr(animal, 'fecha_real_parto'):  # Es un objeto Animal
+                dias_desde_parto = (datetime.now().date() - animal.fecha_real_parto).days
+                partidos_data.append({
+                    'id': animal.id,
+                    'identificacion': animal.identificacion,
+                    'nombre': animal.nombre,
+                    'dias_desde_parto': dias_desde_parto,
+                    'fecha_parto': animal.fecha_real_parto.strftime('%d/%m/%Y'),
+                    'crias_vivas': animal.crias_nacidas_vivas
+                })
+        
+        # Procesar partos de eventos (objetos dict)
+        for evento in partos_recientes:
+            if isinstance(evento, dict):  # Es un objeto dict de eventos
+                fecha_evento = evento.get('fecha_evento')
+                if isinstance(fecha_evento, str):
+                    # Convertir string a date si es necesario
+                    try:
+                        fecha_evento = datetime.strptime(fecha_evento, '%d/%m/%Y').date()
+                    except:
+                        fecha_evento = None
+                
+                dias_desde_parto = (datetime.now().date() - fecha_evento).days if fecha_evento else 0
+                partidos_data.append({
+                    'id': evento.get('id'),
+                    'identificacion': evento.get('identificacion', 'Desconocido'),
+                    'nombre': evento.get('nombre', 'Desconocido'),
+                    'dias_desde_parto': dias_desde_parto,
+                    'fecha_parto': fecha_evento.strftime('%d/%m/%Y') if fecha_evento else evento.get('fecha_parto', 'Sin fecha'),
+                    'crias_vivas': evento.get('crias_vivas', 0)
+                })
+        
+        return jsonify({
+            'preniadas': preniadas_data,
+            'partidos': partidos_data
+        })
+        
+    except Exception as e:
+        print(f"[ERROR] Error en partos_data: {str(e)}")
+        return jsonify({'error': 'Error al cargar datos de partos'}), 500
+
 if __name__ == '__main__':
     try:
-        print('[DEBUG] Entrando al bloque principal')
+        # Crear tablas si no existen
         with app.app_context():
-            print('[DEBUG] Creando tablas de la base de datos...')
             db.create_all()
+            
             # Crear usuario admin por defecto si no existe
             if not Usuario.query.filter_by(username='admin').first():
                 print('[DEBUG] Creando usuario admin por defecto...')

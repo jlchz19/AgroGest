@@ -46,15 +46,23 @@
               <i class="fas fa-eye me-1"></i>Ver
             </button>
             <div class="dropdown">
-              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+              <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" 
+                      aria-expanded="false" style="min-width: 38px;">
                 <i class="fas fa-ellipsis-v"></i>
               </button>
-              <ul class="dropdown-menu dropdown-menu-end">
-                <li><a class="dropdown-item edit-camera" href="#" data-bs-toggle="modal" data-bs-target="#editCameraModal" 
+              <ul class="dropdown-menu dropdown-menu-end" style="min-width: 150px; z-index: 1050;">
+                <li><a class="dropdown-item edit-camera d-flex align-items-center" href="#" 
+                      data-bs-toggle="modal" data-bs-target="#editCameraModal" 
                       data-id="{{ camera.id }}" data-name="{{ camera.nombre }}" data-url="{{ camera.url }}">
-                  <i class="fas fa-edit me-2"></i>Editar</a></li>
-                <li><a class="dropdown-item text-danger" onclick="confirmDelete({{ camera.id }}, '{{ camera.nombre|e }}')">
-                  <i class="fas fa-trash me-2"></i>Eliminar</a></li>
+                  <i class="fas fa-edit me-2 text-primary"></i>
+                  <span>Editar</span>
+                </a></li>
+                <li><hr class="dropdown-divider my-1"></li>
+                <li><a class="dropdown-item text-danger d-flex align-items-center delete-camera" href="#"
+                      data-id="{{ camera.id }}" data-name="{{ camera.nombre }}">
+                  <i class="fas fa-trash me-2"></i>
+                  <span>Eliminar</span>
+                </a></li>
               </ul>
             </div>
           </div>
@@ -73,6 +81,33 @@
       </div>
     </div>
     {% endfor %}
+  </div>
+</div>
+
+<!-- Modal de confirmación para eliminar cámara -->
+<div class="modal fade" id="eliminarCamaraModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">
+          <i class="fas fa-trash me-2"></i>Confirmar Eliminación
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>¿Estás seguro que deseas eliminar esta cámara?</p>
+        <p><strong>Cámara:</strong> <span id="camaraNombreEliminar"></span></p>
+        <div class="alert alert-warning">
+          <i class="fas fa-exclamation-triangle me-2"></i>Esta acción no se puede deshacer.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="confirmarEliminarCamara">
+          <i class="fas fa-trash me-2"></i>Eliminar
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -220,6 +255,58 @@
 .card:hover .card-img-top {
   transform: scale(1.02);
 }
+
+/* Mejoras para móviles */
+@media (max-width: 768px) {
+  .dropdown-menu {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 90% !important;
+    max-width: 300px !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3) !important;
+    border: 1px solid rgba(0,0,0,0.1) !important;
+    padding: 12px !important;
+  }
+  
+  .dropdown-menu::before {
+    display: none !important;
+  }
+  
+  .dropdown-item {
+    padding: 12px 16px !important;
+    border-radius: 8px !important;
+    margin: 2px 0 !important;
+    font-size: 14px !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+  
+  .dropdown-item:hover {
+    background-color: #f8f9fa !important;
+    transform: translateX(4px) !important;
+    transition: all 0.2s ease !important;
+  }
+  
+  .dropdown-divider {
+    margin: 8px 0 !important;
+    border-color: #e9ecef !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .dropdown-menu {
+    width: 95% !important;
+    max-width: 280px !important;
+  }
+  
+  .dropdown-item {
+    font-size: 13px !important;
+    padding: 10px 14px !important;
+  }
+}
 </style>
 
 <script>
@@ -345,15 +432,47 @@ function addTimestamp(url) {
   return `${url}${separator}_t=${Date.now()}`;
 }
 
-// Confirm delete
-function confirmDelete(id, name) {
-  if (confirm(`¿Estás seguro de eliminar la cámara "${name}"?`)) {
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = `/eliminar_camara/${id}`;
-    document.body.appendChild(form);
-    form.submit();
+// Modal de confirmación para eliminar cámara
+let camaraIdAEliminar = null;
+let camaraNombreAEliminar = null;
+
+// Delete camera handler
+document.addEventListener('click', function(e) {
+  if (e.target.closest('.delete-camera')) {
+    e.preventDefault();
+    const link = e.target.closest('.delete-camera');
+    camaraIdAEliminar = link.getAttribute('data-id');
+    camaraNombreAEliminar = link.getAttribute('data-name');
+    
+    // Mostrar información en el modal
+    document.getElementById('camaraNombreEliminar').textContent = camaraNombreAEliminar;
+    const modal = new bootstrap.Modal(document.getElementById('eliminarCamaraModal'));
+    modal.show();
   }
+});
+
+// Confirmar eliminación desde el modal
+document.addEventListener('DOMContentLoaded', function() {
+  const confirmarBtn = document.getElementById('confirmarEliminarCamara');
+  if (confirmarBtn) {
+    confirmarBtn.addEventListener('click', function() {
+      if (camaraIdAEliminar) {
+        ejecutarEliminarCamara(camaraIdAEliminar);
+      }
+    });
+  }
+});
+
+function ejecutarEliminarCamara(id) {
+  // Cerrar modal
+  const modal = bootstrap.Modal.getInstance(document.getElementById('eliminarCamaraModal'));
+  if (modal) modal.hide();
+  
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = `/eliminar_camara/${id}`;
+  document.body.appendChild(form);
+  form.submit();
 }
 
 // Initialize

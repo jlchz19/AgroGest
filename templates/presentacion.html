@@ -7,6 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
         * {
             margin: 0;
@@ -33,17 +35,32 @@
             top: 0;
             left: 0;
             right: 0;
-            z-index: 1000; /* Asegura que la barra de navegación esté por encima del carrusel */
+            z-index: 1000;
             transition: all 0.3s;
             padding: 16px 0;
-            background: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(15px); /* Mayor difuminado en el header */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
         }
         
         nav.scrolled {
             background: rgba(250, 251, 252, 0.95);
-            backdrop-filter: blur(12px);
+            backdrop-filter: blur(20px); /* Difuminado diferente al hacer scroll */
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        
+        nav.scrolled .logo {
+            color: #0d6efd;
+            text-shadow: none;
+        }
+        
+        nav.scrolled .nav-links a {
+            color: #1a1a1a;
+            text-shadow: none;
+        }
+        
+        nav.scrolled .nav-links a:hover {
+            color: #0d6efd;
         }
         
         nav .container {
@@ -55,7 +72,76 @@
         .logo {
             font-size: 1.5rem;
             font-weight: 700;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            flex-shrink: 0;
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .agro-icon {
+            width: 40px;
+            height: 40px;
+            color: #ffffff;
+            filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.3));
+            flex-shrink: 0;
+        }
+
+        .brand-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        nav.scrolled .agro-icon {
             color: #0d6efd;
+            filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.1));
+        }
+        
+        nav.scrolled .brand-name {
+            color: #0d6efd;
+            text-shadow: none;
+        }
+        
+        .logo-img {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            background: transparent;
+            filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.3));
+            mix-blend-mode: multiply;
+        }
+        
+        .agro-icon {
+            width: 40px;
+            height: 40px;
+            color: white;
+            filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.3));
+            flex-shrink: 0;
+        }
+        
+        .logo-emoji {
+            font-size: 36px;
+            line-height: 1;
+            filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.3));
+        }
+        
+        nav.scrolled .agro-icon {
+            color: #0d6efd;
+            filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.1));
         }
         
         .nav-links {
@@ -65,14 +151,15 @@
         }
         
         .nav-links a {
-            color: #1a1a1a;
+            color: white;
             text-decoration: none;
             font-weight: 500;
             transition: color 0.3s;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
         
         .nav-links a:hover {
-            color: #0d6efd;
+            color: #f8f9fa;
         }
         
         .btn {
@@ -112,7 +199,7 @@
         /* Hero Section */
         .hero {
             position: relative;
-            height: calc(100vh - 80px); /* Resta la altura de la barra de navegación */
+            height: 100vh;
             min-height: 500px;
             max-height: 800px;
             width: 100%;
@@ -122,7 +209,7 @@
             justify-content: center;
             text-align: center;
             background: #1a1a1a;
-            margin-top: 80px; /* Altura de la barra de navegación */
+            margin-top: 0;
         }
         
         .carousel {
@@ -151,6 +238,22 @@
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
+            filter: blur(2px); /* Difuminado sutil a la imagen */
+        }
+        
+        .carousel-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                to bottom,
+                rgba(0, 0, 0, 0.1) 0%,
+                rgba(0, 0, 0, 0.3) 100%
+            );
+            z-index: 1;
         }
         
         .carousel-item.active {
@@ -256,8 +359,8 @@
             line-height: 1.2;
             text-align: center;
             text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            background: rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(5px);
+            /*background: rgba(0, 0, 0, 0.1);*/
+            /*backdrop-filter: blur(5px);*/
             padding: 20px 30px;
             border-radius: 15px;
             display: inline-block;
@@ -271,8 +374,8 @@
             margin-left: auto;
             margin-right: auto;
             text-align: center;
-            background: rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(5px);
+           /* background: rgba(0, 0, 0, 0.1);*/
+           /*backdrop-filter: blur(5px);*/
             padding: 15px 25px;
             border-radius: 10px;
             display: inline-block;
@@ -736,7 +839,7 @@
                 padding: 80px 0 40px;
             }
             .hero-content {
-                padding: 40px 20px !important;
+                padding: 100px 20px 40px !important;
             }
             .hero-content h1 { 
                 font-size: 1.75rem;
@@ -769,16 +872,19 @@
     <!-- Navigation -->
     <nav id="navigation">
         <div class="container">
-            <div class="logo">AgroGest</div>
+            <div class="logo-container">
+                <span class="logo-emoji">&#128046;</span>
+                <span class="brand-name">AgroGest</span>
+            </div>
             <div class="nav-links">
                 <a href="#inicio">Inicio</a>
                 <a href="#nosotros">Quiénes Somos</a>
                 <a href="#funciones">Qué Ofrecemos</a>
                 <a href="#como-funciona">Cómo Funciona</a>
                 <a href="#contacto">Contáctanos</a>
-                <a href="{{ url_for('login') }}" class="btn btn-primary">Ingresar</a>
+                <a href="/login" class="btn btn-primary">Ingresar</a>
             </div>
-            <button class="mobile-menu-btn" id="mobileMenuBtn">☰</button>
+            <button class="mobile-menu-btn" id="mobileMenuBtn"><i class="fas fa-bars"></i></button>
         </div>
         <div class="mobile-menu" id="mobileMenu">
             <a href="#inicio" onclick="toggleMobileMenu();">Inicio</a>
@@ -786,7 +892,7 @@
             <a href="#funciones" onclick="toggleMobileMenu();">Qué Ofrecemos</a>
             <a href="#como-funciona" onclick="toggleMobileMenu();">Cómo Funciona</a>
             <a href="#contacto" onclick="toggleMobileMenu();">Contáctanos</a>
-            <a href="{{ url_for('login') }}" class="btn btn-primary">Ingresar</a>
+            <a href="/login" class="btn btn-primary">Ingresar</a>
         </div>
         <div class="overlay" id="overlay"></div>
       </nav>
@@ -795,19 +901,19 @@
     <section id="inicio" class="hero">
         <div class="carousel">
             <div class="carousel-inner">
-                <div class="carousel-item active" style="background-image: url('{{ url_for('static', filename='images/carrusel-1.png') }}');"></div>
-                <div class="carousel-item" style="background-image: url('{{ url_for('static', filename='images/carrusel-2.png') }}');"></div>
-                <div class="carousel-item" style="background-image: url('{{ url_for('static', filename='images/carrusel-3.png') }}');"></div>
-                <div class="carousel-item" style="background-image: url('{{ url_for('static', filename='images/carrusel-4.png') }}');"></div>
-                <div class="carousel-item" style="background-image: url('{{ url_for('static', filename='images/carrusel-5.png') }}');"></div>
-                <div class="carousel-item" style="background-image: url('{{ url_for('static', filename='images/carrusel-6.png') }}');"></div>
+                <div class="carousel-item active" style="background-image: url('/static/images/carrusel-1.png');"></div>
+                <div class="carousel-item" style="background-image: url('/static/images/carrusel-2.png');"></div>
+                <div class="carousel-item" style="background-image: url('/static/images/carrusel-3.png');"></div>
+                <div class="carousel-item" style="background-image: url('/static/images/carrusel-4.png');"></div>
+                <div class="carousel-item" style="background-image: url('/static/images/carrusel-5.png');"></div>
+                <div class="carousel-item" style="background-image: url('/static/images/carrusel-6.png');"></div>
                 
                 <div class="hero-content">
                     <h1>Control Total de tu Finca Ganadera</h1>
                     <p>Gestiona animales, empleados, inventario y producción desde una sola plataforma inteligente</p>
                     <div class="hero-actions">
-                        <a href="{{ url_for('login') }}" class="btn btn-primary">
-                            Comenzar Ahora →
+                        <a href="/login" class="btn btn-primary">
+                            Comenzar Ahora <i class="fas fa-arrow-right"></i>
                         </a>
                         <a href="#funciones" class="btn btn-secondary">
                             Ver Funciones
@@ -816,8 +922,8 @@
                 </div>
             </div>
             <div class="carousel-controls">
-                <button class="carousel-control" id="prevBtn">❮</button>
-                <button class="carousel-control" id="nextBtn">❯</button>
+                <button class="carousel-control" id="prevBtn"><i class="fas fa-chevron-left"></i></button>
+                <button class="carousel-control" id="nextBtn"><i class="fas fa-chevron-right"></i></button>
             </div>
             <div class="carousel-indicators" id="indicators">
                 <span class="indicator active" data-slide-to="0"></span>
@@ -855,14 +961,14 @@
                     <p>Profesionales con más de 20 años de experiencia en ganadería y desarrollo tecnológico</p>
                 </div>
                 <div class="card">
-                    <div class="card-icon">⚡</div>
+                    <div class="card-icon">👁️</div>
                     <h3>Nuestra Visión</h3>
                     <p>Ser la solución integral preferida por ganaderos en toda Latinoamérica</p>
                 </div>
             </div>
 
             <div class="image-section">
-                <img src="{{ url_for('static', filename='images/finca-ganadera-moderna.png') }}" alt="Finca ganadera moderna" style="width: 100%; height: 100%; object-fit: cover;">
+                <img src="/static/images/finca-ganadera-moderna.png" alt="Finca ganadera moderna" style="width: 100%; height: 100%; object-fit: cover;">
                 <div class="image-overlay">
                     <div>
                         <h3>Tecnología al Servicio del Campo</h3>
@@ -883,12 +989,12 @@
 
             <div class="features-grid">
                 <div class="feature-card">
-                    <div class="feature-icon">🐄</div>
+                    <div class="feature-icon">🐾</div>
                     <h3>Control de Animales</h3>
                     <p>Registro completo de cada animal: historial médico, genealogía, peso y desarrollo</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon">👨‍🌾</div>
+                    <div class="feature-icon">👔</div>
                     <h3>Gestión de Empleados</h3>
                     <p>Administra turnos, tareas y rendimiento de tu equipo de trabajo</p>
                 </div>
@@ -921,7 +1027,7 @@
 
             <div style="margin: 40px 0;">
                 <div style="border-radius: 16px; overflow: hidden; width: 100%; max-width: 1200px; margin: 0 auto; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
-                    <img src="{{ url_for('static', filename='images/dashboard-full-width.png') }}" alt="Dashboard de AgroGest" style="width: 100%; height: auto; display: block; background: white;">
+                    <img src="/static/images/dashboard-full-width.png" alt="Dashboard de AgroGest" style="width: 100%; height: auto; display: block; background: white;">
                 </div>
             </div>
       </div>
@@ -938,7 +1044,7 @@
             <div class="steps-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
                 <div class="step-card">
                     <div class="step-number">01</div>
-                    <div class="step-icon">📥</div>
+                    <div class="step-icon">👤</div>
                     <h3>Regístrate</h3>
                     <p style="color: #6b7280;">Crea tu cuenta en minutos y configura tu perfil de finca</p>
                 </div>
@@ -950,7 +1056,7 @@
                 </div>
                 <div class="step-card">
                     <div class="step-number">03</div>
-                    <div class="step-icon">🚀</div>
+                    <div class="step-icon">▶️</div>
                     <h3>Comienza</h3>
                     <p style="color: #6b7280;">Empieza a gestionar tu finca desde cualquier dispositivo</p>
                 </div>
@@ -986,7 +1092,7 @@
                         </ul>
                     </div>
                     <div style="border-radius: 12px; overflow: hidden; height: 300px; background: white; padding: 20px; display: flex; align-items: center; justify-content: center;">
-                        <img src="{{ url_for('static', filename='images/soporte-24-7.png') }}" alt="Soporte 24/7" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                        <img src="/static/images/soporte-24-7.png" alt="Soporte 24/7" style="max-width: 100%; max-height: 100%; object-fit: contain;">
                     </div>
                 </div>
             </div>
@@ -1113,12 +1219,12 @@
             </div>
 
             <div class="footer-bottom">
-                <p style="font-size: 0.875rem; color: white;"> 2025 AgroGest. Todos los derechos reservados.</p>
+                <p style="font-size: 0.875rem; color: white;">© 2025 AgroGest. Todos los derechos reservados.</p>
                 <div class="social-links">
-                    <a href="#" class="social-icon">🔵</a>
-                    <a href="#" class="social-icon">📷</a>
-                    <a href="#" class="social-icon">🐦</a>
-                    <a href="#" class="social-icon">💼</a>
+                    <a href="#" class="social-icon"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="social-icon"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="social-icon"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="social-icon"><i class="fab fa-linkedin-in"></i></a>
                 </div>
             </div>
   </div>

@@ -190,13 +190,17 @@
     <div class="modal fade" id="deleteModal{{ empleado.id|e }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ empleado.id|e }}" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="deleteModalLabel{{ empleado.id|e }}">Confirmar eliminación</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="deleteModalLabel{{ empleado.id|e }}">Confirmar Eliminación</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>¿Estás seguro de que deseas eliminar al empleado <strong>{{ empleado.nombre }} {{ empleado.apellido }}</strong>?</p>
-                    <p class="text-danger"><small>Esta acción no se puede deshacer.</small></p>
+                    <p>¿Estás seguro que deseas eliminar este empleado?</p>
+                    <p><strong>Empleado:</strong> {{ empleado.nombre }} {{ empleado.apellido }}</p>
+                    <p><strong>Cargo:</strong> {{ empleado.cargo or 'N/A' }}</p>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Esta acción no se puede deshacer.
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <div class="d-flex gap-2 w-100">
