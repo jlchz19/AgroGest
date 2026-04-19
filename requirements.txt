@@ -31,8 +31,7 @@ qrcode[pil]>=7.4.0      # Generación de códigos QR
 Flask-Mail>=0.9.1       # Sistema de correo
 APScheduler>=3.10.0     # Programador de tareas
 
-# Autenticación OAuth
-authlib>=1.2.0          # Google OAuth integration
+# Autenticación OAuth eliminada
 
 # Desarrollo y calidad de código
 pytest>=7.4.0           # Testing

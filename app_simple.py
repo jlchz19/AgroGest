@@ -29,10 +29,6 @@ import time
 import secrets
 import string
 
-# Importaciones para Google OAuth
-from authlib.integrations.flask_client import OAuth
-from authlib.integrations.base_client.errors import OAuthError
-
 # Importaciones para códigos QR
 try:
     import qrcode
@@ -478,49 +474,21 @@ with app.app_context():
     except Exception as e:
         print(f"[WARNING] No fue posible comprobar/actualizar columnas de empleado: {e}")
 
-    # Ensure google_id column exists in usuario table
-    try:
-        with db.engine.begin() as conn:
-            res = conn.execute(text("PRAGMA table_info('usuario')")).fetchall()
-            existing_cols = [r[1] for r in res]
-            if 'google_id' not in existing_cols:
-                try:
-                    conn.execute(text("ALTER TABLE usuario ADD COLUMN google_id VARCHAR(100) UNIQUE"))
-                    print("[INFO] Se añadió columna 'google_id' a la tabla usuario.")
-                except Exception as e:
-                    print(f"[WARNING] No se pudo añadir columna google_id: {e}")
-    except Exception as e:
-        print(f"[WARNING] No fue posible comprobar/actualizar columnas de usuario: {e}")
-
-# Configuración de OAuth para Google
-oauth = OAuth(app)
-google = oauth.register(
-    name='google',
-    client_id=os.getenv('GOOGLE_CLIENT_ID', ''),  # Configurar en .env
-    client_secret=os.getenv('GOOGLE_CLIENT_SECRET', ''),  # Configurar en .env
-    access_token_url='https://oauth2.googleapis.com/token',
-    authorize_url='https://accounts.google.com/o/oauth2/auth',
-    api_base_url='https://www.googleapis.com/oauth2/v2/',
-    jwks_uri='https://www.googleapis.com/oauth2/v3/certs',
-    client_kwargs={
-        'scope': 'openid email profile'
-    }
-)
+    # Google OAuth column creation removed
 
     # Modelos de la base de datos
 class Usuario(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(120), nullable=True)  # Nullable para usuarios de Google
+    password_hash = db.Column(db.String(120), nullable=False)
     nombre = db.Column(db.String(100), nullable=False)
     apellido = db.Column(db.String(100), nullable=False)
-    telefono = db.Column(db.String(20), nullable=True)  # Nullable para usuarios de Google
+    telefono = db.Column(db.String(20), nullable=True)
     direccion = db.Column(db.String(200))
     fecha_registro = db.Column(db.DateTime, default=datetime.utcnow)
     estado = db.Column(db.String(20), default='activo')  # activo, inactivo
     rol = db.Column(db.String(20), default='usuario')  # admin, usuario
-    google_id = db.Column(db.String(100), unique=True, nullable=True)  # ID de Google OAuth
 
 @login_manager.user_loader
 def load_user(user_id):
