@@ -68,7 +68,6 @@ static/imagenes_eventos_salud/
 
 # Archivos de configuración específicos
 netlify.toml
-Procfile
 DejaVuSans.ttf
 
 # Archivos que no deben subirse
