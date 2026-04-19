@@ -3670,6 +3670,24 @@ def editar_produccion(produccion_id):
         return redirect(url_for('produccion'))
     animales = Animal.query.filter_by(finca_id=session['finca_id']).filter(Animal.estado.in_(['activo'])).all()
 
+@app.route('/produccion/eliminar/<int:produccion_id>', methods=['POST'])
+@login_required
+def eliminar_produccion(produccion_id):
+    produccion = Produccion.query.get_or_404(produccion_id)
+    if produccion.finca_id != session.get('finca_id'):
+        flash('Acción no autorizada.', 'danger')
+        return redirect(url_for('produccion'))
+    
+    try:
+        db.session.delete(produccion)
+        db.session.commit()
+        flash('Registro de producción eliminado exitosamente', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash('Error al eliminar el registro de producción', 'error')
+    
+    return redirect(url_for('produccion'))
+
 @app.route('/graficos_produccion')
 @login_required
 def graficos_produccion():
