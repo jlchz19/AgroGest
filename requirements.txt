@@ -18,7 +18,7 @@ numpy>=1.24.0           # Cálculos numéricos
 
 # Generación de reportes y PDFs
 reportlab>=4.0.0        # Generación de PDFs profesionales
-WeasyPrint>=59.0        # HTML a PDF avanzado
+# WeasyPrint>=59.0        # HTML a PDF avanzado - Comentado para deployment
 Pillow>=10.0.0          # Manipulación de imágenes
 
 # Utilidades y herramientas profesionales
