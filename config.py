@@ -26,7 +26,7 @@ class ProductionConfig(Config):
     # En producción, usar variables de entorno
     SECRET_KEY = os.environ.get('SECRET_KEY') or Config.SECRET_KEY
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or Config.SQLALCHEMY_DATABASE_URI
-    SERVER_URL = os.environ.get('RENDER_EXTERNAL_URL') or Config.SERVER_URL
+    SERVER_URL = os.environ.get('RENDER_EXTERNAL_URL') or 'https://agrogest-19.onrender.com'
 
 # Configuración por defecto
 config = {
