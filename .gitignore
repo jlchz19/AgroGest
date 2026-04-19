@@ -51,7 +51,6 @@ node_modules/
 .env
 client_secret_*.json
 *.bat
-*.py
 check_db.py
 fix_db.py
 add_column.sql
