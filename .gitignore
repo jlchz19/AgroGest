@@ -19,56 +19,51 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
-# Virtual Environment
-.venv/
+# Virtual environments
+.env
+.venv
 venv/
 ENV/
+env/
+.ENV/
+
+# Flask
+instance/
+.webassets-cache
 
 # Database
 *.db
 *.sqlite
 *.sqlite3
-instance/
+
+# Logs
+*.log
+logs/
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
 # OS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 
-# Logs
-*.log
+# Project specific
+imagen/
+temp/
+uploads/
+*.tmp
 
-# Node modules (si usas npm)
-node_modules/
-
-# Archivos temporales y de configuración local
-.env
-client_secret_*.json
-*.bat
-check_db.py
-fix_db.py
-add_column.sql
-add_google_column.py
-fix_google_column.py
-iniciar_*.py
-abrir_puerto.bat
-configurar_acceso.bat
-
-# Imágenes temporales
-imagen/*.png
-imagen/*.jpg
-static/imagenes_eventos_salud/
-
-# Archivos de configuración específicos
-netlify.toml
-DejaVuSans.ttf
-
-# Archivos que no deben subirse
-crear_tablas_maq*
-database_schema.sql
+# Environment variables
+.env.local
+.env.production
