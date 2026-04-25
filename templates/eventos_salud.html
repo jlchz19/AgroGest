@@ -68,22 +68,26 @@
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card bg-info text-white">
+            <div class="card bg-warning text-white">
                 <div class="card-body">
                     <div class="d-flex justify-content-between">
                         <div>
-                            <h4 class="card-title">{{ eventos_vacunacion }}</h4>
-                            <p class="card-text">Vacunaciones</p>
-                            <small>Ver módulo Vacunas</small>
+                            <h4 class="card-title">{{ total_notas or 0 }}</h4>
+                            <p class="card-text">Notas</p>
+                            <small>
+                                <a href="{{ url_for('nuevo_evento_salud') }}" class="text-white text-decoration-none">
+                                    <i class="fas fa-plus me-1"></i>Registrar Nota
+                                </a>
+                            </small>
                         </div>
                         <div class="align-self-center">
-                            <i class="fas fa-syringe fa-2x"></i>
+                            <i class="fas fa-sticky-note fa-2x"></i>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+            </div>
 
     <!-- Filtros -->
     <div class="row mb-4">

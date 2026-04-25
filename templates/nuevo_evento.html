@@ -38,6 +38,7 @@
                                 <option value="transferido">🔄 Transferido</option>
                                 <option value="recuperado">✅ Recuperado</option>
                                 <option value="enfermo">🤒 Enfermo</option>
+                                <option value="nota">📋 Nota</option>
                                 <option value="otro">📝 Otro</option>
                             </select>
                         </div>
@@ -78,6 +79,15 @@
                         <div class="col-12 mb-3">
                             <label for="causa_muerte" class="form-label">Causa de Muerte</label>
                             <input type="text" class="form-control" id="causa_muerte" name="causa_muerte" placeholder="Describe la causa del fallecimiento">
+                        </div>
+                    </div>
+
+                    <!-- Campos específicos para notas -->
+                    <div id="campos_nota" class="row" style="display: none;">
+                        <div class="col-12 mb-3">
+                            <label for="descripcion_nota" class="form-label">Descripción de la Nota *</label>
+                            <textarea class="form-control" id="descripcion_nota" name="descripcion_nota" rows="4" placeholder="Escribe aquí los detalles de la nota..."></textarea>
+                            <small class="form-text text-muted">Esta nota se agregará al registro completo del animal.</small>
                         </div>
                     </div>
 
@@ -142,10 +152,17 @@ function mostrarCamposEspecificos() {
     const tipoEvento = document.getElementById('tipo_evento').value;
     const camposVenta = document.getElementById('campos_venta');
     const camposFallecido = document.getElementById('campos_fallecido');
+    const camposNota = document.getElementById('campos_nota');
     
     // Ocultar todos los campos específicos
     camposVenta.style.display = 'none';
     camposFallecido.style.display = 'none';
+    camposNota.style.display = 'none';
+    
+    // Quitar requerimiento de todos los campos específicos
+    document.getElementById('comprador').required = false;
+    document.getElementById('causa_muerte').required = false;
+    document.getElementById('descripcion_nota').required = false;
     
     // Mostrar campos según el tipo de evento
     if (tipoEvento === 'vendido') {
@@ -154,10 +171,9 @@ function mostrarCamposEspecificos() {
     } else if (tipoEvento === 'fallecido') {
         camposFallecido.style.display = 'block';
         document.getElementById('causa_muerte').required = true;
-    } else {
-        // Quitar requerimiento de campos específicos
-        document.getElementById('comprador').required = false;
-        document.getElementById('causa_muerte').required = false;
+    } else if (tipoEvento === 'nota') {
+        camposNota.style.display = 'block';
+        document.getElementById('descripcion_nota').required = true;
     }
 }
 
@@ -222,7 +238,10 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('animal_id').addEventListener('change', mostrarInfoAnimal);
     
     // Función para mostrar modal de confirmación
-    function showConfirmModal(message, onConfirm, title = 'Confirmar Acción', actionType = 'eliminar') {
+    function showConfirmModal(message, onConfirm, title, actionType) {
+        title = title || 'Confirmar Acción';
+        actionType = actionType || 'eliminar';
+        
         // Determinar colores según tipo de acción
         const isDeleteAction = actionType === 'eliminar';
         const headerClass = isDeleteAction ? 'bg-danger text-white' : 'bg-primary text-white';
@@ -230,28 +249,26 @@ document.addEventListener('DOMContentLoaded', function() {
         const buttonText = isDeleteAction ? 'Eliminar' : 'Confirmar';
         
         // Crear modal dinámicamente
-        const modalHtml = `
-            <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-header ${headerClass}">
-                            <h5 class="modal-title" id="confirmModalLabel">${title}</h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <p>${message}</p>
-                            <div class="alert alert-warning">
-                                <i class="fas fa-exclamation-triangle me-2"></i>Esta acción no se puede deshacer.
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="button" class="btn ${buttonClass}" id="confirmBtn">${buttonText}</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
+        const modalHtml = '<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">' +
+            '<div class="modal-dialog modal-dialog-centered">' +
+                '<div class="modal-content">' +
+                    '<div class="modal-header ' + headerClass + '">' +
+                        '<h5 class="modal-title" id="confirmModalLabel">' + title + '</h5>' +
+                        '<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>' +
+                    '</div>' +
+                    '<div class="modal-body">' +
+                        '<p>' + message + '</p>' +
+                        '<div class="alert alert-warning">' +
+                            '<i class="fas fa-exclamation-triangle me-2"></i>Esta acción no se puede deshacer.' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="modal-footer">' +
+                        '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>' +
+                        '<button type="button" class="btn ' + buttonClass + '" id="confirmBtn">' + buttonText + '</button>' +
+                    '</div>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
         
         // Agregar modal al DOM
         let modalContainer = document.getElementById('modalContainer');

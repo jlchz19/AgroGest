@@ -39,6 +39,7 @@
     .stats-card-modern.fallecidos { --card-color: #ef4444; --card-color-light: #f87171; }
     .stats-card-modern.vendidos { --card-color: #10b981; --card-color-light: #34d399; }
     .stats-card-modern.transferidos { --card-color: #8b5cf6; --card-color-light: #a78bfa; }
+    .stats-card-modern.notas { --card-color: #f59e0b; --card-color-light: #fbbf24; }
     
     .stats-icon-modern {
         width: 56px;
@@ -148,6 +149,22 @@
             <div class="stats-content-modern">
                 <div class="stats-number-modern">{{ eventos|selectattr('tipo_evento', 'equalto', 'transferido')|list|length }}</div>
                 <div class="stats-label-modern">Transferidos</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="stats-card-modern notas">
+            <div class="stats-icon-modern">
+                <i class="fas fa-sticky-note"></i>
+            </div>
+            <div class="stats-content-modern">
+                <div class="stats-number-modern">{{ total_notas or 0 }}</div>
+                <div class="stats-label-modern">Notas</div>
+                <div class="mt-2">
+                    <a href="{{ url_for('nuevo_evento') }}" class="btn btn-sm btn-outline-warning">
+                        <i class="fas fa-plus"></i> Registrar Nota
+                    </a>
+                </div>
             </div>
         </div>
     </div>

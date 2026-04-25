@@ -3761,7 +3761,10 @@ def eventos():
             Animal.finca_id == finca_id
         ).order_by(Evento.fecha_evento.desc()).all()
         
-        return render_template('eventos.html', eventos=eventos)
+        # Contar eventos de tipo nota
+        total_notas = len([e for e in eventos if e.tipo_evento == 'nota'])
+        
+        return render_template('eventos.html', eventos=eventos, total_notas=total_notas)
     
     except Exception as e:
         print(f"Error en la ruta eventos: {e}")
@@ -3997,6 +4000,18 @@ def nuevo_evento():
                 evento.causa_muerte = request.form.get('causa_muerte', '')
                 # Cambiar estado del animal a 'fallecido'
                 animal.estado = 'fallecido'
+            elif tipo_evento == 'nota':
+                # Para notas, usar la descripción como contenido de la nota
+                descripcion_nota = request.form.get('descripcion_nota', '')
+                evento.descripcion = descripcion_nota
+                # Crear también una nota en el registro completo del animal
+                from app_simple import NotaAnimal
+                nota_animal = NotaAnimal(
+                    animal_id=animal_id,
+                    nota=descripcion_nota,
+                    fecha=fecha_evento
+                )
+                db.session.add(nota_animal)
             
             db.session.add(evento)
             db.session.commit()
@@ -9017,48 +9032,53 @@ def actualizar_finca():
     flash('Configuración de finca actualizada exitosamente.', 'success')
     return redirect(url_for('configuracion_finca'))
 
-# Ruta para Control de Partos
-@app.route('/control_partos')
-@login_required
-def control_partos():
-    if 'finca_id' not in session:
-        flash('Por favor selecciona una finca primero', 'warning')
-        return redirect(url_for('index'))
-    
-    try:
-        finca_id = session['finca_id']
-        
-        # Obtener animales preñadas (estado = 'preñada')
-        animales_preniadas = db.session.query(Animal).filter(
-            Animal.finca_id == finca_id,
-            Animal.estado == 'preñada'
-        ).all()
-        
-        # Obtener animales que han parido recientemente (últimos 30 días)
-        hace_30_dias = datetime.now().date() - timedelta(days=30)
-        partos_recientes = db.session.query(Animal).filter(
-            Animal.finca_id == finca_id,
-            Animal.fecha_real_parto.isnot(None),
-            Animal.fecha_real_parto >= hace_30_dias
-        ).order_by(Animal.fecha_real_parto.desc()).all()
-        
-        # Obtener todos los partos del año
-        ano_actual = datetime.now().year
-        partos_ano = db.session.query(Animal).filter(
-            Animal.finca_id == finca_id,
-            Animal.fecha_real_parto.isnot(None),
-            extract('year', Animal.fecha_real_parto) == ano_actual
-        ).order_by(Animal.fecha_real_parto.desc()).all()
-        
-        return render_template('control_partos.html', 
-                           animales_preniadas=animales_preniadas,
-                           partos_recientes=partos_recientes,
-                           partos_ano=partos_ano)
-        
-    except Exception as e:
-        print(f"[ERROR] Error en control_partos: {str(e)}")
-        flash('Error al cargar el control de partos', 'danger')
-        return redirect(url_for('index'))
+# Ruta para Control de Partos - DESACTIVADA
+# @app.route('/control_partos')
+# @login_required
+# def control_partos():
+#     if 'finca_id' not in session:
+#         flash('Por favor selecciona una finca primero', 'warning')
+#         return redirect(url_for('index'))
+#     
+#     try:
+#         finca_id = session['finca_id']
+#         
+#         # Obtener animales preñadas (estado = 'preñada')
+#         animales_preniadas = db.session.query(Animal).filter(
+#             Animal.finca_id == finca_id,
+#             Animal.estado == 'preñada'
+#         ).all()
+#         
+#         # Obtener animales que han parido recientemente (últimos 30 días)
+#         hace_30_dias = datetime.now().date() - timedelta(days=30)
+#         partos_recientes = db.session.query(Animal).filter(
+#             Animal.finca_id == finca_id,
+#             Animal.fecha_real_parto.isnot(None),
+#             Animal.fecha_real_parto >= hace_30_dias
+#         ).order_by(Animal.fecha_real_parto.desc()).all()
+#         
+#         # Obtener todos los partos del año
+#         ano_actual = datetime.now().year
+#         partos_ano = db.session.query(Animal).filter(
+#             Animal.finca_id == finca_id,
+#             Animal.fecha_real_parto.isnot(None),
+#             extract('year', Animal.fecha_real_parto) == ano_actual
+#         ).order_by(Animal.fecha_real_parto.desc()).all()
+#         
+#         print("[DEBUG] Intentando renderizar template control_partos.html...")
+#         try:
+#             return render_template('control_partos.html', 
+#                                animales_preniadas=animales_preniadas,
+#                                partos_recientes=partos_recientes,
+#                                partos_ano=partos_ano)
+#         except Exception as template_error:
+#             print(f"[ERROR] Error al renderizar template: {str(template_error)}")
+#             raise template_error
+#         
+#     except Exception as e:
+#         print(f"[ERROR] Error en control_partos: {str(e)}")
+#         flash('Error al cargar el control de partos', 'danger')
+#         return redirect(url_for('index'))
 
 # API para buscar ubicación de un animal específico
 @app.route('/api/buscar_animal')
