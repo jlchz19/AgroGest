@@ -433,11 +433,11 @@
                     <p>Ingresa tus credenciales para acceder</p>
                 </div>
 
-                {% with messages = get_flashed_messages() %}
+                {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                <i class="fas fa-exclamation-circle"></i>
+                        {% for category, message in messages %}
+                            <div class="alert alert-{% if 'Registro exitoso' in message %}success{% else %}{{ category }}{% endif %} alert-dismissible fade show" role="alert">
+                                <i class="fas fa-{% if 'Registro exitoso' in message or category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-triangle{% elif category == 'warning' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
                                 <span>{{ message }}</span>
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
