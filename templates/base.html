@@ -524,77 +524,7 @@
             color: var(--danger);
         }
 
-        /* Dark Theme Styles */
-        body.dark-theme {
-            --primary: #f8fafc;
-            --primary-light: #e2e8f0;
-            --secondary: #0ea5e9;
-            --text-primary: #f8fafc;
-            --text-secondary: #cbd5e1;
-            --text-muted: #64748b;
-            --bg-primary: #0f172a;
-            --bg-secondary: #1e293b;
-            --bg-dark: #0f172a;
-            --border: #334155;
-            --surface-color: #1e293b;
-            --sidebar-bg: #0f172a;
-            --gradient-primary: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
-            --gradient-secondary: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
-            background-color: var(--bg-primary);
-            color: var(--text-primary);
-        }
-
-        body.dark-theme .navbar-main {
-            background: var(--bg-secondary);
-            border-bottom-color: var(--border);
-        }
-
-        body.dark-theme .card {
-            background: var(--bg-secondary);
-            border-color: var(--border);
-            color: var(--text-primary);
-        }
-
-        body.dark-theme .form-control {
-            background: var(--bg-secondary);
-            border-color: var(--border);
-            color: var(--text-primary);
-        }
-
-        body.dark-theme .form-control:focus {
-            background: var(--bg-secondary);
-            border-color: var(--secondary);
-            color: var(--text-primary);
-        }
-
-        body.dark-theme .btn-outline-secondary {
-            color: var(--text-secondary);
-            border-color: var(--border);
-        }
-
-        body.dark-theme .btn-outline-secondary:hover {
-            background: var(--secondary);
-            border-color: var(--secondary);
-        }
-
-        body.dark-theme .modal-content {
-            background: var(--bg-secondary);
-            color: var(--text-primary);
-        }
-
-        body.dark-theme .dropdown-menu {
-            background: var(--bg-secondary);
-            border-color: var(--border);
-        }
-
-        body.dark-theme .dropdown-item {
-            color: var(--text-primary);
-        }
-
-        body.dark-theme .dropdown-item:hover {
-            background: var(--bg-primary);
-        }
-
+        
         /* Compact View Styles */
         body.compact-view .card {
             margin-bottom: 1rem;
@@ -861,26 +791,7 @@
             }
         }
 
-        /* Auto Theme - System Preference Detection */
-        @media (prefers-color-scheme: dark) {
-            body.auto-theme {
-                --primary: #f8fafc;
-                --primary-light: #e2e8f0;
-                --secondary: #0ea5e9;
-                --text-primary: #f8fafc;
-                --text-secondary: #cbd5e1;
-                --text-muted: #64748b;
-                --bg-primary: #0f172a;
-                --bg-secondary: #1e293b;
-                --bg-dark: #0f172a;
-                --border: #334155;
-                --surface-color: #1e293b;
-                --sidebar-bg: #0f172a;
-                background-color: var(--bg-primary);
-                color: var(--text-primary);
-            }
-        }
-
+        
         #content {
             width: calc(100% - 280px);
             padding: 2rem;
@@ -3017,7 +2928,6 @@
 
         function openSettingsModal() {
             // Get current settings from localStorage or set defaults
-            const currentTheme = localStorage.getItem('appTheme') || 'claro';
             const currentLang = localStorage.getItem('appLanguage') || 'es';
             const notifications = localStorage.getItem('notifications') !== 'false';
             const autoSave = localStorage.getItem('autoSave') !== 'false';
@@ -3044,17 +2954,7 @@
                                             <h6 class="mb-0">Preferencias Generales</h6>
                                         </div>
                                         <div class="row g-3">
-                                            <div class="col-md-6">
-                                                <label class="form-label fw-semibold">
-                                                    <i class="fas fa-moon me-1"></i>Tema Visual
-                                                </label>
-                                                <select class="form-select" id="themeSelect">
-                                                    <option value="claro" selected>
-                                                        <i class="fas fa-sun"></i> Claro
-                                                    </option>
-                                                </select>
-                                            </div>
-                                            <div class="col-md-6">
+                                            <div class="col-md-12">
                                                 <label class="form-label fw-semibold">
                                                     <i class="fas fa-language me-1"></i>Idioma
                                                 </label>
@@ -3221,7 +3121,6 @@
 
         function saveSettings() {
             // Get form values
-            const theme = document.getElementById('themeSelect').value;
             const language = document.getElementById('languageSelect').value;
             const notifications = document.getElementById('notificationsCheck').checked;
             const autoSave = document.getElementById('autoSaveCheck').checked;
@@ -3229,7 +3128,6 @@
             const compactView = document.getElementById('compactViewCheck').checked;
             
             // Save to localStorage
-            localStorage.setItem('appTheme', theme);
             localStorage.setItem('appLanguage', language);
             localStorage.setItem('notifications', notifications);
             localStorage.setItem('autoSave', autoSave);
@@ -3237,7 +3135,6 @@
             localStorage.setItem('compactView', compactView);
             
             // Apply all settings immediately
-            applyTheme(theme);
             applyLanguage(language);
             
             // Apply compact view
@@ -3262,7 +3159,6 @@
             // Trigger a global settings update event
             window.dispatchEvent(new CustomEvent('settingsUpdated', {
                 detail: {
-                    theme,
                     language,
                     notifications,
                     autoSave,
@@ -3278,24 +3174,7 @@
             modal.hide();
         }
 
-        // Función para aplicar tema
-        function applyTheme(theme) {
-            const body = document.body;
-            const html = document.documentElement;
-            
-            // Remover temas anteriores
-            body.classList.remove('dark-theme', 'light-theme', 'auto-theme');
-            html.removeAttribute('data-theme');
-            
-            // Aplicar tema seleccionado
-            if (theme === 'claro') {
-                body.classList.add('light-theme');
-                html.setAttribute('data-theme', 'light');
-            }
-            
-            console.log('Tema aplicado:', theme);
-        }
-
+        
         // Función para aplicar idioma
         function applyLanguage(language) {
             // Guardar idioma en localStorage
@@ -3800,15 +3679,11 @@
 
         // Función para cargar ajustes globales al iniciar
         function loadGlobalSettings() {
-            const theme = localStorage.getItem('appTheme') || 'claro';
             const language = localStorage.getItem('appLanguage') || 'es';
             const notifications = localStorage.getItem('notifications') !== 'false';
             const autoSave = localStorage.getItem('autoSave') !== 'false';
             const showCharts = localStorage.getItem('showCharts') !== 'false';
             const compactView = localStorage.getItem('compactView') === 'true';
-            
-            // Aplicar tema
-            applyTheme(theme);
             
             // Aplicar idioma
             applyLanguage(language);
