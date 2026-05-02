@@ -1603,7 +1603,7 @@
             display: flex;
             align-items: center;
             padding: 12px 20px;
-            color: #333;
+            color: #ffffff;
             text-decoration: none;
             transition: background-color 0.2s;
             border-bottom: 1px solid #f0f0f0;
@@ -1661,22 +1661,6 @@
             display: flex;
             align-items: center;
             padding: 12px 20px;
-            color: #333;
-            text-decoration: none;
-            transition: all 0.2s ease;
-        }
-        
-        .mobile-nav-item i {
-            width: 24px;
-            margin-right: 15px;
-            text-align: center;
-            font-size: 1.1rem;
-            color: #6c757d;
-        }
-        
-        .mobile-nav-item span {
-            font-size: 0.95rem;
-        }
         
         .mobile-nav-item:hover {
             background-color: #f8f9fa;
@@ -1909,7 +1893,7 @@
             }
         </style>
         
-        <!-- Variables CSS para tema oscuro -->
+        <!-- Variables CSS eliminadas -->
         <style>
         :root {
             /* Tema claro (predeterminado) */
@@ -2132,7 +2116,7 @@
                     </ul>
                 </li>
                 <li>
-                    <a href="{{ url_for('seguimiento_peso') }}" class="nav-link"><span style="font-size: 1.2rem;">⚖️</span> <span>Control de Peso</span></a>
+                    <a href="{{ url_for('seguimiento_peso') }}"><span style="font-size: 1.2rem;">⚖️</span> <span>Control de Peso</span></a>
                 </li>
                 
                 <li>
@@ -2937,7 +2921,7 @@
             // Remove active class from all nav links
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.classList.remove('active');
-                link.style.color = '#6c757d';
+                link.style.color = '#ffffff';
             });
             
             // Show selected tab
@@ -3865,7 +3849,7 @@
             window.notificationsEnabled = notifications;
             window.autoSaveEnabled = autoSave;
             
-            console.log('Ajustes globales cargados:', { theme, language, notifications, autoSave, showCharts, compactView });
+            console.log('Ajustes globales cargados:', { language, notifications, autoSave, showCharts, compactView });
         }
 
         function showToast(message, type = 'success') {
@@ -4075,19 +4059,8 @@
             if (typeof initCloseButton === 'function') {
                 initCloseButton();
             }
-        });
-    </script>
     
     {% endblock %}
     
-    <script>
-    // Cargar preferencia de tema al cargar la página
-    document.addEventListener('DOMContentLoaded', function() {
-        const temaGuardado = localStorage.getItem('temaAgroGest');
-        if (temaGuardado === 'dark') {
-            document.documentElement.setAttribute('data-theme', 'dark');
-        }
-    });
-    </script>
-</body>
+    </body>
 </html>
