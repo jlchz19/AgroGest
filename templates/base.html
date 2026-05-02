@@ -1997,6 +1997,171 @@
                 pointer-events: auto !important;
             }
         </style>
+        
+        <!-- Variables CSS para tema oscuro -->
+        <style>
+        :root {
+            /* Tema claro (predeterminado) */
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #e9ecef;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --text-muted: #adb5bd;
+            --border-primary: #dee2e6;
+            --border-secondary: #e9ecef;
+            --border-accent: #0d6efd;
+            --success: #198754;
+            --error: #dc3545;
+            --warning: #ffc107;
+            --info: #0dcaf0;
+            --btn-primary: #0d6efd;
+            --btn-primary-hover: #0b5ed7;
+        }
+
+        [data-theme="dark"] {
+            /* Tema oscuro */
+            --bg-primary: #0d1117;
+            --bg-secondary: #161b22;
+            --bg-tertiary: #21262d;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --text-muted: #6e7681;
+            --border-primary: #30363d;
+            --border-secondary: #21262d;
+            --border-accent: #58a6ff;
+            --success: #3fb950;
+            --error: #f85149;
+            --warning: #f8961e;
+            --info: #58a6ff;
+            --btn-primary: #238636;
+            --btn-primary-hover: #2ea043;
+        }
+
+        /* Aplicar variables CSS globalmente */
+        body {
+            background-color: var(--bg-primary) !important;
+            color: var(--text-primary) !important;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .card {
+            background-color: var(--bg-secondary) !important;
+            border-color: var(--border-primary) !important;
+            color: var(--text-primary) !important;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .card-header {
+            background-color: var(--bg-tertiary) !important;
+            border-color: var(--border-primary) !important;
+            color: var(--text-primary) !important;
+        }
+
+        .btn-primary {
+            background-color: var(--btn-primary) !important;
+            border-color: var(--btn-primary) !important;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--btn-primary-hover) !important;
+            border-color: var(--btn-primary-hover) !important;
+        }
+
+        .form-control, .form-select {
+            background-color: var(--bg-primary) !important;
+            border-color: var(--border-primary) !important;
+            color: var(--text-primary) !important;
+        }
+
+        .form-control:focus, .form-select:focus {
+            background-color: var(--bg-primary) !important;
+            border-color: var(--border-accent) !important;
+            color: var(--text-primary) !important;
+        }
+
+        .text-muted {
+            color: var(--text-muted) !important;
+        }
+
+        .text-secondary {
+            color: var(--text-secondary) !important;
+        }
+
+        .bg-light {
+            background-color: var(--bg-tertiary) !important;
+        }
+
+        .navbar {
+            background-color: var(--bg-secondary) !important;
+            border-color: var(--border-primary) !important;
+        }
+
+        .navbar-brand, .navbar-nav .nav-link {
+            color: var(--text-primary) !important;
+        }
+
+        .table {
+            color: var(--text-primary) !important;
+        }
+
+        .table-striped > tbody > tr:nth-of-type(odd) > td,
+        .table-striped > tbody > tr:nth-of-type(odd) > th {
+            background-color: var(--bg-tertiary) !important;
+        }
+
+        .modal-content {
+            background-color: var(--bg-secondary) !important;
+            color: var(--text-primary) !important;
+        }
+
+        .modal-header {
+            background-color: var(--bg-tertiary) !important;
+            border-color: var(--border-primary) !important;
+        }
+
+        .alert {
+            color: var(--text-primary) !important;
+        }
+
+        .alert-success {
+            background-color: var(--success) !important;
+            border-color: var(--success) !important;
+        }
+
+        .alert-danger {
+            background-color: var(--error) !important;
+            border-color: var(--error) !important;
+        }
+
+        .alert-warning {
+            background-color: var(--warning) !important;
+            border-color: var(--warning) !important;
+            color: #000 !important;
+        }
+
+        .alert-info {
+            background-color: var(--info) !important;
+            border-color: var(--info) !important;
+        }
+
+        #sidebar {
+            background-color: var(--bg-secondary) !important;
+            border-color: var(--border-primary) !important;
+        }
+
+        #sidebar .nav-link {
+            color: var(--text-primary) !important;
+        }
+
+        #sidebar .nav-link:hover {
+            background-color: var(--bg-tertiary) !important;
+        }
+
+        #sidebar .nav-link.active {
+            background-color: var(--btn-primary) !important;
+        }
+        </style>
         </head>
 <body>
     
@@ -4039,5 +4204,15 @@
     </script>
     
     {% endblock %}
+    
+    <script>
+    // Cargar preferencia de tema al cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+        const temaGuardado = localStorage.getItem('temaAgroGest');
+        if (temaGuardado === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+    });
+    </script>
 </body>
 </html>
