@@ -126,49 +126,130 @@ async function showAnimalesResumen() {
             return;
         }
         
-        // Build a small resumen header: total animals and top type
-        const tiposUnicos = data.tipos_unicos && data.tipos_unicos.length ? data.tipos_unicos.join(', ') : '—';
+        // Build summary data
+        const tiposUnicos = data.tipos_unicos && data.tipos_unicos.length ? data.tipos_unicos : [];
         const topTipo = data.top_tipo || '—';
+        const totalTipos = tiposUnicos.length;
+        const totalRazas = data.razas_unicas || 0;
+        const porRaza = data.por_raza || [];
+
+        // Icon mapping for animal types
+        const getAnimalIcon = (tipo) => {
+            const tipoLower = (tipo || '').toLowerCase();
+            if (tipoLower.includes('vaca') || tipoLower.includes('bovino')) return 'fa-cow';
+            if (tipoLower.includes('toro')) return 'fa-horse';
+            if (tipoLower.includes('cerdo') || tipoLower.includes('porcino')) return 'fa-piggy-bank';
+            if (tipoLower.includes('pollo') || tipoLower.includes('gallina') || tipoLower.includes('ave')) return 'fa-dove';
+            if (tipoLower.includes('caballo') || tipoLower.includes('yegua')) return 'fa-horse';
+            if (tipoLower.includes('oveja') || tipoLower.includes('cordero')) return 'fa-sheep';
+            if (tipoLower.includes('cabra')) return 'fa-goat';
+            if (tipoLower.includes('perro')) return 'fa-dog';
+            if (tipoLower.includes('gato')) return 'fa-cat';
+            return 'fa-paw';
+        };
 
         content.innerHTML = `
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="mb-0">Resumen de Animales</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
+            
+            <!-- Stats Cards -->
             <div class="row g-3 mb-4">
-                <div class="col-12 col-md-6">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body text-center">
-                            <h2 class="mb-1 text-primary">${data.total || 0}</h2>
-                            <p class="text-muted mb-0">Total Animales (incluye inactivos)</p>
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);">
+                        <div class="card-body text-center text-white py-3">
+                            <h2 class="mb-1 fw-bold">${data.total || 0}</h2>
+                            <p class="mb-0 small opacity-75">Total Animales</p>
                         </div>
                     </div>
                 </div>
-                <div class="col-12 col-md-6">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-body text-center">
-                            <h6 class="mb-1">Tipo más frecuente</h6>
-                            <div class="small text-muted mb-2">${topTipo}</div>
-                            <h6 class="mb-0">Tipos registrados</h6>
-                            <div class="small text-muted">${tiposUnicos}</div>
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                        <div class="card-body text-center text-white py-3">
+                            <h2 class="mb-1 fw-bold">${totalTipos}</h2>
+                            <p class="mb-0 small opacity-75">Tipos de Animales</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
+                        <div class="card-body text-center text-white py-3">
+                            <h2 class="mb-1 fw-bold">${totalRazas}</h2>
+                            <p class="mb-0 small opacity-75">Razas Registradas</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                        <div class="card-body text-center text-white py-3">
+                            <h6 class="mb-1 fw-bold text-truncate" title="${topTipo}">${topTipo}</h6>
+                            <p class="mb-0 small opacity-75">Tipo Más Frecuente</p>
                         </div>
                     </div>
                 </div>
             </div>
-            <h6 class="mb-3">Distribución por Tipo</h6>
-            <div class="list-group">
-                ${(data.por_tipo && data.por_tipo.length > 0) ? 
-                    data.por_tipo.map(item => `
-                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-cow me-2 text-primary"></i>
-                                <span>${item.tipo || 'Sin especificar'}</span>
-                            </div>
-                            <span class="badge bg-primary rounded-pill">${item.cantidad || 0}</span>
-                        </div>
-                    `).join('')
-                    : '<div class="alert alert-info mb-0">No hay datos disponibles</div>'
-                }
+            
+            <!-- Two Column Layout: Types and Breeds -->
+            <div class="row g-3">
+                <!-- Animal Types -->
+                <div class="col-md-6">
+                    <h6 class="mb-3 fw-bold"><i class="fas fa-paw me-2 text-primary"></i>Tipos de Animales</h6>
+                    <div class="list-group">
+                        ${(data.por_tipo && data.por_tipo.length > 0) ? 
+                            data.por_tipo.map((item, index) => {
+                                const colors = ['primary', 'success', 'info', 'warning', 'danger', 'secondary'];
+                                const color = colors[index % colors.length];
+                                const icon = getAnimalIcon(item.tipo);
+                                const percentage = data.total > 0 ? Math.round((item.cantidad / data.total) * 100) : 0;
+                                return `
+                                <div class="list-group-item d-flex justify-content-between align-items-center py-2">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-${color} bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                            <i class="fas ${icon} text-${color}"></i>
+                                        </div>
+                                        <div>
+                                            <span class="fw-bold d-block">${item.tipo || 'Sin especificar'}</span>
+                                            <small class="text-muted">${percentage}% del total</small>
+                                        </div>
+                                    </div>
+                                    <span class="badge bg-${color} rounded-pill">${item.cantidad || 0}</span>
+                                </div>
+                            `;
+                            }).join('')
+                            : '<div class="list-group-item"><i class="fas fa-info-circle me-2"></i>No hay datos disponibles</div>'
+                        }
+                    </div>
+                </div>
+                
+                <!-- Breeds -->
+                <div class="col-md-6">
+                    <h6 class="mb-3 fw-bold"><i class="fas fa-dna me-2 text-purple"></i>Razas Registradas</h6>
+                    <div class="list-group">
+                        ${(porRaza && porRaza.length > 0) ? 
+                            porRaza.map((item, index) => {
+                                const colors = ['primary', 'success', 'info', 'warning', 'danger', 'secondary'];
+                                const color = colors[index % colors.length];
+                                const percentage = data.total > 0 ? Math.round((item.cantidad / data.total) * 100) : 0;
+                                return `
+                                <div class="list-group-item d-flex justify-content-between align-items-center py-2">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-${color} bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                            <i class="fas fa-tag text-${color}"></i>
+                                        </div>
+                                        <div>
+                                            <span class="fw-bold d-block">${item.raza || 'Sin especificar'}</span>
+                                            <small class="text-muted">${percentage}% del total</small>
+                                        </div>
+                                    </div>
+                                    <span class="badge bg-${color} rounded-pill">${item.cantidad || 0}</span>
+                                </div>
+                            `;
+                            }).join('')
+                            : '<div class="list-group-item"><i class="fas fa-info-circle me-2"></i>No hay datos disponibles</div>'
+                        }
+                    </div>
+                </div>
             </div>`;
     } catch (error) {
         console.error('Error al cargar datos de animales:', error);

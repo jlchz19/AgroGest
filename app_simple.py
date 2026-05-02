@@ -7216,17 +7216,28 @@ def api_resumen_animales():
         # Animales activos
         activos = Animal.query.filter_by(finca_id=finca_id, estado='activo').count()
         
-        # Tipos únicos
-        tipos = db.session.query(Animal.tipo).filter_by(finca_id=finca_id).distinct().count()
+        # Tipos únicos (de todos los animales excepto inactivos)
+        tipos = db.session.query(Animal.tipo).filter(
+            Animal.finca_id == finca_id,
+            db.or_(
+                Animal.estado.is_(None),
+                Animal.estado == '',
+                ~Animal.estado.in_(['inactivo', 'vendido', 'muerto', 'fallecido', 'dado_de_baja'])
+            )
+        ).distinct().count()
         
-        # Por tipo (solo animales activos, agregado de forma insensible a mayúsculas/minúsculas)
+        # Por tipo (incluye todos excepto inactivos/vendidos/muertos/fallecidos)
         # Normalizamos Animal.tipo a lower() para consolidar entradas como 'Vaca' y 'vaca'
         por_tipo_rows = db.session.query(
             db.func.lower(Animal.tipo).label('tipo_norm'),
             db.func.count(Animal.id).label('cantidad')
         ).filter(
             Animal.finca_id == finca_id,
-            Animal.estado == 'activo'
+            db.or_(
+                Animal.estado.is_(None),
+                Animal.estado == '',
+                ~Animal.estado.in_(['inactivo', 'vendido', 'muerto', 'fallecido', 'dado_de_baja'])
+            )
         ).group_by(db.func.lower(Animal.tipo)).order_by(db.desc('cantidad')).limit(20).all()
 
         # Construir lista por_tipo con la primera letra en mayúscula para mostrar
@@ -7234,6 +7245,22 @@ def api_resumen_animales():
 
         # Tipos únicos (sobre activos, normalizados)
         tipos_unicos = [row['tipo'] for row in por_tipo]
+
+        # Por raza (incluye todos excepto inactivos/vendidos/muertos)
+        por_raza_rows = db.session.query(
+            db.func.lower(Animal.raza).label('raza_norm'),
+            db.func.count(Animal.id).label('cantidad')
+        ).filter(
+            Animal.finca_id == finca_id,
+            db.or_(
+                Animal.estado.is_(None),
+                Animal.estado == '',
+                ~Animal.estado.in_(['inactivo', 'vendido', 'muerto', 'fallecido', 'dado_de_baja'])
+            )
+        ).group_by(db.func.lower(Animal.raza)).order_by(db.desc('cantidad')).limit(20).all()
+
+        por_raza = [{'raza': (row.raza_norm.title() if row.raza_norm else 'Sin especificar'), 'cantidad': row.cantidad} for row in por_raza_rows]
+        razas_unicas = len([r for r in por_raza if r['raza'] != 'Sin especificar'])
 
         # Calcular promedio de edad (solo activos)
         hoy = date.today()
@@ -7257,7 +7284,9 @@ def api_resumen_animales():
             'tipos': tipos,
             'tipos_unicos': tipos_unicos,
             'top_tipo': top_tipo,
-            'por_tipo': por_tipo
+            'por_tipo': por_tipo,
+            'razas_unicas': razas_unicas,
+            'por_raza': por_raza
         })
     except Exception as e:
         print(f"[ERROR] En api_resumen_animales: {e}")
